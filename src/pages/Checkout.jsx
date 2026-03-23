@@ -1,0 +1,432 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
+import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
+
+/* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
+const ORDER_ITEMS = [
+    {
+        id: 1,
+        name: 'Spectre Shell Jacket',
+        qty: 1,
+        price: 450,
+        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYBI3nMLg4qgdT8_gAj_wI7hfoDMzjQINOXASjujQ94t-BLaSPaysrh1T-54nepMTneVtw-9Ao473WSTGuZctzZLeZA-27eNiG8uAdyrcElHTW5MiNLoUkowJiOpjvEkQupmlTDa_2qOjnWCdUs1tEd8g4aE1UUqUaOJaUnRtlqDjbMO3DcLOO8stAaC_Jhtpxt8mId7UZ1ZJYatOL4-hTpt4VMv7l7yjnhFtBCyhlIjGqciEFv5ZcajnhsxQDzd0CGHY1tBDRvOG1',
+    },
+    {
+        id: 2,
+        name: 'Urban Street Sneakers',
+        qty: 1,
+        price: 299,
+        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAeymrPqleX-ea-M9umROMAR1fPpaEhxo6rHC42f7LySEjY5C1kD1putf733ugxi07Ohghvdh7uihAHWLQpf1adI9y-_Z5tR2QGfEpzaR3pWN7WUBYWoCdyIGfeJwLtI6Gcqo_baFTB-7abERT6gs19EU88lFbraof5Tc5j7AWk5M-3htlNNaPFztok6nMzz61H11yZ65m_J56PP92V-U6RqKAyjBxyBp1PKgcYAOcypuUcSdgFjWFgd7ZP_2rpORLZnIpgAzwdGik0',
+    },
+]
+
+/* ── Campo de formulario reutilizable ── */
+function FormField({ label, type = 'text', placeholder = '', colSpan = 1, required = false }) {
+    return (
+        <div className={colSpan === 2 ? 'col-span-2' : ''}>
+            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
+                {label}
+            </label>
+            <input
+                type={type}
+                placeholder={placeholder}
+                required={required}
+                className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#444] font-mono outline-none"
+            />
+        </div>
+    )
+}
+
+export default function Checkout() {
+    const [paymentMethod, setPaymentMethod] = useState('cc')
+    const [shippingMethod, setShippingMethod] = useState('shipping')
+    const { items, subtotal, shipping } = useCart()
+
+    /* Usa los ítems reales del carrito; si está vacío cae al mock de demo */
+    const displayItems = items.length > 0 ? items : ORDER_ITEMS
+    const displaySubtotal = subtotal || ORDER_ITEMS.reduce((s, i) => s + i.price * i.qty, 0)
+    const displayShipping = shippingMethod === 'pickup' ? 0 : (shipping || 0)
+    const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
+    const displayTotal = displaySubtotal + displayShipping + displayTax
+
+    return (
+        <div className="bg-[#0a0a0a] min-h-screen text-slate-200 font-body antialiased">
+
+            {/* ── Grid bg decorativa ── */}
+            <div
+                className="fixed inset-0 pointer-events-none z-0 opacity-[0.03]"
+                style={{
+                    backgroundImage: `
+            linear-gradient(rgba(0,240,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,240,255,0.05) 1px, transparent 1px)
+          `,
+                    backgroundSize: '20px 20px',
+                }}
+                aria-hidden="true"
+            />
+
+            <main className="relative z-10 flex-1 px-6 py-10 lg:px-20 lg:py-12 max-w-[1200px] mx-auto w-full">
+
+                {/* ── Encabezado de página ── */}
+                <div className="mb-10 border-b border-[#333] pb-6 flex flex-wrap justify-between items-end gap-4">
+                    <div>
+                        {/* Breadcrumb */}
+                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-3 uppercase tracking-widest">
+                            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+                            <span className="text-primary">›</span>
+                            <Link to="/" onClick={() => window.history.back()} className="hover:text-primary transition-colors">Cart</Link>
+                            <span className="text-primary">›</span>
+                            <span className="text-white">Checkout</span>
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-white uppercase font-display">
+                            <span className="text-primary">01.</span> Checkout
+                        </h1>
+                        <p className="text-slate-500 flex items-center gap-2 text-xs uppercase tracking-widest font-mono mt-2">
+                            <span className="material-symbols-outlined text-primary text-sm">lock_person</span>
+                            Encrypted Connection // Protocol V.4
+                        </p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono">
+                        <span>STATUS:</span>
+                        <span className="text-green-500 animate-pulse">ONLINE</span>
+                    </div>
+                </div>
+
+                {/* ── Grid principal 12 cols ── */}
+                <form onSubmit={(e) => e.preventDefault()}>
+                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+
+                        {/* ══════ Columna formulario (7 cols) ══════ */}
+                        <div className="lg:col-span-7 space-y-8">
+
+                            {/* ── Sección 1: Contact_Data ── */}
+                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#555]" />
+                                <div className="flex items-center justify-between mb-6 border-b border-[#333] pb-4">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-primary text-sm">contact_mail</span>
+                                        Contact_Data
+                                    </h3>
+                                    <Link
+                                        to="/cuenta"
+                                        className="text-xs font-medium text-primary hover:text-white font-mono uppercase transition-colors"
+                                    >
+                                        &lt; Log_In /&gt;
+                                    </Link>
+                                </div>
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <FormField label="Email Address" type="email" placeholder="USER@DOMAIN.COM" required />
+                                    <FormField label="Phone Number" type="tel" placeholder="+54 9 11 0000-0000" required />
+                                    <div className="flex items-center gap-3 group cursor-pointer col-span-1 sm:col-span-2">
+                                        <input
+                                            type="checkbox"
+                                            id="newsletter"
+                                            className="h-4 w-4 appearance-none border border-[#555] bg-[#0a0a0a] checked:border-primary checked:bg-primary transition-all cursor-pointer"
+                                        />
+                                        <label
+                                            htmlFor="newsletter"
+                                            className="text-xs text-slate-400 font-mono uppercase group-hover:text-primary transition-colors cursor-pointer tracking-wide"
+                                        >
+                                            Subscribe to tactical updates
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* ── Sección 2: Fulfillment_Method ── */}
+                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#555]" />
+                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-sm">local_shipping</span>
+                                    Fulfillment_Method
+                                </h3>
+
+                                {/* ── Selector de Método ── */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShippingMethod('shipping')}
+                                        className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
+                                            shippingMethod === 'shipping' 
+                                            ? 'border-primary bg-primary/10' 
+                                            : 'border-[#333] bg-[#0a0a0a] hover:border-[#555]'
+                                        }`}
+                                    >
+                                        {/* Glow background effect */}
+                                        <div className={`absolute -bottom-10 -right-10 w-24 h-24 bg-primary rounded-full blur-3xl opacity-0 transition-opacity ${shippingMethod === 'shipping' ? 'opacity-20' : 'group-hover:opacity-10'}`} />
+                                        
+                                        {shippingMethod === 'shipping' && (
+                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
+                                                <span className="material-symbols-outlined text-sm font-bold">check</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'shipping' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>local_shipping</span>
+                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Delivery</span>
+                                        </div>
+                                        <span className="text-xs text-slate-400 font-mono leading-relaxed">
+                                            Envío a domicilio. Costo calculado en base a destino.
+                                        </span>
+                                    </button>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => setShippingMethod('pickup')}
+                                        className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
+                                            shippingMethod === 'pickup' 
+                                            ? 'border-primary bg-primary/10' 
+                                            : 'border-[#333] bg-[#0a0a0a] hover:border-[#555]'
+                                        }`}
+                                    >
+                                        {/* Glow background effect */}
+                                        <div className={`absolute -bottom-10 -right-10 w-24 h-24 bg-primary rounded-full blur-3xl opacity-0 transition-opacity ${shippingMethod === 'pickup' ? 'opacity-20' : 'group-hover:opacity-10'}`} />
+                                        
+                                        {shippingMethod === 'pickup' && (
+                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
+                                                <span className="material-symbols-outlined text-sm font-bold">check</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'pickup' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>storefront</span>
+                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Store Pickup</span>
+                                        </div>
+                                        <span className="text-xs text-slate-400 font-mono leading-relaxed">
+                                            Retira en local gratis. Nos pondremos en contacto.
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mt-4">
+                                    <FormField label="First Name" type="text" required />
+                                    <FormField label="Last Name" type="text" required />
+                                    
+                                    {shippingMethod === 'shipping' ? (
+                                        <>
+                                            <FormField label="Address Line 1" type="text" colSpan={2} required />
+                                            <FormField label="City / Sector" type="text" required />
+                                            <FormField label="Postal Code" type="text" required />
+                                        </>
+                                    ) : (
+                                        <div className="col-span-1 sm:col-span-2 bg-[#1a1a1a]/50 border border-[#333] p-4 mt-2 mb-2 relative">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                                            <p className="text-sm text-slate-300 font-mono mb-2">
+                                                <span className="text-primary font-bold">Dirección de Retiro:</span> Microcentro, Buenos Aires
+                                            </p>
+                                            <p className="text-xs text-slate-500 font-mono leading-relaxed">
+                                                <span className="material-symbols-outlined text-[14px] mr-1 align-text-bottom text-primary/70">check_circle</span>
+                                                Una vez confirmada la compra recibiŕas un email para coordinar el horario de retiro en nuestro showroom.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* ── Sección 3: Payment_Method ── */}
+                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
+                                {/* Neon left border */}
+                                <div
+                                    className="absolute top-0 left-0 w-1 h-full bg-primary"
+                                    style={{ boxShadow: '0 0 10px #00f0ff' }}
+                                />
+                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-sm">credit_card</span>
+                                    Payment_Method
+                                </h3>
+
+                                <div className="border border-[#333] bg-[#0a0a0a]/50 overflow-hidden">
+                                    {/* ─ Credit Card ─ */}
+                                    <div className="border-b border-[#333] p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} />
+                                                <label htmlFor="cc" className="font-bold text-white uppercase font-mono text-sm cursor-pointer">
+                                                    Credit Card
+                                                </label>
+                                            </div>
+                                            <div className="flex gap-2 text-slate-500">
+                                                <span className="material-symbols-outlined">credit_card</span>
+                                                <span className="material-symbols-outlined">lock</span>
+                                            </div>
+                                        </div>
+
+                                        {paymentMethod === 'cc' && (
+                                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 bg-[#1a1a1a]/50 p-4 border border-[#333]">
+                                                <div className="col-span-2">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="0000 0000 0000 0000"
+                                                        className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                    />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="MM / YY"
+                                                    className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="CVC"
+                                                    className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ─ Mercado Pago ─ */}
+                                    <div className={`p-4 transition-colors ${paymentMethod === 'mp' ? 'bg-[#1a1a1a]' : 'bg-[#1a1a1a]/20 hover:bg-[#1a1a1a]/40'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <RadioBtn id="mp" name="payment" checked={paymentMethod === 'mp'} onChange={() => setPaymentMethod('mp')} />
+                                                <label htmlFor="mp" className="font-bold text-slate-300 uppercase font-mono text-sm cursor-pointer">
+                                                    Mercado Pago
+                                                </label>
+                                            </div>
+                                            <span className="text-primary font-bold text-sm font-mono opacity-80">MP</span>
+                                        </div>
+                                        {paymentMethod === 'mp' && (
+                                            <p className="mt-3 text-xs text-slate-500 font-mono uppercase tracking-wide pl-7">
+                                                <span className="material-symbols-outlined text-primary text-xs mr-1">info</span>
+                                                Serás redirigido a Mercado Pago para completar el pago de forma segura.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* ── Botón Pagar ── */}
+                            {paymentMethod === 'mp' ? (
+                                <MercadoPagoBrick items={displayItems} />
+                            ) : (
+                                <button
+                                    type="submit"
+                                    className="group w-full relative overflow-hidden bg-primary py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                    <span className="relative text-black text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
+                                        Initiate Payment ${displayTotal.toFixed(2)}
+                                        <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
+                                            arrow_forward
+                                        </span>
+                                    </span>
+                                </button>
+                            )}
+
+                            {/* ── Garantía ── */}
+                            <div className="flex items-center justify-center gap-3 text-xs text-primary font-mono border border-primary/20 bg-primary/5 py-3">
+                                <span className="material-symbols-outlined text-lg">verified_user</span>
+                                <span className="uppercase tracking-wide">30-Day Performance Guarantee</span>
+                            </div>
+                        </div>
+
+                        {/* ══════ Columna Order Manifest (5 cols sticky) ══════ */}
+                        <div className="hidden lg:block lg:col-span-5">
+                            <div className="sticky top-24 p-6 bg-[#121212] border border-[#333] shadow-2xl">
+
+                                {/* Header */}
+                                <div className="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
+                                    <h3 className="text-lg font-bold text-white uppercase font-mono">Order_Manifest</h3>
+                                    <span className="text-xs text-slate-500 font-mono">[{displayItems.length} ITEMS]</span>
+                                </div>
+
+                                {/* Resumen numérico */}
+                                <div className="space-y-3 font-mono text-sm mb-8">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 uppercase">Subtotal</span>
+                                        <span className="font-medium text-white">${displaySubtotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 uppercase">Shipping</span>
+                                        <span className="font-bold text-primary uppercase">
+                                            {displayShipping === 0 ? 'Free' : `$${displayShipping.toFixed(2)}`}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400 uppercase">Tax [Est.]</span>
+                                        <span className="font-medium text-white">${displayTax.toFixed(2)}</span>
+                                    </div>
+                                    <div className="h-px bg-[#333] my-2" />
+                                    <div className="flex justify-between text-base font-bold items-center">
+                                        <span className="text-white uppercase tracking-wider">Total Amount</span>
+                                        <span
+                                            className="text-primary text-2xl"
+                                            style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}
+                                        >
+                                            ${displayTotal.toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Items de la orden */}
+                                <div className="space-y-3">
+                                    {displayItems.map(({ id, name, qty, price, img }) => (
+                                        <div key={id} className="flex gap-4 p-3 bg-[#0a0a0a]/50 border border-[#333]/50">
+                                            <div className="h-16 w-12 bg-[#222] border border-[#555] overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={img}
+                                                    alt={name}
+                                                    className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col justify-center gap-1 flex-1">
+                                                <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
+                                                    {name}
+                                                </span>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
+                                                    <span className="text-xs text-primary font-mono font-bold">${price}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Promo code */}
+                                <div className="mt-6">
+                                    <div className="flex">
+                                        <input
+                                            type="text"
+                                            placeholder="PROMO_CODE"
+                                            className="flex-1 bg-[#0a0a0a] border border-[#333] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="px-4 py-2.5 bg-[#222] border border-l-0 border-[#333] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Seguridad */}
+                                <div className="mt-6 flex items-center justify-center gap-4 opacity-30">
+                                    <span className="material-symbols-outlined text-2xl text-white">lock</span>
+                                    <span className="material-symbols-outlined text-2xl text-white">verified_user</span>
+                                    <span className="material-symbols-outlined text-2xl text-white">shield</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </main>
+        </div>
+    )
+}
+
+/* ── Radio button custom ── */
+function RadioBtn({ id, name, checked, onChange }) {
+    return (
+        <div className="relative flex items-center">
+            <input
+                type="radio"
+                id={id}
+                name={name}
+                checked={checked}
+                onChange={onChange}
+                className="peer h-4 w-4 appearance-none rounded-full border border-[#555] bg-[#0a0a0a] checked:border-primary checked:bg-[#0a0a0a] transition-all cursor-pointer"
+            />
+            <div className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+        </div>
+    )
+}

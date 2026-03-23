@@ -1,0 +1,65 @@
+<svg xmlns="http://www.svg.org/2000/svg" viewBox="0 0 400 350" width="100%" height="100%">
+  <!-- Definitions for gradients to match the original logo's styling -->
+  <defs>
+    <!-- Blue gradient for the outer triangle segments -->
+    <linearGradient id="blueGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a90e2" />
+      <stop offset="100%" stop-color="#1c5ca8" />
+    </linearGradient>
+
+    <!-- Drop shadow for the text to give it that "embossed/glowing" look against the dark background -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background (Dark to match the original image and context of the site) -->
+  <rect width="100%" height="100%" fill="transparent" />
+
+  <g transform="translate(0, -20)">
+    <!-- TRIANGLE LOGO MARK -->
+    <g transform="translate(200, 160) scale(1.2)">
+      <!-- Top Left Blue Segment -->
+      <path d="M -4, -10 L -60, 90 L -8, 90 Z" fill="url(#blueGlow)" />
+      <!-- Top White Segment -->
+      <path d="M 0, -80 L -18, 5 L 8, 30 Z" fill="#ffffff" />
+      
+      <!-- Bottom Right Blue Segment -->
+      <path d="M 85, 90 L 30, -5 L 12, 28 Z" fill="url(#blueGlow)" />
+      <!-- Right White Segment -->
+      <path d="M 15, 30 L 75, 75 L 20, 75 Z" fill="#ffffff" />
+      
+      <!-- Bottom Left Blue Segment -->
+      <path d="M -80, 85 L 0, 110 L 80, 110 Z" fill="url(#blueGlow)" />
+      <!-- Bottom Left White Segment -->
+      <path d="M -15, 50 L -65, 80 L 0, 80 Z" fill="#ffffff" />
+      
+      <!-- Center Negative Space (implied by the overlapping shapes, but explicitly drawn here for exact match) -->
+      <path d="M -10, 40 L 25, 60 L 5, 10 Z" fill="transparent" />
+    </g>
+
+    <!-- TEXT: NEXO -->
+    <text x="200" y="270" 
+          font-family="'Inter', 'Space Grotesk', sans-serif" 
+          font-size="64" 
+          font-weight="900" 
+          letter-spacing="4" 
+          fill="#526b7d" 
+          text-anchor="middle"
+          filter="url(#glow)">
+      NEXO
+    </text>
+
+    <!-- TEXT: PERFORMANCE -->
+    <text x="200" y="315" 
+          font-family="'Inter', 'Space Grotesk', sans-serif" 
+          font-size="28" 
+          font-weight="800" 
+          letter-spacing="6" 
+          fill="#4a90e2" 
+          text-anchor="middle">
+      PERFORMANCE
+    </text>
+  </g>
+</svg>
