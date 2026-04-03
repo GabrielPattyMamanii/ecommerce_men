@@ -93,7 +93,7 @@ export default function OrdersTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('orders')
-            .select('id, status, total, payment_id, created_at, profiles(full_name)')
+            .select('id, status, total, payment_id, customer_name, customer_email, shipping_type, created_at, profiles(full_name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setOrders(data ?? [])
@@ -199,10 +199,10 @@ export default function OrdersTable() {
                         <table className="admin-orders__table">
                             <thead>
                                 <tr>
-                                    {['Order ID', 'Customer', 'Status', 'Total', 'Payment ID', 'Date', 'Actions'].map((h, i) => (
+                                    {['Order ID', 'Customer', 'Status', 'Total', 'Shipping', 'Payment ID', 'Date', 'Actions'].map((h, i) => (
                                         <th
                                             key={h}
-                                            className={`admin-orders__th${i === 6 ? ' admin-orders__th--right' : ''}`}
+                                            className={`admin-orders__th${i === 7 ? ' admin-orders__th--right' : ''}`}
                                         >
                                             {h}
                                         </th>
@@ -218,9 +218,9 @@ export default function OrdersTable() {
                                             #{order.id.slice(0, 8)}
                                         </td>
 
-                                        {/* Customer — viene del JOIN con profiles */}
+                                        {/* Customer — JOIN profiles o guest data */}
                                         <td className="admin-orders__td">
-                                            {order.profiles?.full_name || (
+                                            {order.profiles?.full_name || order.customer_name || order.customer_email || (
                                                 <span style={{ color: '#475569', fontStyle: 'italic' }}>Unknown</span>
                                             )}
                                         </td>
@@ -233,6 +233,17 @@ export default function OrdersTable() {
                                         {/* Total */}
                                         <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
                                             ${Number(order.total).toFixed(2)}
+                                        </td>
+
+                                        {/* Shipping type */}
+                                        <td className="admin-orders__td" style={{ textAlign: 'center' }}>
+                                            {order.shipping_type === 'pickup' ? (
+                                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: '#00f0ff' }} title="Retiro en local">storefront</span>
+                                            ) : order.shipping_type === 'shipping' ? (
+                                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: '#10b981' }} title="Envío a domicilio">local_shipping</span>
+                                            ) : (
+                                                <span style={{ color: '#334155' }}>—</span>
+                                            )}
                                         </td>
 
                                         {/* Payment ID de Mercado Pago */}

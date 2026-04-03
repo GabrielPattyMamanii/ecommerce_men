@@ -1,10 +1,12 @@
 // Supabase Edge Function — Mercado Pago: create payment preference
-// Deploy: supabase functions deploy create-mp-preference --no-verify-jwt
+// Deploy: supabase functions deploy create-mp-preference
 // Env vars needed in Supabase Dashboard → Settings → Edge Functions:
-//   MERCADOPAGO_ACCESS_TOKEN  — tu Access Token de producción o sandbox
-//   SITE_URL                  — URL del frontend (ej. https://tudominio.com)
+//   MP_ACCESS_TOKEN  — tu Access Token de producción o sandbox
+//   SITE_URL         — URL del frontend (ej. https://tudominio.com)
+// Auto-available: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 import { MercadoPagoConfig, Preference } from 'npm:mercadopago@^2'
+import { createClient } from 'npm:@supabase/supabase-js@^2'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -13,10 +15,30 @@ const CORS = {
 
 interface CartItem {
   id: string
+  productId: string
   name: string
   price: number
   qty: number
   img?: string
+  spec?: string
+}
+
+interface Payer {
+  email: string
+  phone: string
+  firstName: string
+  lastName: string
+}
+
+interface CheckoutPayload {
+  items: CartItem[]
+  payer: Payer
+  shippingMethod: 'shipping' | 'pickup'
+  shippingAddress?: {
+    address: string
+    city: string
+    postalCode: string
+  } | null
 }
 
 Deno.serve(async (req: Request) => {
@@ -26,7 +48,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { items }: { items: CartItem[] } = await req.json()
+    const { items, payer, shippingMethod, shippingAddress }: CheckoutPayload =
+      await req.json()
 
     if (!items?.length) {
       return new Response(
@@ -35,37 +58,122 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    if (!payer?.email) {
+      return new Response(
+        JSON.stringify({ error: 'El email del comprador es obligatorio.' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── Supabase admin client (bypasses RLS) ──
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    // ── Extract user_id from Authorization header (if logged in) ──
+    let userId: string | null = null
+    const authHeader = req.headers.get('Authorization')
+    if (authHeader) {
+      const { data: { user } } = await supabaseAdmin.auth.getUser(
+        authHeader.replace('Bearer ', ''),
+      )
+      userId = user?.id ?? null
+    }
+
+    // ── Compute totals ──
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0)
+    const shippingCost = shippingMethod === 'pickup' ? 0 : (subtotal >= 200 ? 0 : 12)
+    const total = subtotal + shippingCost
+
+    // ── 1. Create order in DB (status: pending) ──
+    const { data: order, error: orderErr } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        user_id: userId,
+        status: 'pending',
+        total,
+        customer_email: payer.email,
+        customer_phone: payer.phone || null,
+        customer_name: `${payer.firstName} ${payer.lastName}`.trim() || null,
+        shipping_type: shippingMethod,
+        shipping_address: shippingMethod === 'shipping' && shippingAddress
+          ? shippingAddress
+          : null,
+      })
+      .select('id')
+      .single()
+
+    if (orderErr) throw orderErr
+
+    // ── 2. Insert order_items ──
+    const orderItems = items.map((item) => ({
+      order_id: order.id,
+      product_id: item.productId,
+      quantity: item.qty,
+      unit_price: item.price,
+      spec: item.spec || null,
+    }))
+
+    const { error: itemsErr } = await supabaseAdmin
+      .from('order_items')
+      .insert(orderItems)
+
+    if (itemsErr) throw itemsErr
+
+    // ── 3. Create Mercado Pago preference ──
     const client = new MercadoPagoConfig({
       accessToken: Deno.env.get('MP_ACCESS_TOKEN') ?? '',
       options: { timeout: 8000 },
     })
 
-    const siteUrl = (Deno.env.get('SITE_URL') ?? 'http://localhost:5173').replace(/\/$/, '')
+    const siteUrl = (Deno.env.get('SITE_URL') ?? 'http://localhost:5173').replace(
+      /\/$/,
+      '',
+    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const notificationUrl = `${supabaseUrl}/functions/v1/handle-mp-webhook`
 
     const response = await new Preference(client).create({
       body: {
         items: items.map((item) => ({
-          id: item.id,
+          id: item.productId,
           title: item.name,
           unit_price: item.price,
           quantity: item.qty,
           currency_id: 'ARS',
           picture_url: item.img,
         })),
-        back_urls: {
-          success: `${siteUrl}/pago-resultado?status=success`,
-          failure: `${siteUrl}/pago-resultado?status=failure`,
-          pending: `${siteUrl}/pago-resultado?status=pending`,
+        payer: {
+          email: payer.email,
+          phone: { number: payer.phone || '' },
+          name: payer.firstName,
+          surname: payer.lastName,
         },
+        external_reference: order.id,
+        notification_url: notificationUrl,
+        back_urls: {
+          success: `${siteUrl}/pago-resultado?status=success&order_id=${order.id}`,
+          failure: `${siteUrl}/pago-resultado?status=failure&order_id=${order.id}`,
+          pending: `${siteUrl}/pago-resultado?status=pending&order_id=${order.id}`,
+        },
+        auto_return: 'approved',
         statement_descriptor: 'NEXO PERFORMANCE',
       },
     })
+
+    // ── 4. Store preference_id on the order ──
+    await supabaseAdmin
+      .from('orders')
+      .update({ payment_id: response.id })
+      .eq('id', order.id)
 
     return new Response(
       JSON.stringify({
         preferenceId: response.id,
         init_point: response.init_point,
         sandbox_init_point: response.sandbox_init_point,
+        order_id: order.id,
       }),
       { headers: { ...CORS, 'Content-Type': 'application/json' } },
     )

@@ -4,8 +4,10 @@ import { useCheckoutPro } from '../../hooks/useCheckoutPro'
  * Botón de pago con Mercado Pago (Checkout PRO redirect).
  * Maneja estados de carga, error y disabled.
  */
-export function MercadoPagoBrick({ items }) {
+export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress }) {
   const { checkout, isLoading, error } = useCheckoutPro()
+
+  const missingPayer = !payer?.email || !payer?.firstName || !payer?.lastName
 
   return (
     <div className="space-y-4">
@@ -18,8 +20,8 @@ export function MercadoPagoBrick({ items }) {
 
       <button
         type="button"
-        onClick={() => checkout({ items })}
-        disabled={isLoading || !items?.length}
+        onClick={() => checkout({ items, payer, shippingMethod, shippingAddress })}
+        disabled={isLoading || !items?.length || missingPayer}
         className="group w-full relative overflow-hidden py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,157,227,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
         style={{ backgroundColor: '#009EE3' }}
       >

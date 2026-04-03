@@ -9,22 +9,34 @@ export function useCheckoutPro() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const checkout = useCallback(async ({ items }) => {
+  const checkout = useCallback(async ({ items, payer, shippingMethod, shippingAddress }) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const payload = items.map((i) => ({
-        id: String(i.id),
-        name: i.name,
-        price: i.price,
-        qty: i.qty,
-        img: i.img ?? '',
-      }))
+      const payload = {
+        items: items.map((i) => ({
+          id: String(i.id),
+          productId: i.productId ?? String(i.id),
+          name: i.name,
+          price: i.price,
+          qty: i.qty,
+          img: i.img ?? '',
+          spec: i.spec ?? '',
+        })),
+        payer: {
+          email: payer.email,
+          phone: payer.phone,
+          firstName: payer.firstName,
+          lastName: payer.lastName,
+        },
+        shippingMethod,
+        shippingAddress: shippingAddress ?? null,
+      }
 
       const { data, error: fnError } = await supabase.functions.invoke(
         'create-mp-preference',
-        { body: { items: payload } },
+        { body: payload },
       )
 
       if (fnError) throw fnError

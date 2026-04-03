@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
 
 const STATUS_CONFIG = {
   success: {
@@ -33,7 +35,14 @@ const STATUS_CONFIG = {
 export default function PaymentResult() {
   const [searchParams] = useSearchParams()
   const status = searchParams.get('status') ?? 'pending'
+  const orderId = searchParams.get('order_id')
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending
+  const { clearCart } = useCart()
+
+  // Clear cart on successful payment
+  useEffect(() => {
+    if (status === 'success') clearCart()
+  }, [status, clearCart])
 
   return (
     <div className="bg-[#0a0a0a] min-h-screen text-slate-200 font-body antialiased">
@@ -75,11 +84,21 @@ export default function PaymentResult() {
             </p>
           </div>
 
-          {/* Info de referencia (si MP envió datos) */}
-          {searchParams.get('payment_id') && (
-            <div className="text-xs font-mono text-slate-500 border border-[#333] bg-[#121212] px-4 py-3">
-              <span className="text-slate-400">REF:</span>{' '}
-              <span className="text-primary">{searchParams.get('payment_id')}</span>
+          {/* Info de referencia */}
+          {(orderId || searchParams.get('payment_id')) && (
+            <div className="text-xs font-mono text-slate-500 border border-[#333] bg-[#121212] px-4 py-3 space-y-1">
+              {orderId && (
+                <p>
+                  <span className="text-slate-400">ORDER:</span>{' '}
+                  <span className="text-primary">#{orderId.slice(0, 8).toUpperCase()}</span>
+                </p>
+              )}
+              {searchParams.get('payment_id') && (
+                <p>
+                  <span className="text-slate-400">REF:</span>{' '}
+                  <span className="text-primary">{searchParams.get('payment_id')}</span>
+                </p>
+              )}
             </div>
           )}
 

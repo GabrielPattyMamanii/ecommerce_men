@@ -56,17 +56,22 @@ export function CartProvider({ children }) {
             setItems(prev => [
                 ...prev,
                 {
-                    id:    itemId,
-                    name:  product.name,
-                    spec:  `${colorLabel} // Sz: ${size}`,
-                    price: product.price,
-                    qty:   1,
-                    img:   product.images?.[0] ?? '',
+                    id:        itemId,
+                    productId: product.id,
+                    name:      product.name,
+                    spec:      `${colorLabel} // Sz: ${size}`,
+                    price:     product.price,
+                    qty:       1,
+                    img:       product.images?.[0] ?? '',
                 },
             ])
         }
 
         openCart()
+    }
+
+    function clearCart() {
+        setItems([])
     }
 
     const totalCount = items.reduce((sum, i) => sum + i.qty, 0)
@@ -79,7 +84,7 @@ export function CartProvider({ children }) {
             items,
             isOpen,
             openCart, closeCart, toggleCart,
-            changeQty, removeItem, addItem,
+            changeQty, removeItem, addItem, clearCart,
             totalCount, subtotal, shipping, total,
         }}>
             {children}

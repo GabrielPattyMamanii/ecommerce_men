@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
@@ -21,8 +22,8 @@ const ORDER_ITEMS = [
     },
 ]
 
-/* ── Campo de formulario reutilizable ── */
-function FormField({ label, type = 'text', placeholder = '', colSpan = 1, required = false }) {
+/* ── Campo de formulario reutilizable (controlado) ── */
+function FormField({ label, type = 'text', placeholder = '', colSpan = 1, required = false, value, onChange }) {
     return (
         <div className={colSpan === 2 ? 'col-span-2' : ''}>
             <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
@@ -32,6 +33,8 @@ function FormField({ label, type = 'text', placeholder = '', colSpan = 1, requir
                 type={type}
                 placeholder={placeholder}
                 required={required}
+                value={value}
+                onChange={onChange}
                 className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#444] font-mono outline-none"
             />
         </div>
@@ -42,6 +45,21 @@ export default function Checkout() {
     const [paymentMethod, setPaymentMethod] = useState('cc')
     const [shippingMethod, setShippingMethod] = useState('shipping')
     const { items, subtotal, shipping } = useCart()
+    const { user } = useAuth()
+
+    /* ── Estado del formulario ── */
+    const [email, setEmail]         = useState('')
+    const [phone, setPhone]         = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName]   = useState('')
+    const [address, setAddress]     = useState('')
+    const [city, setCity]           = useState('')
+    const [postalCode, setPostalCode] = useState('')
+
+    /* Pre-llenar email si el usuario está logueado */
+    useEffect(() => {
+        if (user?.email) setEmail(user.email)
+    }, [user])
 
     /* Usa los ítems reales del carrito; si está vacío cae al mock de demo */
     const displayItems = items.length > 0 ? items : ORDER_ITEMS
@@ -116,8 +134,8 @@ export default function Checkout() {
                                     </Link>
                                 </div>
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                    <FormField label="Email Address" type="email" placeholder="USER@DOMAIN.COM" required />
-                                    <FormField label="Phone Number" type="tel" placeholder="+54 9 11 0000-0000" required />
+                                    <FormField label="Email Address" type="email" placeholder="USER@DOMAIN.COM" required value={email} onChange={e => setEmail(e.target.value)} />
+                                    <FormField label="Phone Number" type="tel" placeholder="+54 9 11 0000-0000" required value={phone} onChange={e => setPhone(e.target.value)} />
                                     <div className="flex items-center gap-3 group cursor-pointer col-span-1 sm:col-span-2">
                                         <input
                                             type="checkbox"
@@ -198,14 +216,14 @@ export default function Checkout() {
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mt-4">
-                                    <FormField label="First Name" type="text" required />
-                                    <FormField label="Last Name" type="text" required />
+                                    <FormField label="First Name" type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} />
+                                    <FormField label="Last Name" type="text" required value={lastName} onChange={e => setLastName(e.target.value)} />
                                     
                                     {shippingMethod === 'shipping' ? (
                                         <>
-                                            <FormField label="Address Line 1" type="text" colSpan={2} required />
-                                            <FormField label="City / Sector" type="text" required />
-                                            <FormField label="Postal Code" type="text" required />
+                                            <FormField label="Address Line 1" type="text" colSpan={2} required value={address} onChange={e => setAddress(e.target.value)} />
+                                            <FormField label="City / Sector" type="text" required value={city} onChange={e => setCity(e.target.value)} />
+                                            <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                                         </>
                                     ) : (
                                         <div className="col-span-1 sm:col-span-2 bg-[#1a1a1a]/50 border border-[#333] p-4 mt-2 mb-2 relative">
@@ -296,7 +314,12 @@ export default function Checkout() {
 
                             {/* ── Botón Pagar ── */}
                             {paymentMethod === 'mp' ? (
-                                <MercadoPagoBrick items={displayItems} />
+                                <MercadoPagoBrick
+                                    items={displayItems}
+                                    payer={{ email, phone, firstName, lastName }}
+                                    shippingMethod={shippingMethod}
+                                    shippingAddress={shippingMethod === 'shipping' ? { address, city, postalCode } : null}
+                                />
                             ) : (
                                 <button
                                     type="submit"
