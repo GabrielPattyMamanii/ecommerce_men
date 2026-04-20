@@ -36,8 +36,8 @@ const CHANNELS = [
 ]
 
 export default function Contacto() {
-    const [form, setForm]       = useState({ name: '', email: '', message: '' })
-    const [sent, setSent]       = useState(false)
+    const [form, setForm] = useState({ name: '', email: '', message: '' })
+    const [sent, setSent] = useState(false)
     const [sending, setSending] = useState(false)
 
     function handleChange(e) {
@@ -73,7 +73,7 @@ export default function Contacto() {
                 {/* Encabezado ── */}
                 <div className="mb-10 border-b border-[#1a1a2e] pb-6">
                     <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.3em] mb-2">
-                        // COMM_PROTOCOL
+            // COMM_PROTOCOL
                     </p>
                     <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-white">
                         CONTACT_<span className="text-[#00f0ff]">NODE</span>
@@ -85,10 +85,10 @@ export default function Contacto() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
-                    {/* ── Canales ── */}
+                    {/* ── Canales (IZQUIERDA) ── */}
                     <div>
                         <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
-                            // DIRECT_CHANNELS
+                // CANALES DE COMUNICACIÓN
                         </p>
                         <div className="space-y-3">
                             {CHANNELS.map(ch => (
@@ -119,133 +119,31 @@ export default function Contacto() {
                                 </a>
                             ))}
                         </div>
+                    </div>
 
-                        {/* Horarios ── */}
-                        <div className="mt-6 border border-[#1a1a2e] p-5">
-                            <p className="font-mono text-[9px] text-[#00f0ff] uppercase tracking-widest mb-3">
-                                SYSTEM_UPTIME
-                            </p>
+                    {/* ── Horarios (DERECHA) ── */}
+                    <div>
+                        <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
+                            //HORARIOS DE ATENCIÓN AL PUBLICO
+                        </p>
+                        <div className="border border-[#1a1a2e] p-5">
                             <div className="space-y-2 font-mono text-[10px] text-slate-500 uppercase tracking-wide">
                                 <div className="flex justify-between">
-                                    <span>Lun — Vie</span>
-                                    <span className="text-slate-300">09:00 — 18:00</span>
+                                    <span>Lunes</span>
+                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span>Sábado</span>
-                                    <span className="text-slate-300">10:00 — 14:00</span>
+                                    <span>Miercoles</span>
+                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span>Domingo</span>
-                                    <span className="text-red-500">OFFLINE</span>
+                                    <span>Sabado</span>
+                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* ── Formulario ── */}
-                    <div>
-                        <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
-                            // TRANSMIT_INQUIRY
-                        </p>
-
-                        {sent ? (
-                            <div className="h-full flex flex-col items-center justify-center py-16 border border-[#00f0ff30] bg-[#00f0ff05] text-center gap-4">
-                                <span className="material-symbols-outlined text-4xl text-[#00f0ff]">check_circle</span>
-                                <p className="font-mono text-sm text-[#00f0ff] uppercase tracking-widest">TRANSMISSION_SENT</p>
-                                <p className="font-mono text-[10px] text-slate-500 uppercase tracking-wide">We'll respond within 24h</p>
-                                <button
-                                    onClick={() => setSent(false)}
-                                    className="mt-4 px-6 py-2 border border-[#1a1a2e] hover:border-[#00f0ff] text-slate-500 hover:text-[#00f0ff] font-mono text-[10px] uppercase tracking-widest transition-all"
-                                >
-                                    NEW_INQUIRY
-                                </button>
-                            </div>
-                        ) : (
-                            <form onSubmit={handleSubmit} className="space-y-5 bg-[#0a0a0a] border border-[#1a1a2e] p-6 relative">
-                                {/* Línea superior ── */}
-                                <div
-                                    className="absolute top-0 left-0 right-0 h-[1px]"
-                                    style={{ background: 'linear-gradient(90deg, transparent, #00f0ff40, transparent)' }}
-                                />
-
-                                <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest mb-4">
-                                    ENCRYPTED DATA PACKET SUBMISSION
-                                </p>
-
-                                {/* Nombre ── */}
-                                <div>
-                                    <label className="block font-mono text-[10px] text-slate-500 uppercase tracking-widest mb-2">
-                                        OPERATOR_ID
-                                    </label>
-                                    <input
-                                        name="name"
-                                        type="text"
-                                        required
-                                        value={form.name}
-                                        onChange={handleChange}
-                                        placeholder="Tu nombre"
-                                        className="w-full bg-transparent border border-[#1e293b] text-white px-4 py-3 font-mono text-sm placeholder-[#334155]
-                                                   focus:border-[#00f0ff] focus:outline-none focus:ring-1 focus:ring-[#00f0ff20] transition-all"
-                                    />
-                                </div>
-
-                                {/* Email ── */}
-                                <div>
-                                    <label className="block font-mono text-[10px] text-slate-500 uppercase tracking-widest mb-2">
-                                        EMAIL_AUTH
-                                    </label>
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        required
-                                        value={form.email}
-                                        onChange={handleChange}
-                                        placeholder="tu@email.com"
-                                        className="w-full bg-transparent border border-[#1e293b] text-white px-4 py-3 font-mono text-sm placeholder-[#334155]
-                                                   focus:border-[#00f0ff] focus:outline-none focus:ring-1 focus:ring-[#00f0ff20] transition-all"
-                                    />
-                                </div>
-
-                                {/* Mensaje ── */}
-                                <div>
-                                    <label className="block font-mono text-[10px] text-slate-500 uppercase tracking-widest mb-2">
-                                        MESSAGE_PAYLOAD
-                                    </label>
-                                    <textarea
-                                        name="message"
-                                        required
-                                        rows={5}
-                                        value={form.message}
-                                        onChange={handleChange}
-                                        placeholder="Describe tu consulta..."
-                                        className="w-full bg-transparent border border-[#1e293b] text-white px-4 py-3 font-mono text-sm placeholder-[#334155]
-                                                   focus:border-[#00f0ff] focus:outline-none focus:ring-1 focus:ring-[#00f0ff20] transition-all resize-none"
-                                    />
-                                </div>
-
-                                {/* Botón ── */}
-                                <button
-                                    type="submit"
-                                    disabled={sending}
-                                    className="w-full py-3.5 bg-[#00f0ff] text-black font-black font-mono text-xs uppercase tracking-widest
-                                               hover:bg-[#00d4e0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors
-                                               flex items-center justify-center gap-2"
-                                >
-                                    {sending ? (
-                                        <>
-                                            <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
-                                            TRANSMITTING…
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="material-symbols-outlined text-base">send</span>
-                                            SEND_PACKET
-                                        </>
-                                    )}
-                                </button>
-                            </form>
-                        )}
-                    </div>
                 </div>
             </main>
 

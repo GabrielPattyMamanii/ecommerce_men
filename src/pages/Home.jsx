@@ -55,9 +55,9 @@ export default function Home() {
     }, [])
 
     return (
-        <div 
+        <div
             className="relative min-h-screen bg-[#0a0a0a] text-[#e7edf3] font-body antialiased selection:bg-primary/30 selection:text-primary overflow-x-hidden"
-            style={{ 
+            style={{
                 backgroundImage: "url('/noise.svg')",
                 backgroundSize: "150px 150px"
             }}
@@ -79,12 +79,12 @@ export default function Home() {
                     <div className="tech-border bg-[#121212]/30 p-1">
                         <div
                             className="group relative flex min-h-[500px] flex-col items-start justify-end overflow-hidden border border-white/10 px-8 pb-12 md:px-16 md:pb-20 bg-cover bg-center bg-no-repeat"
-                            style={{ 
+                            style={{
                                 backgroundImage: 'linear-gradient(rgba(10, 10, 10, 0.2) 0%, rgba(10, 10, 10, 0.9) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuA_9NRPfEgpDNtB65uyhYqwPS6t6wAjgKX4fu2aF-OGpFOBnKT0XfE2Hv5U7P4jVoKBNZ8sHPKuIxbgZ3xsg26w2SMvSUqRf67N_CDIct8k1Fb-LiePUYIt2y1FVn984wM4YupjE7miiZEsWyCTTD4LIYM_YAcvoF8hG3cjnUtu9BVK5g21zl3wvkraOKA8NxD2jvolRH1qMf2NaZcXOo85X-ahXdUrP3cWssdT2W8AaOx_Df7lQM2n0_3FFNd08XNe677bCI_kzosO")'
                             }}
                         >
                             <div className="absolute inset-0 bg-primary/5 mix-blend-overlay"></div>
-                            
+
                             {/* Decorative marks */}
                             <div className="absolute top-0 right-0 p-4 flex flex-col items-end gap-1 opacity-60">
                                 <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Sys.Ready</span>
@@ -97,22 +97,17 @@ export default function Home() {
 
                             {/* Texto hero */}
                             <div className="relative flex flex-col gap-4 text-left max-w-3xl z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-[1px] w-8 bg-primary" />
-                                    <span className="text-primary text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                                        Serie 2024 / V.02
-                                    </span>
-                                </div>
                                 <h1 className="text-white text-6xl md:text-7xl lg:text-8xl font-display font-bold leading-[0.85] tracking-tighter uppercase italic">
-                                    Velocity<br />
+                                    Indumentaria<br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500">
-                                        Protocol
+                                        Masculina
                                     </span>
                                 </h1>
                                 <p className="text-slate-300 font-mono text-xs uppercase tracking-wide border-l-2 border-primary/50 pl-4 mt-2 leading-relaxed">
-                                    Advanced biometrics integration.<br />
-                                    Adaptive thermal regulation fabrics.<br />
-                                    Engineered for peak output.
+                                    La mejor calidad en indumentaria masculina.<br />
+                                    Ropa de invierno y verano.<br />
+                                    Los mejores estilos.<br />
+                                    Los mejores precios.<br />
                                 </p>
                                 <Link
                                     to="/catalogo"
@@ -135,7 +130,7 @@ export default function Home() {
                     {/* Encabezado */}
                     <div className="px-4 md:px-10 lg:px-40 flex items-end justify-between border-b border-white/10 pb-4">
                         <div className="flex flex-col gap-1">
-                            <span className="text-primary font-mono text-xs uppercase tracking-widest">// NEW_DROPS</span>
+                            <span className="text-primary font-mono text-xs uppercase tracking-widest">// NUEVAS ENTRADAS</span>
                             <h2 className="text-white font-display uppercase tracking-wider text-3xl font-bold leading-tight">
                                 Novedades
                             </h2>
