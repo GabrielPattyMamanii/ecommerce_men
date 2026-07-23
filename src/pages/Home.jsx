@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useCart } from '../context/CartContext'
+import { formatPrice, isPurchasable } from '../lib/productPricing'
 
 export default function Home() {
     const [products, setProducts] = useState([])
@@ -38,12 +39,14 @@ export default function Home() {
             const [mainRes, novRes] = await Promise.all([
                 supabase
                     .from('products')
-                    .select('id, name, description, price, stock, images')
+                    .select('id, name, description, retail_price, price_on_request, stock, images')
+                    .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(8),
                 supabase
                     .from('products')
-                    .select('id, name, price, images')
+                    .select('id, name, retail_price, price_on_request, images')
+                    .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(12),
             ])
@@ -56,7 +59,7 @@ export default function Home() {
 
     return (
         <div
-            className="relative min-h-screen bg-[#0a0a0a] text-[#e7edf3] font-body antialiased selection:bg-primary/30 selection:text-primary overflow-x-hidden"
+            className="relative min-h-screen bg-[#12161c] text-[#e7edf3] font-body antialiased selection:bg-primary/30 selection:text-primary overflow-x-hidden"
             style={{
                 backgroundImage: "url('/noise.svg')",
                 backgroundSize: "150px 150px"
@@ -76,7 +79,7 @@ export default function Home() {
 
                 {/* ══ HERO BANNER ══ */}
                 <div className="px-4 md:px-10 lg:px-40">
-                    <div className="tech-border bg-[#121212]/30 p-1">
+                    <div className="tech-border bg-[#1a1f27]/30 p-1">
                         <div
                             className="group relative flex min-h-[500px] flex-col items-start justify-end overflow-hidden border border-white/10 px-8 pb-12 md:px-16 md:pb-20 bg-cover bg-center bg-no-repeat"
                             style={{
@@ -152,7 +155,7 @@ export default function Home() {
                             <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
                         </div>
                     ) : novedades.length === 0 ? (
-                        <div className="px-4 md:px-10 lg:px-40 py-12 text-center border border-dashed border-white/10 mx-4 md:mx-10 lg:mx-40 bg-[#121212]/30">
+                        <div className="px-4 md:px-10 lg:px-40 py-12 text-center border border-dashed border-white/10 mx-4 md:mx-10 lg:mx-40 bg-[#1a1f27]/30">
                             <p className="text-sm font-mono text-slate-500 uppercase">Sin novedades disponibles</p>
                         </div>
                     ) : (
@@ -172,7 +175,7 @@ export default function Home() {
                                         key={product.id}
                                         to={`/producto/${product.id}`}
                                         draggable={false}
-                                        className="group flex-shrink-0 w-44 flex flex-col bg-[#171717] border border-white/5 hover:border-primary/50 transition-all duration-300 relative"
+                                        className="group flex-shrink-0 w-44 flex flex-col bg-[#1a1f27] border border-white/5 hover:border-primary/50 transition-all duration-300 relative"
                                     >
                                         {/* Badge NEW en los primeros 3 */}
                                         {i < 3 && (
@@ -182,7 +185,7 @@ export default function Home() {
                                         )}
 
                                         {/* Imagen */}
-                                        <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#121212]">
+                                        <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#1a1f27]">
                                             {imgUrl ? (
                                                 <div
                                                     className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-105 filter grayscale group-hover:grayscale-0"
@@ -205,7 +208,7 @@ export default function Home() {
                                             </h3>
 
                                             <p className="text-primary font-display font-bold text-sm mt-1">
-                                                ${Number(product.price).toFixed(2)}
+                                                {formatPrice(product)}
                                             </p>
                                         </div>
                                     </Link>
@@ -240,7 +243,7 @@ export default function Home() {
                             <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
                         </div>
                     ) : products.length === 0 ? (
-                        <div className="py-24 text-center border border-dashed border-white/10 bg-[#121212]/30">
+                        <div className="py-24 text-center border border-dashed border-white/10 bg-[#1a1f27]/30">
                             <span className="material-symbols-outlined text-4xl text-slate-600 mb-4 block">inventory_2</span>
                             <p className="text-sm font-mono text-slate-500 uppercase">Sin productos en la base de datos</p>
                         </div>
@@ -294,7 +297,7 @@ function ProductCard({ product, onAdd, badge }) {
     const imgUrl = product.images?.[0] || null
 
     return (
-        <div className="group flex flex-col bg-[#171717] border border-white/5 hover:border-primary/50 transition-all duration-300 relative">
+        <div className="group flex flex-col bg-[#1a1f27] border border-white/5 hover:border-primary/50 transition-all duration-300 relative">
             {badge && (
                 <div className={`absolute top-0 left-0 text-[10px] font-bold font-mono px-2 py-0.5 z-20 uppercase
                     ${badge === 'NEW' ? 'bg-primary text-black' : 'bg-primary/20 backdrop-blur border border-primary/50 text-primary'}`}>
@@ -302,7 +305,7 @@ function ProductCard({ product, onAdd, badge }) {
                 </div>
             )}
 
-            <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#121212] group-hover:opacity-90 transition-opacity">
+            <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#1a1f27] group-hover:opacity-90 transition-opacity">
                 {imgUrl ? (
                     <div
                         className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-105 filter grayscale group-hover:grayscale-0"
@@ -319,7 +322,7 @@ function ProductCard({ product, onAdd, badge }) {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-1 p-4 bg-[#171717]">
+            <div className="flex flex-col gap-1 p-4 bg-[#1a1f27]">
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="text-white text-base font-display font-bold uppercase leading-none tracking-wide group-hover:text-primary transition-colors">
@@ -330,7 +333,7 @@ function ProductCard({ product, onAdd, badge }) {
                         </p>
                     </div>
                     <p className="text-primary text-base font-display font-bold whitespace-nowrap">
-                        ${Number(product.price).toFixed(2)}
+                        {formatPrice(product)}
                     </p>
                 </div>
                 <div className="flex gap-2 mt-3">
@@ -342,10 +345,15 @@ function ProductCard({ product, onAdd, badge }) {
                     </Link>
                     <button
                         onClick={() => onAdd(product, 'default', 'M')}
-                        className="flex-1 h-10 border border-white/20 text-white font-mono text-xs uppercase tracking-widest hover:bg-primary hover:text-black hover:border-primary transition-all flex items-center justify-center gap-1"
+                        disabled={!isPurchasable(product)}
+                        className={`flex-1 h-10 font-mono text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${
+                            isPurchasable(product)
+                                ? 'border border-white/20 text-white hover:bg-primary hover:text-black hover:border-primary'
+                                : 'border border-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
                     >
                         <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-                        Add
+                        {isPurchasable(product) ? 'Add' : 'N/A'}
                     </button>
                 </div>
             </div>

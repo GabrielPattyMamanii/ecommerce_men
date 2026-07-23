@@ -12,9 +12,10 @@ export default {
         "primary": "#00f0ff",
         "primary-dark": "#00a3cc",
         "accent": "#2d3446",
-        "background-dark": "#050505",
-        "surface": "#0a0f14",
-        "surface-light": "#131a24",
+        "background-dark": "#12161c",
+        "surface": "#1a1f27",
+        "surface-light": "#232a35",
+        "border-soft": "#333b49",
         "neon-blue": "#00f0ff",
         "tech-grey": "#8b9bb4",
 

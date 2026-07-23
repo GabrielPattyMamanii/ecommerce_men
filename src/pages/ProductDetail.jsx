@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../services/supabaseClient'
+import { formatPrice, isPurchasable } from '../lib/productPricing'
 
 /* ── Componente Stars ── */
 function Stars({ rating, size = 'text-[16px]' }) {
@@ -31,7 +32,7 @@ export default function ProductDetail() {
 
     const [activeImage, setActiveImage] = useState(0)
     const [activeColor, setActiveColor] = useState('default')
-    const [activeSize, setActiveSize] = useState('M')
+    const [activeSize, setActiveSize] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeTab, setActiveTab] = useState('specs')
     const [added, setAdded] = useState(false)
 
@@ -43,8 +44,9 @@ export default function ProductDetail() {
             setError(null)
             const { data, error: err } = await supabase
                 .from('products')
-                .select('id, name, description, price, stock, images')
+                .select('id, name, description, retail_price, price_on_request, stock, images, sizes, colors')
                 .eq('id', id)
+                .eq('visible', true)
                 .single()
             if (err) setError(err.message)
             else setProduct(data)
@@ -53,25 +55,16 @@ export default function ProductDetail() {
         if (id) fetchProduct()
     }, [id])
 
-    function handleAddToCart() {
-        if (!product) return
-        addItem(product, activeColor, activeSize)
-        setAdded(true)
-        setTimeout(() => setAdded(false), 2000)
-    }
-
     const TABS = [
         { id: 'specs', label: 'Tech Specs' },
         { id: 'logistics', label: 'Logistics' },
         { id: 'care', label: 'Care Protocol' },
     ]
 
-    const SIZES = ['XS', 'S', 'M', 'L', 'XL']
-
     /* ── Estados de carga ── */
     if (loading) {
         return (
-            <div className="bg-[#050505] min-h-screen flex items-center justify-center">
+            <div className="bg-background-dark min-h-screen flex items-center justify-center">
                 <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
             </div>
         )
@@ -79,7 +72,7 @@ export default function ProductDetail() {
 
     if (error || !product) {
         return (
-            <div className="bg-[#050505] min-h-screen flex flex-col items-center justify-center gap-6 px-4">
+            <div className="bg-background-dark min-h-screen flex flex-col items-center justify-center gap-6 px-4">
                 <span className="material-symbols-outlined text-slate-600 text-6xl">inventory_2</span>
                 <p className="font-mono text-slate-500 text-sm uppercase tracking-widest">
                     {error || 'Producto no encontrado'}
@@ -96,6 +89,15 @@ export default function ProductDetail() {
 
     const images = product.images?.length > 0 ? product.images : []
     const activeImg = images[activeImage] || null
+    const sizes = product.sizes?.length > 0 ? product.sizes : []
+    const selectedSize = activeSize ?? sizes[0] ?? 'Único'
+    const colors = product.colors?.length > 0 ? product.colors : []
+
+    function handleAddToCart() {
+        addItem(product, activeColor, selectedSize)
+        setAdded(true)
+        setTimeout(() => setAdded(false), 2000)
+    }
 
     return (
         <div className="bg-background-dark min-h-screen text-slate-200 font-body antialiased selection:bg-primary selection:text-black">
@@ -229,7 +231,7 @@ export default function ProductDetail() {
                             {/* Precio + Stock */}
                             <div className="flex items-end gap-6 mb-6 border-b border-surface-light pb-6 mt-4">
                                 <p className="text-3xl font-display font-medium text-primary">
-                                    ${Number(product.price).toFixed(2)}
+                                    {product.price_on_request ? 'Consultar precio' : `$${Number(product.retail_price).toFixed(2)}`}
                                 </p>
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className={`text-xs font-mono uppercase tracking-wide ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -250,39 +252,64 @@ export default function ProductDetail() {
                                 </div>
                             )}
 
-                            {/* ── Selector de talla ── */}
-                            <div className="mb-8">
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
-                                        Size Configuration
-                                    </span>
+                            {/* ── Selector de talla (real, cargado desde el producto) ── */}
+                            {sizes.length > 0 && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Size Configuration
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {sizes.map(label => {
+                                            const isActive = selectedSize === label
+                                            return (
+                                                <button
+                                                    key={label}
+                                                    onClick={() => setActiveSize(label)}
+                                                    aria-label={`Talla ${label}`}
+                                                    aria-pressed={isActive}
+                                                    className={`h-10 min-w-10 px-3 border relative overflow-hidden flex items-center justify-center text-xs font-display font-bold transition-all
+                                                        ${isActive
+                                                            ? 'border-primary bg-primary/10 text-primary shadow-neon-sm'
+                                                            : 'border-surface-light bg-surface hover:bg-surface-light hover:border-primary/50 text-slate-300 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {isActive && (
+                                                        <>
+                                                            <span className="absolute top-0 right-0 w-1 h-1 bg-primary" />
+                                                            <span className="absolute bottom-0 left-0 w-1 h-1 bg-primary" />
+                                                        </>
+                                                    )}
+                                                    {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-5 gap-2">
-                                    {SIZES.map(label => {
-                                        const isActive = activeSize === label
-                                        return (
-                                            <button
-                                                key={label}
-                                                onClick={() => setActiveSize(label)}
-                                                aria-label={`Talla ${label}`}
-                                                className={`h-10 border relative overflow-hidden flex items-center justify-center text-xs font-display font-bold transition-all
-                                                    ${isActive
-                                                        ? 'border-primary bg-primary/10 text-primary shadow-neon-sm'
-                                                        : 'border-surface-light bg-surface hover:bg-surface-light hover:border-primary/50 text-slate-300 hover:text-white'
-                                                    }`}
-                                            >
-                                                {isActive && (
-                                                    <>
-                                                        <span className="absolute top-0 right-0 w-1 h-1 bg-primary" />
-                                                        <span className="absolute bottom-0 left-0 w-1 h-1 bg-primary" />
-                                                    </>
-                                                )}
-                                                {label}
-                                            </button>
-                                        )
-                                    })}
+                            )}
+
+                            {/* ── Colores disponibles (informativo, cargado desde el producto) ── */}
+                            {colors.length > 0 && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Color Configuration
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {colors.map(hex => (
+                                            <span
+                                                key={hex}
+                                                title={hex}
+                                                aria-label={`Color disponible: ${hex}`}
+                                                className="w-8 h-8 border border-surface-light"
+                                                style={{ background: hex }}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* ── CTAs ── */}
                             <div className="flex flex-col gap-4 mb-8">
@@ -290,10 +317,10 @@ export default function ProductDetail() {
                                 {/* Botón principal — Add to Cart */}
                                 <button
                                     onClick={handleAddToCart}
-                                    disabled={product.stock === 0}
+                                    disabled={!isPurchasable(product)}
                                     id="add-to-cart-btn"
                                     className={`w-full h-14 font-display font-bold text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-8 group relative overflow-hidden
-                                        ${product.stock === 0
+                                        ${!isPurchasable(product)
                                             ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                             : added
                                                 ? 'bg-green-500 text-black'
@@ -301,7 +328,7 @@ export default function ProductDetail() {
                                         }`}
                                     style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)' }}
                                 >
-                                    {product.stock !== 0 && !added && (
+                                    {isPurchasable(product) && !added && (
                                         <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
                                     )}
                                     <span className="z-10 flex items-center gap-2">
@@ -310,6 +337,8 @@ export default function ProductDetail() {
                                                 <span className="material-symbols-outlined text-sm">check</span>
                                                 AGREGADO
                                             </>
+                                        ) : product.price_on_request ? (
+                                            'CONSULTAR PRECIO'
                                         ) : product.stock === 0 ? (
                                             'SIN STOCK'
                                         ) : (
@@ -319,7 +348,7 @@ export default function ProductDetail() {
                                             </>
                                         )}
                                     </span>
-                                    <span className="z-10 font-mono text-sm">${Number(product.price).toFixed(2)}</span>
+                                    {!product.price_on_request && <span className="z-10 font-mono text-sm">${Number(product.retail_price).toFixed(2)}</span>}
                                 </button>
 
                                 {/* Botón secundario — Ver catálogo */}
@@ -358,7 +387,7 @@ export default function ProductDetail() {
                                         {[
                                             ['Nombre', product.name],
                                             ['Categoría', product.category || '—'],
-                                            ['Precio', `$${Number(product.price).toFixed(2)}`],
+                                            ['Precio', formatPrice(product)],
                                             ['Stock disponible', product.stock],
                                         ].map(([key, value]) => (
                                             <div

@@ -8,9 +8,12 @@
 import { MercadoPagoConfig, Preference } from 'npm:mercadopago@^2'
 import { createClient } from 'npm:@supabase/supabase-js@^2'
 
+const SITE_URL = Deno.env.get('SITE_URL')
+
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': SITE_URL ?? '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 interface CartItem {
@@ -42,6 +45,13 @@ interface CheckoutPayload {
 }
 
 Deno.serve(async (req: Request) => {
+  if (!SITE_URL) {
+    return new Response(JSON.stringify({ error: 'SITE_URL environment variable not set' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   // Preflight CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS })
@@ -122,15 +132,17 @@ Deno.serve(async (req: Request) => {
     if (itemsErr) throw itemsErr
 
     // ── 3. Create Mercado Pago preference ──
+    const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
+    if (!mpAccessToken) {
+      throw new Error('MP_ACCESS_TOKEN environment variable not set')
+    }
+
     const client = new MercadoPagoConfig({
-      accessToken: Deno.env.get('MP_ACCESS_TOKEN') ?? '',
+      accessToken: mpAccessToken,
       options: { timeout: 8000 },
     })
 
-    const siteUrl = (Deno.env.get('SITE_URL') ?? 'http://localhost:5173').replace(
-      /\/$/,
-      '',
-    )
+    const siteUrl = SITE_URL.replace(/\/$/, '')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const notificationUrl = `${supabaseUrl}/functions/v1/handle-mp-webhook`
 

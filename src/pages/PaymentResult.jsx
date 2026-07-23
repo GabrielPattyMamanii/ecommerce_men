@@ -45,7 +45,7 @@ export default function PaymentResult() {
   }, [status, clearCart])
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen text-slate-200 font-body antialiased">
+    <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
       {/* Grid bg decorativa */}
       <div
         className="fixed inset-0 pointer-events-none z-0 opacity-[0.03]"
@@ -86,7 +86,7 @@ export default function PaymentResult() {
 
           {/* Info de referencia */}
           {(orderId || searchParams.get('payment_id')) && (
-            <div className="text-xs font-mono text-slate-500 border border-[#333] bg-[#121212] px-4 py-3 space-y-1">
+            <div className="text-xs font-mono text-slate-500 border border-[#333b49] bg-[#1a1f27] px-4 py-3 space-y-1">
               {orderId && (
                 <p>
                   <span className="text-slate-400">ORDER:</span>{' '}
@@ -106,7 +106,7 @@ export default function PaymentResult() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link
               to="/"
-              className="px-6 py-3 bg-[#121212] border border-[#333] text-white text-sm font-mono uppercase tracking-wider hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-[#1a1f27] border border-[#333b49] text-white text-sm font-mono uppercase tracking-wider hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">home</span>
               Volver al Inicio

@@ -71,7 +71,7 @@ export default function Contacto() {
             <main className="relative z-10 max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-10">
 
                 {/* Encabezado ── */}
-                <div className="mb-10 border-b border-[#1a1a2e] pb-6">
+                <div className="mb-10 border-b border-[#333b49] pb-6">
                     <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.3em] mb-2">
             // COMM_PROTOCOL
                     </p>
@@ -97,7 +97,7 @@ export default function Contacto() {
                                     href={ch.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group flex items-center gap-5 p-5 border border-[#1a1a2e] hover:border-[#00f0ff40] bg-[#0a0a0a] hover:bg-[#0f0f18] transition-all duration-200"
+                                    className="group flex items-center gap-5 p-5 border border-[#333b49] hover:border-[#00f0ff40] bg-[#1a1f27] hover:bg-[#232a35] transition-all duration-200"
                                 >
                                     <div
                                         className="flex-shrink-0 flex items-center justify-center w-10 h-10 border"
@@ -126,7 +126,7 @@ export default function Contacto() {
                         <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
                             //HORARIOS DE ATENCIÓN AL PUBLICO
                         </p>
-                        <div className="border border-[#1a1a2e] p-5">
+                        <div className="border border-[#333b49] p-5">
                             <div className="space-y-2 font-mono text-[10px] text-slate-500 uppercase tracking-wide">
                                 <div className="flex justify-between">
                                     <span>Lunes</span>
@@ -167,7 +167,7 @@ export default function Contacto() {
                         title="Ubicación NEXO Performance"
                     />
                 */}
-                <div className="w-full h-80 border border-[#1a1a2e] bg-[#0a0a0a] flex flex-col items-center justify-center gap-3 text-slate-600">
+                <div className="w-full h-80 border border-[#333b49] bg-[#1a1f27] flex flex-col items-center justify-center gap-3 text-slate-600">
                     <span className="material-symbols-outlined text-4xl">location_on</span>
                     <p className="font-mono text-[10px] uppercase tracking-widest">GOOGLE_MAPS // PENDIENTE</p>
                 </div>

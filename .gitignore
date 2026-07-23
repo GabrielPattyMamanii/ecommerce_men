@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+*.pem
+*.key
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +25,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Documentation and database files
+*.md
+*.sql
+
+# Claude Code tooling (local config, skills, caches)
+.agents/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/skills/
+graphify-out/

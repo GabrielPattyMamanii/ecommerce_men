@@ -38,7 +38,7 @@ export function CartProvider({ children }) {
      * Añade un producto al carrito. Si ya existe la misma variante (id único
      * = productId + color + size) incrementa la cantidad en 1.
      *
-     * @param {{ id: string, name: string, price: number, images: string[] }} product
+     * @param {{ id: string, name: string, retail_price: number, images: string[] }} product
      * @param {string} color  — valor del color seleccionado (ej. 'midnight_blk')
      * @param {string} size   — talla seleccionada (ej. 'M')
      */
@@ -60,7 +60,7 @@ export function CartProvider({ children }) {
                     productId: product.id,
                     name:      product.name,
                     spec:      `${colorLabel} // Sz: ${size}`,
-                    price:     product.price,
+                    price:     product.retail_price,
                     qty:       1,
                     img:       product.images?.[0] ?? '',
                 },

@@ -36,10 +36,10 @@
 :root {
   --color-primary: #00f0ff;
   --color-primary-dark: #00b8c4;
-  --color-bg: #0a0a0a;
-  --color-surface: #121212;
-  --color-card: #171717;
-  --color-charcoal: #1c242c;
+  --color-bg: #12161c;
+  --color-surface: #1a1f27;
+  --color-card: #1e2530;
+  --color-charcoal: #2a3140;
   --color-bone: #e7edf3;
   --color-text-muted: #94a3b8;
   --color-border: rgba(255, 255, 255, 0.1);
@@ -81,6 +81,45 @@ body {
 ::selection {
   background-color: rgba(0, 240, 255, 0.3);
   color: var(--color-primary);
+}
+
+/* ── MiniCart — native dialog drawer ──
+   Override browser dialog defaults so it renders as a right-side drawer.
+   Tailwind classes on the element handle visual styling (colors, shadow).
+   The [open] selector re-enables display:flex so flex children work, and
+   kicks off the slide-in animation. The ::backdrop replaces the custom
+   overlay div. */
+dialog.cart-drawer {
+  padding: 0;
+  border: none;
+  outline: none;
+  margin: 0;
+  position: fixed;
+  left: auto;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 450px;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+dialog.cart-drawer::backdrop {
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes cart-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+dialog.cart-drawer[open] {
+  display: flex;
+  flex-direction: column;
+  animation: cart-slide-in 300ms ease-in-out;
 }
 
 /* ── Material Symbols ── */

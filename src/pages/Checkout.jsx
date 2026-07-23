@@ -35,7 +35,7 @@ function FormField({ label, type = 'text', placeholder = '', colSpan = 1, requir
                 required={required}
                 value={value}
                 onChange={onChange}
-                className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#444] font-mono outline-none"
+                className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
             />
         </div>
     )
@@ -69,7 +69,7 @@ export default function Checkout() {
     const displayTotal = displaySubtotal + displayShipping + displayTax
 
     return (
-        <div className="bg-[#0a0a0a] min-h-screen text-slate-200 font-body antialiased">
+        <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
 
             {/* ── Grid bg decorativa ── */}
             <div
@@ -87,7 +87,7 @@ export default function Checkout() {
             <main className="relative z-10 flex-1 px-6 py-10 lg:px-20 lg:py-12 max-w-[1200px] mx-auto w-full">
 
                 {/* ── Encabezado de página ── */}
-                <div className="mb-10 border-b border-[#333] pb-6 flex flex-wrap justify-between items-end gap-4">
+                <div className="mb-10 border-b border-[#333b49] pb-6 flex flex-wrap justify-between items-end gap-4">
                     <div>
                         {/* Breadcrumb */}
                         <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-3 uppercase tracking-widest">
@@ -119,9 +119,9 @@ export default function Checkout() {
                         <div className="lg:col-span-7 space-y-8">
 
                             {/* ── Sección 1: Contact_Data ── */}
-                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#555]" />
-                                <div className="flex items-center justify-between mb-6 border-b border-[#333] pb-4">
+                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#4a5568]" />
+                                <div className="flex items-center justify-between mb-6 border-b border-[#333b49] pb-4">
                                     <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
                                         <span className="material-symbols-outlined text-primary text-sm">contact_mail</span>
                                         Contact_Data
@@ -140,7 +140,7 @@ export default function Checkout() {
                                         <input
                                             type="checkbox"
                                             id="newsletter"
-                                            className="h-4 w-4 appearance-none border border-[#555] bg-[#0a0a0a] checked:border-primary checked:bg-primary transition-all cursor-pointer"
+                                            className="h-4 w-4 appearance-none border border-[#4a5568] bg-[#12161c] checked:border-primary checked:bg-primary transition-all cursor-pointer"
                                         />
                                         <label
                                             htmlFor="newsletter"
@@ -153,9 +153,9 @@ export default function Checkout() {
                             </section>
 
                             {/* ── Sección 2: Fulfillment_Method ── */}
-                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#555]" />
-                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#4a5568]" />
+                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">local_shipping</span>
                                     Fulfillment_Method
                                 </h3>
@@ -168,7 +168,7 @@ export default function Checkout() {
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
                                             shippingMethod === 'shipping' 
                                             ? 'border-primary bg-primary/10' 
-                                            : 'border-[#333] bg-[#0a0a0a] hover:border-[#555]'
+                                            : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
                                         }`}
                                     >
                                         {/* Glow background effect */}
@@ -194,7 +194,7 @@ export default function Checkout() {
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
                                             shippingMethod === 'pickup' 
                                             ? 'border-primary bg-primary/10' 
-                                            : 'border-[#333] bg-[#0a0a0a] hover:border-[#555]'
+                                            : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
                                         }`}
                                     >
                                         {/* Glow background effect */}
@@ -226,7 +226,7 @@ export default function Checkout() {
                                             <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                                         </>
                                     ) : (
-                                        <div className="col-span-1 sm:col-span-2 bg-[#1a1a1a]/50 border border-[#333] p-4 mt-2 mb-2 relative">
+                                        <div className="col-span-1 sm:col-span-2 bg-[#232a35]/50 border border-[#333b49] p-4 mt-2 mb-2 relative">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                                             <p className="text-sm text-slate-300 font-mono mb-2">
                                                 <span className="text-primary font-bold">Dirección de Retiro:</span> Microcentro, Buenos Aires
@@ -241,23 +241,23 @@ export default function Checkout() {
                             </section>
 
                             {/* ── Sección 3: Payment_Method ── */}
-                            <section className="bg-[#121212] border border-[#333] p-6 relative overflow-hidden">
+                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
                                 {/* Neon left border */}
                                 <div
                                     className="absolute top-0 left-0 w-1 h-full bg-primary"
                                     style={{ boxShadow: '0 0 10px #00f0ff' }}
                                 />
-                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">credit_card</span>
                                     Payment_Method
                                 </h3>
 
-                                <div className="border border-[#333] bg-[#0a0a0a]/50 overflow-hidden">
+                                <div className="border border-[#333b49] bg-[#12161c]/50 overflow-hidden">
                                     {/* ─ Credit Card ─ */}
-                                    <div className="border-b border-[#333] p-4">
+                                    <div className="border-b border-[#333b49] p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} />
+                                                <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} ariaLabel="Credit Card" />
                                                 <label htmlFor="cc" className="font-bold text-white uppercase font-mono text-sm cursor-pointer">
                                                     Credit Card
                                                 </label>
@@ -269,33 +269,33 @@ export default function Checkout() {
                                         </div>
 
                                         {paymentMethod === 'cc' && (
-                                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 bg-[#1a1a1a]/50 p-4 border border-[#333]">
+                                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 bg-[#232a35]/50 p-4 border border-[#333b49]">
                                                 <div className="col-span-2">
                                                     <input
                                                         type="text"
                                                         placeholder="0000 0000 0000 0000"
-                                                        className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                        className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
                                                     />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     placeholder="MM / YY"
-                                                    className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
                                                 />
                                                 <input
                                                     type="text"
                                                     placeholder="CVC"
-                                                    className="w-full bg-[#0a0a0a] border border-[#333] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
                                                 />
                                             </div>
                                         )}
                                     </div>
 
                                     {/* ─ Mercado Pago ─ */}
-                                    <div className={`p-4 transition-colors ${paymentMethod === 'mp' ? 'bg-[#1a1a1a]' : 'bg-[#1a1a1a]/20 hover:bg-[#1a1a1a]/40'}`}>
+                                    <div className={`p-4 transition-colors ${paymentMethod === 'mp' ? 'bg-[#232a35]' : 'bg-[#232a35]/20 hover:bg-[#232a35]/40'}`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <RadioBtn id="mp" name="payment" checked={paymentMethod === 'mp'} onChange={() => setPaymentMethod('mp')} />
+                                                <RadioBtn id="mp" name="payment" checked={paymentMethod === 'mp'} onChange={() => setPaymentMethod('mp')} ariaLabel="Mercado Pago" />
                                                 <label htmlFor="mp" className="font-bold text-slate-300 uppercase font-mono text-sm cursor-pointer">
                                                     Mercado Pago
                                                 </label>
@@ -344,10 +344,10 @@ export default function Checkout() {
 
                         {/* ══════ Columna Order Manifest (5 cols sticky) ══════ */}
                         <div className="hidden lg:block lg:col-span-5">
-                            <div className="sticky top-24 p-6 bg-[#121212] border border-[#333] shadow-2xl">
+                            <div className="sticky top-24 p-6 bg-[#1a1f27] border border-[#333b49] shadow-2xl">
 
                                 {/* Header */}
-                                <div className="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
+                                <div className="flex justify-between items-center mb-6 border-b border-[#333b49] pb-4">
                                     <h3 className="text-lg font-bold text-white uppercase font-mono">Order_Manifest</h3>
                                     <span className="text-xs text-slate-500 font-mono">[{displayItems.length} ITEMS]</span>
                                 </div>
@@ -368,7 +368,7 @@ export default function Checkout() {
                                         <span className="text-slate-400 uppercase">Tax [Est.]</span>
                                         <span className="font-medium text-white">${displayTax.toFixed(2)}</span>
                                     </div>
-                                    <div className="h-px bg-[#333] my-2" />
+                                    <div className="h-px bg-[#333b49] my-2" />
                                     <div className="flex justify-between text-base font-bold items-center">
                                         <span className="text-white uppercase tracking-wider">Total Amount</span>
                                         <span
@@ -383,8 +383,8 @@ export default function Checkout() {
                                 {/* Items de la orden */}
                                 <div className="space-y-3">
                                     {displayItems.map(({ id, name, qty, price, img }) => (
-                                        <div key={id} className="flex gap-4 p-3 bg-[#0a0a0a]/50 border border-[#333]/50">
-                                            <div className="h-16 w-12 bg-[#222] border border-[#555] overflow-hidden flex-shrink-0">
+                                        <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-[#333b49]/50">
+                                            <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
                                                 <img
                                                     src={img}
                                                     alt={name}
@@ -410,11 +410,11 @@ export default function Checkout() {
                                         <input
                                             type="text"
                                             placeholder="PROMO_CODE"
-                                            className="flex-1 bg-[#0a0a0a] border border-[#333] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#444] outline-none"
+                                            className="flex-1 bg-[#12161c] border border-[#333b49] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
                                         />
                                         <button
                                             type="button"
-                                            className="px-4 py-2.5 bg-[#222] border border-l-0 border-[#333] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all"
+                                            className="px-4 py-2.5 bg-[#232a35] border border-l-0 border-[#333b49] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all"
                                         >
                                             Apply
                                         </button>
@@ -438,7 +438,7 @@ export default function Checkout() {
 }
 
 /* ── Radio button custom ── */
-function RadioBtn({ id, name, checked, onChange }) {
+function RadioBtn({ id, name, checked, onChange, ariaLabel }) {
     return (
         <div className="relative flex items-center">
             <input
@@ -447,7 +447,8 @@ function RadioBtn({ id, name, checked, onChange }) {
                 name={name}
                 checked={checked}
                 onChange={onChange}
-                className="peer h-4 w-4 appearance-none rounded-full border border-[#555] bg-[#0a0a0a] checked:border-primary checked:bg-[#0a0a0a] transition-all cursor-pointer"
+                aria-label={ariaLabel}
+                className="peer h-4 w-4 appearance-none rounded-full border border-[#4a5568] bg-[#12161c] checked:border-primary checked:bg-[#12161c] transition-all cursor-pointer"
             />
             <div className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
         </div>

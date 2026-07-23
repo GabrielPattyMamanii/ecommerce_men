@@ -1,13 +1,13 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import PromoBanner from './components/PromoBanner'
 import MiniCart from './components/MiniCart'
 import Footer from './components/Footer'
+import WhatsAppButton from './components/WhatsAppButton'
 import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
-import AdminLayout from './pages/admin/AdminLayout'
-import Dashboard from './pages/admin/Dashboard'
-import ProductsTable from './pages/admin/ProductsTable'
-import OrdersTable from './pages/admin/OrdersTable'
 import ProductDetail from './pages/ProductDetail'
 import Checkout from './pages/Checkout'
 import PaymentResult from './pages/PaymentResult'
@@ -17,6 +17,22 @@ import Contacto from './pages/Contacto'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import './index.css'
+
+/* Admin pages lazy-loaded — keeps admin-only authorization fields out of the
+   public bundle so the main artifact doesn't expose a BaaS authority map. */
+const AdminLayout     = lazy(() => import('./pages/admin/layout/AdminLayout'))
+const Dashboard       = lazy(() => import('./pages/admin/sections/Dashboard/Dashboard'))
+const ProductsTable   = lazy(() => import('./pages/admin/sections/Products/ProductsTable'))
+const CategoriesTable = lazy(() => import('./pages/admin/sections/Categories/CategoriesTable'))
+const OrdersTable     = lazy(() => import('./pages/admin/sections/Orders/OrdersTable'))
+const CouponsTable    = lazy(() => import('./pages/admin/sections/Coupons/CouponsTable'))
+const InventarioTandas            = lazy(() => import('./pages/admin/sections/Inventario/InventarioTandas'))
+const TandaForm                   = lazy(() => import('./pages/admin/sections/Inventario/TandaForm'))
+const TandaDetalle                = lazy(() => import('./pages/admin/sections/Inventario/TandaDetalle'))
+const InventarioPropietarios      = lazy(() => import('./pages/admin/sections/Inventario/InventarioPropietarios'))
+const InventarioPropietariosTanda = lazy(() => import('./pages/admin/sections/Inventario/InventarioPropietariosTanda'))
+const ControlInventarioTandas     = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTandas'))
+const ControlInventarioTanda      = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTanda'))
 
 // Placeholder pages — serán reemplazadas en Tareas posteriores
 function ComingSoon({ title }) {
@@ -43,6 +59,7 @@ function ComingSoon({ title }) {
 function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col">
+      <PromoBanner />
       <Navbar />
       {/* MiniCart vive fuera del flujo de página para ser un overlay global */}
       <MiniCart />
@@ -60,6 +77,7 @@ function PublicLayout() {
         </Routes>
       </div>
       <Footer />
+      <WhatsAppButton />
     </div>
   )
 }
@@ -75,6 +93,7 @@ export default function App() {
       */}
       <AuthProvider>
         <CartProvider>
+          <ScrollToTop />
           <Routes>
             {/*
               ── Rutas Admin (protegidas) ──
@@ -82,11 +101,23 @@ export default function App() {
               renderizar AdminLayout. Si falla, redirige a /cuenta o /.
             */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="productos" element={<ProductsTable />} />
-                <Route path="ordenes" element={<OrdersTable />} />
+              <Route path="/admin" element={<Suspense fallback={null}><AdminLayout /></Suspense>}>
+                <Route index element={<Suspense fallback={null}><Dashboard /></Suspense>} />
+                <Route path="productos" element={<Suspense fallback={null}><ProductsTable /></Suspense>} />
+                <Route path="inventario" element={<Suspense fallback={null}><InventarioTandas /></Suspense>} />
+                <Route path="inventario/nueva" element={<Suspense fallback={null}><TandaForm /></Suspense>} />
+                <Route path="inventario/editar/:tandaNombre" element={<Suspense fallback={null}><TandaForm /></Suspense>} />
+                <Route path="inventario/detalle/:tanda" element={<Suspense fallback={null}><TandaDetalle /></Suspense>} />
+                <Route path="inventario/propietarios" element={<Suspense fallback={null}><InventarioPropietarios /></Suspense>} />
+                <Route path="inventario/propietarios/:tanda" element={<Suspense fallback={null}><InventarioPropietariosTanda /></Suspense>} />
+                <Route path="control-inventario" element={<Suspense fallback={null}><ControlInventarioTandas /></Suspense>} />
+                <Route path="control-inventario/:tanda" element={<Suspense fallback={null}><ControlInventarioTanda /></Suspense>} />
+                <Route path="categorias" element={<Suspense fallback={null}><CategoriesTable /></Suspense>} />
+                <Route path="ordenes" element={<Suspense fallback={null}><OrdersTable /></Suspense>} />
                 <Route path="clientes" element={<ComingSoon title="Clientes" />} />
+                <Route path="cupones" element={<Suspense fallback={null}><CouponsTable /></Suspense>} />
+                <Route path="configuracion" element={<ComingSoon title="Configuración" />} />
+                <Route path="compras" element={<ComingSoon title="Compras" />} />
                 <Route path="analytics" element={<ComingSoon title="Analytics" />} />
               </Route>
             </Route>

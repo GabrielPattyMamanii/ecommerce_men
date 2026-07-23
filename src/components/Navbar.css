@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: #0a0a0a;
+  background-color: #12161c;
   overflow: hidden;
 }
 
@@ -20,8 +20,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, #262626 1px, transparent 1px),
-    linear-gradient(to bottom, #262626 1px, transparent 1px);
+    linear-gradient(to right, #2a3038 1px, transparent 1px),
+    linear-gradient(to bottom, #2a3038 1px, transparent 1px);
   background-size: 40px 40px;
   opacity: 0.05;
   pointer-events: none;
@@ -162,7 +162,7 @@
   align-items: stretch;
   flex: 1;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: rgba(18, 18, 18, 0.5);
+  background-color: rgba(26, 31, 39, 0.6);
   transform: skewX(-10deg);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -294,7 +294,7 @@
   overflow: hidden;
   transition: max-height 0.35s ease;
   border-top: 1px solid transparent;
-  background-color: rgba(10, 10, 10, 0.97);
+  background-color: rgba(18, 22, 28, 0.97);
 }
 
 .navbar__mobile-menu--open {

@@ -22,7 +22,7 @@ export default function ProtectedRoute() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 minHeight: '100vh',
-                background: '#0a0a0a',
+                background: '#12161c',
                 gap: '1rem',
             }}>
                 <span

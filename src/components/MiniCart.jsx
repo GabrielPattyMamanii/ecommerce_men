@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
@@ -7,6 +7,7 @@ const FREE_SHIPPING_THRESHOLD = 200
 export default function MiniCart() {
     const { items, isOpen, closeCart, changeQty, removeItem, totalCount, subtotal, shipping } = useCart()
     const navigate = useNavigate()
+    const dialogRef = useRef(null)
 
     /* Bloquear scroll del body cuando el drawer está abierto */
     useEffect(() => {
@@ -14,11 +15,24 @@ export default function MiniCart() {
         return () => { document.body.style.overflow = '' }
     }, [isOpen])
 
-    /* Cerrar con Escape */
+    /* Sync isOpen → showModal() / close()
+       Native <dialog> handles Escape key and focus trapping automatically. */
     useEffect(() => {
-        const handler = (e) => { if (e.key === 'Escape') closeCart() }
-        window.addEventListener('keydown', handler)
-        return () => window.removeEventListener('keydown', handler)
+        const dialog = dialogRef.current
+        if (!dialog) return
+        if (isOpen) {
+            if (!dialog.open) dialog.showModal()
+        } else {
+            if (dialog.open) dialog.close()
+        }
+    }, [isOpen])
+
+    /* Sync native dialog close event (e.g. Escape key) back to CartContext */
+    useEffect(() => {
+        const dialog = dialogRef.current
+        if (!dialog) return
+        dialog.addEventListener('close', closeCart)
+        return () => dialog.removeEventListener('close', closeCart)
     }, [closeCart])
 
     function handleCheckout() {
@@ -32,24 +46,16 @@ export default function MiniCart() {
 
     return (
         <>
-            {/* ── Overlay / Backdrop ── */}
-            <div
-                aria-hidden="true"
-                onClick={closeCart}
-                className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-            />
-
-            {/* ── Drawer sidebar ── */}
-            <aside
-                role="dialog"
-                aria-modal="true"
+            {/* ── Drawer sidebar — native <dialog> for built-in focus trap,
+                Escape handling, and ::backdrop (replaces custom overlay div). ── */}
+            <dialog
+                ref={dialogRef}
                 aria-label="Equipment Bag"
-                className={`fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:w-[450px] bg-[#121212] border-l border-[#333]/50 shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
-                    }`}
+                className="cart-drawer bg-[#1a1f27] border-l border-[#333b49]/50 shadow-[0_0_50px_rgba(0,0,0,0.8)]"
+                onClick={(e) => { if (e.target === dialogRef.current) closeCart() }}
             >
                 {/* ── Header ── */}
-                <div className="flex items-center justify-between border-b border-[#333] px-6 py-5 bg-[#121212]/95 backdrop-blur flex-shrink-0">
+                <div className="flex items-center justify-between border-b border-[#333b49] px-6 py-5 bg-[#1a1f27]/95 backdrop-blur flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-primary">shopping_cart</span>
                         <h2 className="text-lg font-bold text-white uppercase tracking-widest font-display">
@@ -62,14 +68,14 @@ export default function MiniCart() {
                     <button
                         onClick={closeCart}
                         aria-label="Cerrar carrito"
-                        className="flex h-8 w-8 items-center justify-center border border-[#555] bg-[#0a0a0a] hover:border-primary hover:text-primary text-slate-400 transition-all"
+                        className="flex h-8 w-8 items-center justify-center border border-[#4a5568] bg-[#12161c] hover:border-primary hover:text-primary text-slate-400 transition-all"
                     >
                         <span className="material-symbols-outlined text-sm">close</span>
                     </button>
                 </div>
 
                 {/* ── Barra de envío gratis ── */}
-                <div className="px-6 py-4 bg-[#1a1a1a] border-b border-[#333] flex-shrink-0">
+                <div className="px-6 py-4 bg-[#232a35] border-b border-[#333b49] flex-shrink-0">
                     <div className="flex items-center justify-between text-xs font-mono uppercase mb-2">
                         {freeShipping ? (
                             <span className="font-bold text-primary flex items-center gap-2">
@@ -84,7 +90,7 @@ export default function MiniCart() {
                         )}
                         <span className="text-slate-500">Threshold: ${FREE_SHIPPING_THRESHOLD}</span>
                     </div>
-                    <div className="h-1 w-full bg-[#333] relative overflow-hidden">
+                    <div className="h-1 w-full bg-[#333b49] relative overflow-hidden">
                         <div
                             className="absolute h-full bg-primary transition-all duration-700"
                             style={{ width: `${progressPct}%`, boxShadow: '0 0 10px #00f0ff' }}
@@ -93,7 +99,7 @@ export default function MiniCart() {
                 </div>
 
                 {/* ── Lista de ítems ── */}
-                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#121212]">
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#1a1f27]">
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
                             <span className="material-symbols-outlined text-5xl text-slate-600">shopping_bag</span>
@@ -108,7 +114,7 @@ export default function MiniCart() {
                                 <div className="absolute -left-2 top-0 bottom-0 w-[2px] bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
 
                                 {/* Imagen */}
-                                <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#555] bg-[#0a0a0a] relative">
+                                <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#4a5568] bg-[#12161c] relative">
                                     <div className="absolute inset-0 bg-primary/10 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <img
                                         src={img}
@@ -135,11 +141,11 @@ export default function MiniCart() {
 
                                     <div className="flex items-center justify-between mt-2">
                                         {/* Qty ± */}
-                                        <div className="flex items-center border border-[#555] bg-[#0a0a0a]">
+                                        <div className="flex items-center border border-[#4a5568] bg-[#12161c]">
                                             <button
                                                 onClick={() => changeQty(id, -1)}
                                                 aria-label="Reducir cantidad"
-                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#222] transition-colors text-sm font-mono"
+                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
                                             >
                                                 −
                                             </button>
@@ -147,7 +153,7 @@ export default function MiniCart() {
                                             <button
                                                 onClick={() => changeQty(id, +1)}
                                                 aria-label="Aumentar cantidad"
-                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#222] transition-colors text-sm font-mono"
+                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
                                             >
                                                 +
                                             </button>
@@ -168,7 +174,7 @@ export default function MiniCart() {
                 </div>
 
                 {/* ── Footer con totales y CTA ── */}
-                <div className="border-t border-[#333] bg-[#1a1a1a] p-6 flex-shrink-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.5)]">
+                <div className="border-t border-[#333b49] bg-[#232a35] p-6 flex-shrink-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.5)]">
                     {/* Totales */}
                     <div className="mb-5 space-y-2 font-mono text-sm">
                         <div className="flex justify-between text-slate-400">
@@ -181,7 +187,7 @@ export default function MiniCart() {
                                 {freeShipping ? 'Free' : `$${shipping.toFixed(2)}`}
                             </span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold text-white mt-2 pt-2 border-t border-[#333]">
+                        <div className="flex justify-between text-lg font-bold text-white mt-2 pt-2 border-t border-[#333b49]">
                             <span className="uppercase tracking-wider">Total</span>
                             <span style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}>
                                 ${(subtotal + shipping).toFixed(2)}
@@ -214,7 +220,7 @@ export default function MiniCart() {
                         <span className="material-symbols-outlined text-2xl text-white">shield</span>
                     </div>
                 </div>
-            </aside>
+            </dialog>
         </>
     )
 }
