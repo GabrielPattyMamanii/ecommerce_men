@@ -7,8 +7,10 @@ import { useAuth } from '../context/AuthContext'
  * Flujo:
  *   1. Mientras AuthContext resuelve sesión + role → spinner de pantalla completa
  *   2. Sin sesión activa             → redirige a /cuenta (login)
- *   3. Sesión activa pero role ≠ 'admin' → redirige a / (403 implícito)
- *   4. user && role === 'admin'      → renderiza <Outlet /> (AdminLayout + sub-rutas)
+ *   3. Sesión activa pero role no es 'admin' ni 'staff' → redirige a / (403 implícito)
+ *   4. user && (role === 'admin' || role === 'staff') → renderiza <Outlet />
+ *      (AdminLayout + sub-rutas; el acceso a cada sección concreta lo filtra
+ *      RequirePermission según los permisos del usuario)
  */
 export default function ProtectedRoute() {
     const { user, role, loading } = useAuth()
@@ -49,8 +51,8 @@ export default function ProtectedRoute() {
         return <Navigate to="/cuenta" replace />
     }
 
-    /* ── Autenticado pero sin privilegios admin → inicio ── */
-    if (role !== 'admin') {
+    /* ── Autenticado pero sin privilegios de panel → inicio ── */
+    if (role !== 'admin' && role !== 'staff') {
         return <Navigate to="/" replace />
     }
 

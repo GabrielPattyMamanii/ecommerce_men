@@ -22,6 +22,21 @@ const ORDER_ITEMS = [
     },
 ]
 
+/* ── Encabezado de sección (Por Menor / Por Mayor) del Order_Manifest ── */
+function ManifestSectionHeader({ label, count, accent }) {
+    return (
+        <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">
+            <span className={`text-[10px] font-bold font-mono uppercase tracking-widest ${accent.text}`}>
+                {label}
+            </span>
+            <span className={`px-1.5 py-0.5 text-[9px] font-bold font-mono border ${accent.badge}`}>
+                {count}
+            </span>
+            <div className={`flex-1 h-px ${accent.line}`} />
+        </div>
+    )
+}
+
 /* ── Campo de formulario reutilizable (controlado) ── */
 function FormField({ label, type = 'text', placeholder = '', colSpan = 1, required = false, value, onChange }) {
     return (
@@ -63,6 +78,8 @@ export default function Checkout() {
 
     /* Usa los ítems reales del carrito; si está vacío cae al mock de demo */
     const displayItems = items.length > 0 ? items : ORDER_ITEMS
+    const retailItems = displayItems.filter(i => (i.type ?? 'retail') === 'retail')
+    const wholesaleItems = displayItems.filter(i => i.type === 'wholesale')
     const displaySubtotal = subtotal || ORDER_ITEMS.reduce((s, i) => s + i.price * i.qty, 0)
     const displayShipping = shippingMethod === 'pickup' ? 0 : (shipping || 0)
     const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
@@ -380,28 +397,71 @@ export default function Checkout() {
                                     </div>
                                 </div>
 
-                                {/* Items de la orden */}
-                                <div className="space-y-3">
-                                    {displayItems.map(({ id, name, qty, price, img }) => (
-                                        <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-[#333b49]/50">
-                                            <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
-                                                <img
-                                                    src={img}
-                                                    alt={name}
-                                                    className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
-                                                />
+                                {/* Items de la orden — agrupados por menor / mayor */}
+                                <div>
+                                    {retailItems.length > 0 && (
+                                        <>
+                                            <ManifestSectionHeader
+                                                label="Por Menor"
+                                                count={retailItems.length}
+                                                accent={{ text: 'text-primary', badge: 'border-primary/40 text-primary bg-primary/10', line: 'bg-primary/20' }}
+                                            />
+                                            <div className="space-y-3">
+                                                {retailItems.map(({ id, name, qty, price, img }) => (
+                                                    <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-[#333b49]/50">
+                                                        <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
+                                                            <img
+                                                                src={img}
+                                                                alt={name}
+                                                                className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col justify-center gap-1 flex-1">
+                                                            <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
+                                                                {name}
+                                                            </span>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
+                                                                <span className="text-xs text-primary font-mono font-bold">${price}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <div className="flex flex-col justify-center gap-1 flex-1">
-                                                <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
-                                                    {name}
-                                                </span>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
-                                                    <span className="text-xs text-primary font-mono font-bold">${price}</span>
-                                                </div>
+                                        </>
+                                    )}
+
+                                    {wholesaleItems.length > 0 && (
+                                        <>
+                                            <ManifestSectionHeader
+                                                label="Por Mayor"
+                                                count={wholesaleItems.length}
+                                                accent={{ text: 'text-amber-400', badge: 'border-amber-400/40 text-amber-400 bg-amber-400/10', line: 'bg-amber-400/20' }}
+                                            />
+                                            <div className="space-y-3">
+                                                {wholesaleItems.map(({ id, name, qty, price, img }) => (
+                                                    <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-amber-400/20">
+                                                        <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
+                                                            <img
+                                                                src={img}
+                                                                alt={name}
+                                                                className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col justify-center gap-1 flex-1">
+                                                            <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
+                                                                {name}
+                                                            </span>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
+                                                                <span className="text-xs text-amber-400 font-mono font-bold">${price}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        </div>
-                                    ))}
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Promo code */}

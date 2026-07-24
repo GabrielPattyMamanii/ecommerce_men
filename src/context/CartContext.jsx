@@ -5,10 +5,13 @@ const CART_KEY = 'cart'
 const CartCtx = createContext(null)
 
 export function CartProvider({ children }) {
-    // Lazy initializer: lee localStorage una sola vez en el primer render
-    const [items, setItems] = useState(
-        () => JSON.parse(localStorage.getItem(CART_KEY) ?? 'null') ?? []
-    )
+    // Lazy initializer: lee localStorage una sola vez en el primer render.
+    // Normaliza `type` para carritos guardados antes de que este campo existiera
+    // (se infiere del sufijo `-wholesale` del id).
+    const [items, setItems] = useState(() => {
+        const stored = JSON.parse(localStorage.getItem(CART_KEY) ?? 'null') ?? []
+        return stored.map(i => ({ ...i, type: i.type ?? (i.id.endsWith('-wholesale') ? 'wholesale' : 'retail') }))
+    })
     const [isOpen, setIsOpen] = useState(false)
 
     // Sincronizar items → localStorage en cada cambio
@@ -36,18 +39,19 @@ export function CartProvider({ children }) {
 
     /**
      * Añade un producto al carrito. Si ya existe la misma variante (id único
-     * = productId + color + size) incrementa la cantidad en 1.
+     * = productId + color + size) incrementa la cantidad en `qty`.
      *
      * @param {{ id: string, name: string, retail_price: number, images: string[] }} product
      * @param {string} color  — valor del color seleccionado (ej. 'midnight_blk')
      * @param {string} size   — talla seleccionada (ej. 'M')
+     * @param {number} qty    — cantidad a agregar (default 1)
      */
-    function addItem(product, color, size) {
+    function addItem(product, color, size, qty = 1) {
         const itemId = `${product.id}-${color}-${size}`.toLowerCase()
         const exists = items.some(i => i.id === itemId)
 
         if (exists) {
-            changeQty(itemId, 1)
+            changeQty(itemId, qty)
         } else {
             const colorLabel = color
                 .replace(/_/g, ' ')
@@ -58,10 +62,44 @@ export function CartProvider({ children }) {
                 {
                     id:        itemId,
                     productId: product.id,
+                    type:      'retail',
                     name:      product.name,
                     spec:      `${colorLabel} // Sz: ${size}`,
                     price:     product.retail_price,
-                    qty:       1,
+                    qty:       qty,
+                    img:       product.images?.[0] ?? '',
+                },
+            ])
+        }
+
+        openCart()
+    }
+
+    /**
+     * Añade una compra por mayor (docenas) al carrito. Usa un id propio
+     * (`${productId}-wholesale`) para no mezclarse con ítems por menor
+     * del mismo producto.
+     *
+     * @param {{ id: string, name: string, wholesale_price: number, images: string[] }} product
+     * @param {number} dozens — cantidad de docenas
+     */
+    function addWholesaleItem(product, dozens) {
+        const itemId = `${product.id}-wholesale`
+        const exists = items.some(i => i.id === itemId)
+
+        if (exists) {
+            changeQty(itemId, dozens)
+        } else {
+            setItems(prev => [
+                ...prev,
+                {
+                    id:        itemId,
+                    productId: product.id,
+                    type:      'wholesale',
+                    name:      product.name,
+                    spec:      'Por Mayor // Docena (12 uds) // Talles surtidos',
+                    price:     product.wholesale_price,
+                    qty:       dozens,
                     img:       product.images?.[0] ?? '',
                 },
             ])
@@ -84,7 +122,7 @@ export function CartProvider({ children }) {
             items,
             isOpen,
             openCart, closeCart, toggleCart,
-            changeQty, removeItem, addItem, clearCart,
+            changeQty, removeItem, addItem, addWholesaleItem, clearCart,
             totalCount, subtotal, shipping, total,
         }}>
             {children}

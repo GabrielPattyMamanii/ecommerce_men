@@ -7,14 +7,7 @@
 
 import { MercadoPagoConfig, Preference } from 'npm:mercadopago@^2'
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-
-const SITE_URL = Deno.env.get('SITE_URL')
-
-const CORS = {
-  'Access-Control-Allow-Origin': SITE_URL ?? '',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
 
 interface CartItem {
   id: string
@@ -45,6 +38,8 @@ interface CheckoutPayload {
 }
 
 Deno.serve(async (req: Request) => {
+  const CORS = buildCorsHeaders(req)
+
   if (!SITE_URL) {
     return new Response(JSON.stringify({ error: 'SITE_URL environment variable not set' }), {
       status: 500,

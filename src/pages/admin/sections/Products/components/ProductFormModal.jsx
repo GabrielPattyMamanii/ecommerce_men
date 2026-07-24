@@ -4,7 +4,7 @@ import ProductImageUploader from './ProductImageUploader'
 import ProductSizeManager from './ProductSizeManager'
 import ProductColorManager from './ProductColorManager'
 
-const EMPTY_FORM = { name: '', description: '', retail_price: '', wholesale_price: '', stock: '', category_id: '', price_on_request: false }
+const EMPTY_FORM = { name: '', description: '', retail_price: '', wholesale_price: '', dozen_height: '', dozen_width: '', dozen_length: '', dozen_weight: '', stock: '', category_id: '', price_on_request: false }
 
 /**
  * El padre le pasa un `key` distinto cada vez que abre el popup (ver
@@ -21,6 +21,10 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 description:       initialProduct.description || '',
                 retail_price:      initialProduct.retail_price ?? '',
                 wholesale_price:   initialProduct.wholesale_price ?? '',
+                dozen_height:      initialProduct.dozen_height ?? '',
+                dozen_width:       initialProduct.dozen_width ?? '',
+                dozen_length:      initialProduct.dozen_length ?? '',
+                dozen_weight:      initialProduct.dozen_weight ?? '',
                 stock:             initialProduct.stock ?? '',
                 category_id:       initialProduct.category_id || '',
                 price_on_request:  initialProduct.price_on_request ?? false,
@@ -164,6 +168,47 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                         placeholder="0.00" style={{ ...S.input, opacity: applyDiscount ? 0.6 : 1 }}
                                         readOnly={applyDiscount}
                                     />
+                                </div>
+                            </div>
+
+                            {/* Dimensiones de la docena — opcional, solo relevante si hay precio mayorista */}
+                            <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
+                                <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la docena (opcional)</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                                    <div>
+                                        <label style={S.label}>Alto (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.dozen_height}
+                                            onChange={e => setForm(p => ({ ...p, dozen_height: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={S.label}>Ancho (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.dozen_width}
+                                            onChange={e => setForm(p => ({ ...p, dozen_width: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={S.label}>Largo (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.dozen_length}
+                                            onChange={e => setForm(p => ({ ...p, dozen_length: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={S.label}>Peso (kg)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.dozen_weight}
+                                            onChange={e => setForm(p => ({ ...p, dozen_weight: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

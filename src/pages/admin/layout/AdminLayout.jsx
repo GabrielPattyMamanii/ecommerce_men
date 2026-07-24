@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../context/AuthContext'
 import './AdminLayout.css'
 
-/* ── Navegación del sidebar ── */
+/* ── Navegación del sidebar ──
+   `section` es null para Dashboard (siempre visible) y para 'usuarios',
+   que es admin-only por definición (nunca aparece en admin_permissions). */
 const SIDEBAR_LINKS = [
-    { label: 'Dashboard', icon: 'dashboard', to: '/admin', badge: null, end: true },
-    { label: 'Productos', icon: 'inventory_2', to: '/admin/productos', badge: null, end: false },
-    { label: 'Inventario', icon: 'warehouse', to: '/admin/inventario', badge: null, end: false },
-    { label: 'Categorías', icon: 'category', to: '/admin/categorias', badge: null, end: false },
-    { label: 'Cupones', icon: 'redeem', to: '/admin/cupones', badge: null, end: false },
-    { label: 'Compras', icon: 'shopping_bag', to: '/admin/compras', badge: null, end: false },
-    { label: 'Pedidos', icon: 'shopping_cart', to: '/admin/ordenes', badge: 12, end: false },
-    { label: 'Usuarios registrados', icon: 'group', to: '/admin/clientes', badge: null, end: false },
- /*   { label: 'Analytics', icon: 'monitoring', to: '/admin/analytics', badge: null, end: false },*/
-    { label: 'Configuración', icon: 'settings', to: '/admin/configuracion', badge: null, end: false },
-
+    { label: 'Dashboard', icon: 'dashboard', to: '/admin', badge: null, end: true, section: null },
+    { label: 'Productos', icon: 'inventory_2', to: '/admin/productos', badge: null, end: false, section: 'productos' },
+    { label: 'Inventario', icon: 'warehouse', to: '/admin/inventario', badge: null, end: false, section: 'inventario' },
+    { label: 'Categorías', icon: 'category', to: '/admin/categorias', badge: null, end: false, section: 'categorias' },
+    { label: 'Cupones', icon: 'redeem', to: '/admin/cupones', badge: null, end: false, section: 'cupones' },
+    { label: 'Compras', icon: 'shopping_bag', to: '/admin/compras', badge: null, end: false, section: 'compras' },
+    { label: 'Pedidos', icon: 'shopping_cart', to: '/admin/ordenes', badge: 12, end: false, section: 'ordenes' },
+    { label: 'Usuarios registrados', icon: 'group', to: '/admin/clientes', badge: null, end: false, section: 'clientes' },
+ /*   { label: 'Analytics', icon: 'monitoring', to: '/admin/analytics', badge: null, end: false, section: null },*/
+    { label: 'Configuración', icon: 'settings', to: '/admin/configuracion', badge: null, end: false, section: 'configuracion' },
+    { label: 'Usuarios', icon: 'admin_panel_settings', to: '/admin/usuarios', badge: null, end: false, section: 'usuarios' },
 ]
 
 /* ────────────────────────────────────────────────
@@ -22,6 +25,14 @@ const SIDEBAR_LINKS = [
 ──────────────────────────────────────────────── */
 function Sidebar({ collapsed, onToggle }) {
     const navigate = useNavigate()
+    const { role, permissions } = useAuth()
+
+    const visibleLinks = SIDEBAR_LINKS.filter(({ section }) => {
+        if (section === null) return true
+        if (role === 'admin') return true
+        if (section === 'usuarios') return false // admin-only, nunca delegable
+        return permissions?.includes(section)
+    })
 
     return (
         <aside className={`admin-sidebar${collapsed ? ' admin-sidebar--collapsed' : ''}`}>
@@ -41,7 +52,7 @@ function Sidebar({ collapsed, onToggle }) {
                     <p className="admin-sidebar__section-label">Main Menu</p>
                 )}
 
-                {SIDEBAR_LINKS.map(({ label, icon, to, badge, end }) => (
+                {visibleLinks.map(({ label, icon, to, badge, end }) => (
                     <NavLink
                         key={to}
                         to={to}

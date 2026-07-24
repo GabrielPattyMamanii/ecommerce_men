@@ -4,10 +4,95 @@ import { useCart } from '../context/CartContext'
 
 const FREE_SHIPPING_THRESHOLD = 200
 
+/* ── Encabezado de sección (Por Menor / Por Mayor) ── */
+function CartSectionHeader({ icon, label, count, accent }) {
+    return (
+        <div className="flex items-center gap-2 mb-4">
+            <span className={`material-symbols-outlined text-sm ${accent.text}`}>{icon}</span>
+            <h4 className={`text-xs font-display font-bold uppercase tracking-widest ${accent.text}`}>
+                {label}
+            </h4>
+            <span className={`px-1.5 py-0.5 text-[10px] font-bold font-mono border ${accent.badge}`}>
+                {count}
+            </span>
+            <div className={`flex-1 h-px ${accent.line}`} />
+        </div>
+    )
+}
+
+/* ── Fila de ítem del carrito ── */
+function CartLineItem({ id, name, spec, price, qty, img, changeQty, removeItem }) {
+    return (
+        <div className="flex gap-4 group relative">
+            {/* Indicador izquierdo de hover */}
+            <div className="absolute -left-2 top-0 bottom-0 w-[2px] bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            {/* Imagen */}
+            <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#4a5568] bg-[#12161c] relative">
+                <div className="absolute inset-0 bg-primary/10 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <img
+                    src={img}
+                    alt={name}
+                    className="h-full w-full object-cover object-center grayscale opacity-90 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                />
+            </div>
+
+            {/* Info + controles */}
+            <div className="flex flex-1 flex-col justify-between py-1">
+                <div>
+                    <div className="flex justify-between items-start">
+                        <h3 className="text-sm font-bold text-white leading-tight uppercase font-display tracking-tight">
+                            {name}
+                        </h3>
+                        <p className="text-sm font-bold text-primary font-mono ml-2 flex-shrink-0">
+                            ${price}
+                        </p>
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-500 uppercase tracking-wider font-mono">
+                        {spec}
+                    </p>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
+                    {/* Qty ± */}
+                    <div className="flex items-center border border-[#4a5568] bg-[#12161c]">
+                        <button
+                            onClick={() => changeQty(id, -1)}
+                            aria-label="Reducir cantidad"
+                            className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
+                        >
+                            −
+                        </button>
+                        <span className="px-3 py-1 text-xs font-bold text-white font-mono">{qty}</span>
+                        <button
+                            onClick={() => changeQty(id, +1)}
+                            aria-label="Aumentar cantidad"
+                            className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
+                        >
+                            +
+                        </button>
+                    </div>
+
+                    {/* Remove */}
+                    <button
+                        onClick={() => removeItem(id)}
+                        className="text-[10px] font-bold text-slate-500 uppercase hover:text-red-500 transition-colors tracking-wider border-b border-transparent hover:border-red-500 font-mono"
+                    >
+                        Remove_Item
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 export default function MiniCart() {
     const { items, isOpen, closeCart, changeQty, removeItem, totalCount, subtotal, shipping } = useCart()
     const navigate = useNavigate()
     const dialogRef = useRef(null)
+
+    const retailItems = items.filter(i => i.type === 'retail')
+    const wholesaleItems = items.filter(i => i.type === 'wholesale')
 
     /* Bloquear scroll del body cuando el drawer está abierto */
     useEffect(() => {
@@ -99,7 +184,7 @@ export default function MiniCart() {
                 </div>
 
                 {/* ── Lista de ítems ── */}
-                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#1a1f27]">
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 bg-[#1a1f27]">
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
                             <span className="material-symbols-outlined text-5xl text-slate-600">shopping_bag</span>
@@ -108,68 +193,39 @@ export default function MiniCart() {
                             </p>
                         </div>
                     ) : (
-                        items.map(({ id, name, spec, price, qty, img }) => (
-                            <div key={id} className="flex gap-4 group relative">
-                                {/* Indicador izquierdo de hover */}
-                                <div className="absolute -left-2 top-0 bottom-0 w-[2px] bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                {/* Imagen */}
-                                <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#4a5568] bg-[#12161c] relative">
-                                    <div className="absolute inset-0 bg-primary/10 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <img
-                                        src={img}
-                                        alt={name}
-                                        className="h-full w-full object-cover object-center grayscale opacity-90 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                        <>
+                            {retailItems.length > 0 && (
+                                <div>
+                                    <CartSectionHeader
+                                        icon="local_mall"
+                                        label="Por Menor"
+                                        count={retailItems.length}
+                                        accent={{ text: 'text-primary', badge: 'border-primary/40 text-primary bg-primary/10', line: 'bg-primary/20' }}
                                     />
-                                </div>
-
-                                {/* Info + controles */}
-                                <div className="flex flex-1 flex-col justify-between py-1">
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="text-sm font-bold text-white leading-tight uppercase font-display tracking-tight">
-                                                {name}
-                                            </h3>
-                                            <p className="text-sm font-bold text-primary font-mono ml-2 flex-shrink-0">
-                                                ${price}
-                                            </p>
-                                        </div>
-                                        <p className="mt-1 text-[10px] text-slate-500 uppercase tracking-wider font-mono">
-                                            {spec}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between mt-2">
-                                        {/* Qty ± */}
-                                        <div className="flex items-center border border-[#4a5568] bg-[#12161c]">
-                                            <button
-                                                onClick={() => changeQty(id, -1)}
-                                                aria-label="Reducir cantidad"
-                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
-                                            >
-                                                −
-                                            </button>
-                                            <span className="px-3 py-1 text-xs font-bold text-white font-mono">{qty}</span>
-                                            <button
-                                                onClick={() => changeQty(id, +1)}
-                                                aria-label="Aumentar cantidad"
-                                                className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        {/* Remove */}
-                                        <button
-                                            onClick={() => removeItem(id)}
-                                            className="text-[10px] font-bold text-slate-500 uppercase hover:text-red-500 transition-colors tracking-wider border-b border-transparent hover:border-red-500 font-mono"
-                                        >
-                                            Remove_Item
-                                        </button>
+                                    <div className="space-y-6">
+                                        {retailItems.map(item => (
+                                            <CartLineItem key={item.id} {...item} changeQty={changeQty} removeItem={removeItem} />
+                                        ))}
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            )}
+
+                            {wholesaleItems.length > 0 && (
+                                <div>
+                                    <CartSectionHeader
+                                        icon="inventory_2"
+                                        label="Por Mayor"
+                                        count={wholesaleItems.length}
+                                        accent={{ text: 'text-amber-400', badge: 'border-amber-400/40 text-amber-400 bg-amber-400/10', line: 'bg-amber-400/20' }}
+                                    />
+                                    <div className="space-y-6">
+                                        {wholesaleItems.map(item => (
+                                            <CartLineItem key={item.id} {...item} changeQty={changeQty} removeItem={removeItem} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 

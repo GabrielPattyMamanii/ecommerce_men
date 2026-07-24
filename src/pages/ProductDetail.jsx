@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../services/supabaseClient'
-import { formatPrice, isPurchasable } from '../lib/productPricing'
+import { formatPrice, isPurchasable, hasWholesale, formatWholesalePrice, isWholesalePurchasable, hasDozenDimensions, formatDozenDimensions, getDozenDimensionEntries } from '../lib/productPricing'
 
 /* ── Componente Stars ── */
 function Stars({ rating, size = 'text-[16px]' }) {
@@ -31,12 +31,15 @@ export default function ProductDetail() {
     const [error, setError] = useState(null)
 
     const [activeImage, setActiveImage] = useState(0)
-    const [activeColor, setActiveColor] = useState('default')
+    const [activeColor, setActiveColor] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeSize, setActiveSize] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeTab, setActiveTab] = useState('specs')
     const [added, setAdded] = useState(false)
+    const [mode, setMode] = useState('retail') // 'retail' | 'wholesale'
+    const [dozens, setDozens] = useState(1)
+    const [qty, setQty] = useState(1)
 
-    const { addItem } = useCart()
+    const { addItem, addWholesaleItem } = useCart()
 
     useEffect(() => {
         async function fetchProduct() {
@@ -44,7 +47,7 @@ export default function ProductDetail() {
             setError(null)
             const { data, error: err } = await supabase
                 .from('products')
-                .select('id, name, description, retail_price, price_on_request, stock, images, sizes, colors')
+                .select('id, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, images, sizes, colors')
                 .eq('id', id)
                 .eq('visible', true)
                 .single()
@@ -92,9 +95,18 @@ export default function ProductDetail() {
     const sizes = product.sizes?.length > 0 ? product.sizes : []
     const selectedSize = activeSize ?? sizes[0] ?? 'Único'
     const colors = product.colors?.length > 0 ? product.colors : []
+    const selectedColor = activeColor ?? colors[0] ?? 'default'
+    const maxQty = product.stock > 0 ? product.stock : 1
 
     function handleAddToCart() {
-        addItem(product, activeColor, selectedSize)
+        addItem(product, selectedColor, selectedSize, qty)
+        setAdded(true)
+        setQty(1)
+        setTimeout(() => setAdded(false), 2000)
+    }
+
+    function handleAddWholesaleToCart() {
+        addWholesaleItem(product, dozens)
         setAdded(true)
         setTimeout(() => setAdded(false), 2000)
     }
@@ -228,16 +240,48 @@ export default function ProductDetail() {
                                 {product.name}
                             </h1>
 
-                            {/* Precio + Stock */}
-                            <div className="flex items-end gap-6 mb-6 border-b border-surface-light pb-6 mt-4">
-                                <p className="text-3xl font-display font-medium text-primary">
-                                    {product.price_on_request ? 'Consultar precio' : `$${Number(product.retail_price).toFixed(2)}`}
-                                </p>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-xs font-mono uppercase tracking-wide ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        {product.stock > 0 ? `Stock: ${product.stock}` : 'Sin stock'}
-                                    </span>
+                            {/* Toggle Por Menor / Por Mayor (solo si el producto tiene precio mayorista) */}
+                            {hasWholesale(product) && (
+                                <div className="flex mt-4 border border-surface-light w-fit" role="tablist" aria-label="Modalidad de compra">
+                                    {[
+                                        { id: 'retail', label: 'Por Menor' },
+                                        { id: 'wholesale', label: 'Por Mayor' },
+                                    ].map(({ id, label }) => (
+                                        <button
+                                            key={id}
+                                            role="tab"
+                                            aria-selected={mode === id}
+                                            onClick={() => setMode(id)}
+                                            className={`px-5 py-2 text-xs font-display font-bold uppercase tracking-widest transition-colors ${mode === id
+                                                    ? 'bg-primary text-black'
+                                                    : 'bg-surface text-slate-400 hover:text-white'
+                                                }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
                                 </div>
+                            )}
+
+                            {/* Precio + Stock */}
+                            <div className="border-b border-surface-light pb-6 mb-6 mt-4">
+                                <div className="flex items-end gap-6">
+                                    <p className="text-3xl font-display font-medium text-primary">
+                                        {mode === 'wholesale'
+                                            ? formatWholesalePrice(product)
+                                            : (product.price_on_request ? 'Consultar precio' : `$${Number(product.retail_price).toFixed(2)}`)}
+                                    </p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-xs font-mono uppercase tracking-wide ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {product.stock > 0 ? `Stock: ${product.stock}` : 'Sin stock'}
+                                        </span>
+                                    </div>
+                                </div>
+                                {mode === 'wholesale' && (
+                                    <p className="text-[11px] text-slate-500 font-mono uppercase tracking-wide mt-1">
+                                        Precio por docena · 12 unidades
+                                    </p>
+                                )}
                             </div>
 
                             {/* Descripción */}
@@ -253,7 +297,7 @@ export default function ProductDetail() {
                             )}
 
                             {/* ── Selector de talla (real, cargado desde el producto) ── */}
-                            {sizes.length > 0 && (
+                            {sizes.length > 0 && mode === 'retail' && (
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
@@ -289,8 +333,67 @@ export default function ProductDetail() {
                                 </div>
                             )}
 
-                            {/* ── Colores disponibles (informativo, cargado desde el producto) ── */}
-                            {colors.length > 0 && (
+                            {/* ── Talles disponibles (solo informativo, modo Por Mayor) ── */}
+                            {sizes.length > 0 && mode === 'wholesale' && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Talles disponibles
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {sizes.map(label => (
+                                            <span
+                                                key={label}
+                                                aria-label={`Talla disponible ${label}`}
+                                                className="h-10 min-w-10 px-3 border border-surface-light bg-surface flex items-center justify-center text-xs font-display font-bold text-slate-300"
+                                            >
+                                                {label}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Selector de color (real, seleccionable — modo Por Menor) ── */}
+                            {colors.length > 0 && mode === 'retail' && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Color Configuration
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {colors.map(hex => {
+                                            const isActive = selectedColor === hex
+                                            return (
+                                                <button
+                                                    key={hex}
+                                                    onClick={() => setActiveColor(hex)}
+                                                    title={hex}
+                                                    aria-label={`Color ${hex}`}
+                                                    aria-pressed={isActive}
+                                                    className={`w-8 h-8 relative transition-all ${isActive
+                                                            ? 'border-2 border-primary shadow-neon-sm scale-110'
+                                                            : 'border border-surface-light hover:border-primary/50'
+                                                        }`}
+                                                    style={{ background: hex }}
+                                                >
+                                                    {isActive && (
+                                                        <>
+                                                            <span className="absolute top-0 right-0 w-1 h-1 bg-primary" />
+                                                            <span className="absolute bottom-0 left-0 w-1 h-1 bg-primary" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Colores disponibles (solo informativo, modo Por Mayor) ── */}
+                            {colors.length > 0 && mode === 'wholesale' && (
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
@@ -311,45 +414,160 @@ export default function ProductDetail() {
                                 </div>
                             )}
 
+                            {/* ── Cantidad (modo Por Menor) ── */}
+                            {mode === 'retail' && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Cantidad
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center border border-surface-light bg-surface w-fit">
+                                        <button
+                                            onClick={() => setQty(q => Math.max(1, q - 1))}
+                                            disabled={qty <= 1}
+                                            aria-label="Reducir cantidad"
+                                            className="px-4 py-2 text-slate-400 hover:text-white hover:bg-surface-light transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            −
+                                        </button>
+                                        <span className="px-4 py-2 text-sm font-bold text-white font-mono min-w-10 text-center">{qty}</span>
+                                        <button
+                                            onClick={() => setQty(q => Math.min(maxQty, q + 1))}
+                                            disabled={qty >= maxQty}
+                                            aria-label="Aumentar cantidad"
+                                            className="px-4 py-2 text-slate-400 hover:text-white hover:bg-surface-light transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Cantidad de docenas (modo Por Mayor) ── */}
+                            {mode === 'wholesale' && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Cantidad de docenas
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={dozens}
+                                        onChange={e => setDozens(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                        aria-label="Cantidad de docenas"
+                                        className="w-28 h-10 px-3 bg-surface border border-surface-light text-slate-200 font-mono text-sm focus:outline-none focus:border-primary"
+                                    />
+                                </div>
+                            )}
+
+                            {/* ── Dimensiones de la docena (si el producto las tiene cargadas) ── */}
+                            {mode === 'wholesale' && hasDozenDimensions(product) && (
+                                <div className="mb-8 border border-surface-light bg-surface/50 px-4 py-3">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="material-symbols-outlined text-tech-grey text-lg">inventory_2</span>
+                                        <span className="text-xs font-display font-bold text-tech-grey uppercase tracking-widest">
+                                            Dimensiones de la docena
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {getDozenDimensionEntries(product).map(({ label, value }) => (
+                                            <div
+                                                key={label}
+                                                className="flex flex-col items-center justify-center bg-surface border border-surface-light py-2 px-1"
+                                            >
+                                                <span className="text-[10px] font-mono uppercase tracking-wide text-slate-500 mb-1">
+                                                    {label}
+                                                </span>
+                                                <span className="text-sm font-display font-bold text-primary">
+                                                    {value}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* ── CTAs ── */}
                             <div className="flex flex-col gap-4 mb-8">
 
                                 {/* Botón principal — Add to Cart */}
-                                <button
-                                    onClick={handleAddToCart}
-                                    disabled={!isPurchasable(product)}
-                                    id="add-to-cart-btn"
-                                    className={`w-full h-14 font-display font-bold text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-8 group relative overflow-hidden
-                                        ${!isPurchasable(product)
-                                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                            : added
-                                                ? 'bg-green-500 text-black'
-                                                : 'bg-primary hover:bg-white text-black'
-                                        }`}
-                                    style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)' }}
-                                >
-                                    {isPurchasable(product) && !added && (
-                                        <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
-                                    )}
-                                    <span className="z-10 flex items-center gap-2">
-                                        {added ? (
-                                            <>
-                                                <span className="material-symbols-outlined text-sm">check</span>
-                                                AGREGADO
-                                            </>
-                                        ) : product.price_on_request ? (
-                                            'CONSULTAR PRECIO'
-                                        ) : product.stock === 0 ? (
-                                            'SIN STOCK'
-                                        ) : (
-                                            <>
-                                                INITIATE PURCHASE
-                                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                            </>
+                                {mode === 'wholesale' ? (
+                                    <button
+                                        onClick={handleAddWholesaleToCart}
+                                        disabled={!isWholesalePurchasable(product) || dozens < 1}
+                                        id="add-to-cart-wholesale-btn"
+                                        className={`w-full h-14 font-display font-bold text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-8 group relative overflow-hidden
+                                            ${!isWholesalePurchasable(product) || dozens < 1
+                                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                                : added
+                                                    ? 'bg-green-500 text-black'
+                                                    : 'bg-primary hover:bg-white text-black'
+                                            }`}
+                                        style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)' }}
+                                    >
+                                        {isWholesalePurchasable(product) && !added && (
+                                            <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
                                         )}
-                                    </span>
-                                    {!product.price_on_request && <span className="z-10 font-mono text-sm">${Number(product.retail_price).toFixed(2)}</span>}
-                                </button>
+                                        <span className="z-10 flex items-center gap-2">
+                                            {added ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-sm">check</span>
+                                                    AGREGADO
+                                                </>
+                                            ) : product.stock === 0 ? (
+                                                'SIN STOCK'
+                                            ) : (
+                                                <>
+                                                    AGREGAR {dozens} DOCENA{dozens === 1 ? '' : 'S'}
+                                                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                </>
+                                            )}
+                                        </span>
+                                        <span className="z-10 font-mono text-sm">
+                                            ${(Number(product.wholesale_price) * dozens).toFixed(2)}
+                                        </span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleAddToCart}
+                                        disabled={!isPurchasable(product)}
+                                        id="add-to-cart-btn"
+                                        className={`w-full h-14 font-display font-bold text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-8 group relative overflow-hidden
+                                            ${!isPurchasable(product)
+                                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                                : added
+                                                    ? 'bg-green-500 text-black'
+                                                    : 'bg-primary hover:bg-white text-black'
+                                            }`}
+                                        style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)' }}
+                                    >
+                                        {isPurchasable(product) && !added && (
+                                            <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
+                                        )}
+                                        <span className="z-10 flex items-center gap-2">
+                                            {added ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-sm">check</span>
+                                                    AGREGADO
+                                                </>
+                                            ) : product.price_on_request ? (
+                                                'CONSULTAR PRECIO'
+                                            ) : product.stock === 0 ? (
+                                                'SIN STOCK'
+                                            ) : (
+                                                <>
+                                                    INITIATE PURCHASE
+                                                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                </>
+                                            )}
+                                        </span>
+                                        {!product.price_on_request && <span className="z-10 font-mono text-sm">${Number(product.retail_price).toFixed(2)}</span>}
+                                    </button>
+                                )}
 
                                 {/* Botón secundario — Ver catálogo */}
                                 <Link
@@ -387,7 +605,9 @@ export default function ProductDetail() {
                                         {[
                                             ['Nombre', product.name],
                                             ['Categoría', product.category || '—'],
-                                            ['Precio', formatPrice(product)],
+                                            ['Precio', mode === 'wholesale' ? `${formatWholesalePrice(product)} / docena` : formatPrice(product)],
+                                            ...(mode === 'wholesale' ? [['Unidad de venta', 'Docena (12 unidades)']] : []),
+                                            ...(mode === 'wholesale' && hasDozenDimensions(product) ? [['Dimensiones docena', formatDozenDimensions(product)]] : []),
                                             ['Stock disponible', product.stock],
                                         ].map(([key, value]) => (
                                             <div

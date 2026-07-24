@@ -92,7 +92,7 @@ export default function ProductsTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('products')
-            .select('id, name, description, retail_price, wholesale_price, price_on_request, stock, images, sizes, colors, visible, created_at, category_id, categories(name)')
+            .select('id, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, images, sizes, colors, visible, created_at, category_id, categories(name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setProducts(data ?? [])
@@ -129,6 +129,10 @@ export default function ProductsTable() {
                 description:       values.description.trim() || null,
                 retail_price:      values.price_on_request ? null : parseFloat(values.retail_price),
                 wholesale_price:   values.price_on_request ? null : (values.wholesale_price !== '' ? parseFloat(values.wholesale_price) : null),
+                dozen_height:      values.price_on_request ? null : (values.dozen_height !== '' ? parseFloat(values.dozen_height) : null),
+                dozen_width:       values.price_on_request ? null : (values.dozen_width !== '' ? parseFloat(values.dozen_width) : null),
+                dozen_length:      values.price_on_request ? null : (values.dozen_length !== '' ? parseFloat(values.dozen_length) : null),
+                dozen_weight:      values.price_on_request ? null : (values.dozen_weight !== '' ? parseFloat(values.dozen_weight) : null),
                 price_on_request:  values.price_on_request,
                 stock:             parseInt(values.stock, 10),
                 category_id:       values.category_id || null,

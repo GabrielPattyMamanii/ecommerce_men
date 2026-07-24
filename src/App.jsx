@@ -6,6 +6,7 @@ import MiniCart from './components/MiniCart'
 import Footer from './components/Footer'
 import WhatsAppButton from './components/WhatsAppButton'
 import ProtectedRoute from './components/ProtectedRoute'
+import RequirePermission from './components/RequirePermission'
 import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
 import ProductDetail from './pages/ProductDetail'
@@ -33,6 +34,7 @@ const InventarioPropietarios      = lazy(() => import('./pages/admin/sections/In
 const InventarioPropietariosTanda = lazy(() => import('./pages/admin/sections/Inventario/InventarioPropietariosTanda'))
 const ControlInventarioTandas     = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTandas'))
 const ControlInventarioTanda      = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTanda'))
+const UsersTable      = lazy(() => import('./pages/admin/sections/Users/UsersTable'))
 
 // Placeholder pages — serán reemplazadas en Tareas posteriores
 function ComingSoon({ title }) {
@@ -103,21 +105,22 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/admin" element={<Suspense fallback={null}><AdminLayout /></Suspense>}>
                 <Route index element={<Suspense fallback={null}><Dashboard /></Suspense>} />
-                <Route path="productos" element={<Suspense fallback={null}><ProductsTable /></Suspense>} />
-                <Route path="inventario" element={<Suspense fallback={null}><InventarioTandas /></Suspense>} />
-                <Route path="inventario/nueva" element={<Suspense fallback={null}><TandaForm /></Suspense>} />
-                <Route path="inventario/editar/:tandaNombre" element={<Suspense fallback={null}><TandaForm /></Suspense>} />
-                <Route path="inventario/detalle/:tanda" element={<Suspense fallback={null}><TandaDetalle /></Suspense>} />
-                <Route path="inventario/propietarios" element={<Suspense fallback={null}><InventarioPropietarios /></Suspense>} />
-                <Route path="inventario/propietarios/:tanda" element={<Suspense fallback={null}><InventarioPropietariosTanda /></Suspense>} />
-                <Route path="control-inventario" element={<Suspense fallback={null}><ControlInventarioTandas /></Suspense>} />
-                <Route path="control-inventario/:tanda" element={<Suspense fallback={null}><ControlInventarioTanda /></Suspense>} />
-                <Route path="categorias" element={<Suspense fallback={null}><CategoriesTable /></Suspense>} />
-                <Route path="ordenes" element={<Suspense fallback={null}><OrdersTable /></Suspense>} />
-                <Route path="clientes" element={<ComingSoon title="Clientes" />} />
-                <Route path="cupones" element={<Suspense fallback={null}><CouponsTable /></Suspense>} />
-                <Route path="configuracion" element={<ComingSoon title="Configuración" />} />
-                <Route path="compras" element={<ComingSoon title="Compras" />} />
+                <Route path="productos" element={<RequirePermission section="productos"><Suspense fallback={null}><ProductsTable /></Suspense></RequirePermission>} />
+                <Route path="inventario" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioTandas /></Suspense></RequirePermission>} />
+                <Route path="inventario/nueva" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaForm /></Suspense></RequirePermission>} />
+                <Route path="inventario/editar/:tandaNombre" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaForm /></Suspense></RequirePermission>} />
+                <Route path="inventario/detalle/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaDetalle /></Suspense></RequirePermission>} />
+                <Route path="inventario/propietarios" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioPropietarios /></Suspense></RequirePermission>} />
+                <Route path="inventario/propietarios/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioPropietariosTanda /></Suspense></RequirePermission>} />
+                <Route path="control-inventario" element={<RequirePermission section="inventario"><Suspense fallback={null}><ControlInventarioTandas /></Suspense></RequirePermission>} />
+                <Route path="control-inventario/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><ControlInventarioTanda /></Suspense></RequirePermission>} />
+                <Route path="categorias" element={<RequirePermission section="categorias"><Suspense fallback={null}><CategoriesTable /></Suspense></RequirePermission>} />
+                <Route path="ordenes" element={<RequirePermission section="ordenes"><Suspense fallback={null}><OrdersTable /></Suspense></RequirePermission>} />
+                <Route path="clientes" element={<RequirePermission section="clientes"><ComingSoon title="Clientes" /></RequirePermission>} />
+                <Route path="cupones" element={<RequirePermission section="cupones"><Suspense fallback={null}><CouponsTable /></Suspense></RequirePermission>} />
+                <Route path="usuarios" element={<RequirePermission section="usuarios"><Suspense fallback={null}><UsersTable /></Suspense></RequirePermission>} />
+                <Route path="configuracion" element={<RequirePermission section="configuracion"><ComingSoon title="Configuración" /></RequirePermission>} />
+                <Route path="compras" element={<RequirePermission section="compras"><ComingSoon title="Compras" /></RequirePermission>} />
                 <Route path="analytics" element={<ComingSoon title="Analytics" />} />
               </Route>
             </Route>
