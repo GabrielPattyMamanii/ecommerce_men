@@ -7,7 +7,7 @@
 
 import { MercadoPagoConfig, Preference } from 'npm:mercadopago@^2'
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
+import { SITE_URL, buildCorsHeaders } from '@shared/cors.ts'
 
 interface CartItem {
   id: string

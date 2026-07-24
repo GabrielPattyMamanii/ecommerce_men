@@ -7,7 +7,7 @@
 // Auto-available: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
+import { SITE_URL, buildCorsHeaders } from '@shared/cors.ts'
 
 Deno.serve(async (req: Request) => {
   const CORS = buildCorsHeaders(req)
