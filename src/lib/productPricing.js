@@ -18,6 +18,13 @@ export function isWholesalePurchasable(product) {
   return hasWholesale(product) && product.stock > 0
 }
 
+const UNIT_DIMENSION_META = [
+  { key: 'unit_height', label: 'Alto', unit: 'cm' },
+  { key: 'unit_width', label: 'Ancho', unit: 'cm' },
+  { key: 'unit_length', label: 'Largo', unit: 'cm' },
+  { key: 'unit_weight', label: 'Peso', unit: 'kg' },
+]
+
 const DOZEN_DIMENSION_META = [
   { key: 'dozen_height', label: 'Alto', unit: 'cm' },
   { key: 'dozen_width', label: 'Ancho', unit: 'cm' },
@@ -25,6 +32,24 @@ const DOZEN_DIMENSION_META = [
   { key: 'dozen_weight', label: 'Peso', unit: 'kg' },
 ]
 
+// Unit dimensions (retail)
+export function hasUnitDimensions(product) {
+  return UNIT_DIMENSION_META.some(({ key }) => product[key] != null)
+}
+
+export function getUnitDimensionEntries(product) {
+  return UNIT_DIMENSION_META
+    .filter(({ key }) => product[key] != null)
+    .map(({ key, label, unit }) => ({ label, value: `${Number(product[key])} ${unit}` }))
+}
+
+export function formatUnitDimensions(product) {
+  return getUnitDimensionEntries(product)
+    .map(({ label, value }) => `${label}: ${value}`)
+    .join(' · ')
+}
+
+// Dozen dimensions (wholesale)
 export function hasDozenDimensions(product) {
   return DOZEN_DIMENSION_META.some(({ key }) => product[key] != null)
 }

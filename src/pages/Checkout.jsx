@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
+import { supabase } from '../services/supabaseClient'
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
 const ORDER_ITEMS = [
@@ -68,22 +69,78 @@ export default function Checkout() {
     const [firstName, setFirstName] = useState('')
     const [lastName, setLastName]   = useState('')
     const [address, setAddress]     = useState('')
+    const [number, setNumber]       = useState('')
     const [city, setCity]           = useState('')
+    const [province, setProvince]   = useState('')
     const [postalCode, setPostalCode] = useState('')
+
+    /* ── Estado de cotización de envío ── */
+    const [shippingOptions, setShippingOptions] = useState([])
+    const [shippingLoading, setShippingLoading] = useState(false)
+    const [shippingError, setShippingError] = useState(null)
+    const [selectedShipping, setSelectedShipping] = useState(null)
+    const [selectedBranch, setSelectedBranch] = useState(null)
 
     /* Pre-llenar email si el usuario está logueado */
     useEffect(() => {
         if (user?.email) setEmail(user.email)
     }, [user])
 
+    /* Cotizar envío cuando cambia dirección/provincia/CP para envío automático */
+    useEffect(() => {
+        if (shippingMethod !== 'shipping' || !city || !province || !postalCode || items.length === 0) {
+            setShippingOptions([])
+            setSelectedShipping(null)
+            setSelectedBranch(null)
+            return
+        }
+
+        const cotizar = async () => {
+            setShippingLoading(true)
+            setShippingError(null)
+            setSelectedShipping(null)
+
+            try {
+                const { data, error } = await supabase.functions.invoke('envia-cotizar', {
+                    body: {
+                        items: items.map(i => ({
+                            productId: i.productId,
+                            qty: i.qty,
+                            type: i.type,
+                        })),
+                        destino: {
+                            city,
+                            province,
+                            postalCode,
+                        },
+                    },
+                })
+
+                if (error) throw error
+                setShippingOptions(data.opciones || [])
+            } catch (err) {
+                setShippingError(err?.message ?? 'Error al cotizar envío')
+                setShippingOptions([])
+            } finally {
+                setShippingLoading(false)
+            }
+        }
+
+        cotizar()
+    }, [shippingMethod, city, province, postalCode, items])
+
     /* Usa los ítems reales del carrito; si está vacío cae al mock de demo */
     const displayItems = items.length > 0 ? items : ORDER_ITEMS
     const retailItems = displayItems.filter(i => (i.type ?? 'retail') === 'retail')
     const wholesaleItems = displayItems.filter(i => i.type === 'wholesale')
     const displaySubtotal = subtotal || ORDER_ITEMS.reduce((s, i) => s + i.price * i.qty, 0)
-    const displayShipping = shippingMethod === 'pickup' ? 0 : (shipping || 0)
+    const displayShipping = selectedShipping?.precio ?? 0
     const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
     const displayTotal = displaySubtotal + displayShipping + displayTax
+
+    // Validar que sea posible proceder al pago
+    const canCheckout = shippingMethod === 'pickup' || selectedShipping
+    const addressComplete = shippingMethod === 'pickup' || (address && number && city && province && postalCode && selectedShipping)
 
     return (
         <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
@@ -181,16 +238,13 @@ export default function Checkout() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                                     <button
                                         type="button"
-                                        onClick={() => setShippingMethod('shipping')}
+                                        onClick={() => { setShippingMethod('shipping'); setSelectedShipping(null) }}
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
-                                            shippingMethod === 'shipping' 
-                                            ? 'border-primary bg-primary/10' 
+                                            shippingMethod === 'shipping'
+                                            ? 'border-primary bg-primary/10'
                                             : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
                                         }`}
                                     >
-                                        {/* Glow background effect */}
-                                        <div className={`absolute -bottom-10 -right-10 w-24 h-24 bg-primary rounded-full blur-3xl opacity-0 transition-opacity ${shippingMethod === 'shipping' ? 'opacity-20' : 'group-hover:opacity-10'}`} />
-                                        
                                         {shippingMethod === 'shipping' && (
                                             <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
                                                 <span className="material-symbols-outlined text-sm font-bold">check</span>
@@ -201,22 +255,19 @@ export default function Checkout() {
                                             <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Delivery</span>
                                         </div>
                                         <span className="text-xs text-slate-400 font-mono leading-relaxed">
-                                            Envío a domicilio. Costo calculado en base a destino.
+                                            Envío a domicilio. Costo cotizado en base a destino.
                                         </span>
                                     </button>
-                                    
+
                                     <button
                                         type="button"
-                                        onClick={() => setShippingMethod('pickup')}
+                                        onClick={() => { setShippingMethod('pickup'); setShippingOptions([]) }}
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
-                                            shippingMethod === 'pickup' 
-                                            ? 'border-primary bg-primary/10' 
+                                            shippingMethod === 'pickup'
+                                            ? 'border-primary bg-primary/10'
                                             : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
                                         }`}
                                     >
-                                        {/* Glow background effect */}
-                                        <div className={`absolute -bottom-10 -right-10 w-24 h-24 bg-primary rounded-full blur-3xl opacity-0 transition-opacity ${shippingMethod === 'pickup' ? 'opacity-20' : 'group-hover:opacity-10'}`} />
-                                        
                                         {shippingMethod === 'pickup' && (
                                             <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
                                                 <span className="material-symbols-outlined text-sm font-bold">check</span>
@@ -227,7 +278,7 @@ export default function Checkout() {
                                             <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Store Pickup</span>
                                         </div>
                                         <span className="text-xs text-slate-400 font-mono leading-relaxed">
-                                            Retira en local gratis. Nos pondremos en contacto.
+                                            Retira en local. Nos pondremos en contacto.
                                         </span>
                                     </button>
                                 </div>
@@ -235,12 +286,116 @@ export default function Checkout() {
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mt-4">
                                     <FormField label="First Name" type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} />
                                     <FormField label="Last Name" type="text" required value={lastName} onChange={e => setLastName(e.target.value)} />
-                                    
+
                                     {shippingMethod === 'shipping' ? (
                                         <>
                                             <FormField label="Address Line 1" type="text" colSpan={2} required value={address} onChange={e => setAddress(e.target.value)} />
+                                            <FormField label="Number" type="text" colSpan={1} required value={number} onChange={e => setNumber(e.target.value)} />
                                             <FormField label="City / Sector" type="text" required value={city} onChange={e => setCity(e.target.value)} />
+                                            <div className="col-span-1 sm:col-span-2">
+                                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">Province</label>
+                                                <select
+                                                    value={province}
+                                                    onChange={e => setProvince(e.target.value)}
+                                                    required
+                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
+                                                >
+                                                    <option value="">— Selecciona provincia —</option>
+                                                    <option value="Buenos Aires">Buenos Aires</option>
+                                                    <option value="Ciudad Autónoma de Buenos Aires">CABA</option>
+                                                    <option value="Catamarca">Catamarca</option>
+                                                    <option value="Chaco">Chaco</option>
+                                                    <option value="Chubut">Chubut</option>
+                                                    <option value="Corrientes">Corrientes</option>
+                                                    <option value="Entre Ríos">Entre Ríos</option>
+                                                    <option value="Formosa">Formosa</option>
+                                                    <option value="Jujuy">Jujuy</option>
+                                                    <option value="La Pampa">La Pampa</option>
+                                                    <option value="La Rioja">La Rioja</option>
+                                                    <option value="Mendoza">Mendoza</option>
+                                                    <option value="Misiones">Misiones</option>
+                                                    <option value="Neuquén">Neuquén</option>
+                                                    <option value="Río Negro">Río Negro</option>
+                                                    <option value="Salta">Salta</option>
+                                                    <option value="San Juan">San Juan</option>
+                                                    <option value="San Luis">San Luis</option>
+                                                    <option value="Santa Cruz">Santa Cruz</option>
+                                                    <option value="Santa Fe">Santa Fe</option>
+                                                    <option value="Santiago del Estero">Santiago del Estero</option>
+                                                    <option value="Tierra del Fuego">Tierra del Fuego</option>
+                                                    <option value="Tucumán">Tucumán</option>
+                                                </select>
+                                            </div>
                                             <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+
+                                            {/* Opciones de envío cotizadas */}
+                                            {shippingLoading && (
+                                                <div className="col-span-1 sm:col-span-2 bg-[#232a35]/50 border border-[#333b49] p-4 relative flex items-center gap-3">
+                                                    <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                                                    <span className="text-xs text-slate-400 font-mono">Cotizando opciones de envío...</span>
+                                                </div>
+                                            )}
+                                            {shippingError && (
+                                                <div className="col-span-1 sm:col-span-2 bg-red-500/10 border border-red-500/30 p-4 relative">
+                                                    <span className="text-xs text-red-400 font-mono">{shippingError}</span>
+                                                </div>
+                                            )}
+                                            {shippingOptions.length > 0 && (
+                                                <div className="col-span-1 sm:col-span-2">
+                                                    <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">Shipping Options</label>
+                                                    <div className="space-y-2">
+                                                        {shippingOptions.map((opt, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                type="button"
+                                                                onClick={() => setSelectedShipping(opt)}
+                                                                className={`w-full p-3 border transition-all text-left text-sm ${
+                                                                    selectedShipping === opt
+                                                                        ? 'border-primary bg-primary/10'
+                                                                        : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
+                                                                }`}
+                                                            >
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="flex-1">
+                                                                        <div className="font-mono text-xs text-slate-300">
+                                                                            {opt.carrier} • {opt.service}
+                                                                        </div>
+                                                                        {opt.dias && (
+                                                                            <div className="text-[10px] text-slate-500 mt-1">
+                                                                                ~{opt.dias} días
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="font-bold text-primary">${Number(opt.precio).toFixed(2)}</div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Selector de sucursal si es "a Sucursal" */}
+                                            {selectedShipping?.isBranch && selectedShipping?.sucursales?.length > 0 && (
+                                                <div className="col-span-1 sm:col-span-2">
+                                                    <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">Branch / Sucursal</label>
+                                                    <select
+                                                        value={selectedBranch?.codigo ?? ''}
+                                                        onChange={e => {
+                                                            const branch = selectedShipping.sucursales.find(b => b.codigo === e.target.value)
+                                                            setSelectedBranch(branch)
+                                                        }}
+                                                        required
+                                                        className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono outline-none"
+                                                    >
+                                                        <option value="">— Selecciona sucursal —</option>
+                                                        {selectedShipping.sucursales.map(sucursal => (
+                                                            <option key={sucursal.codigo} value={sucursal.codigo}>
+                                                                {sucursal.nombre} ({sucursal.address.address})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
                                         </>
                                     ) : (
                                         <div className="col-span-1 sm:col-span-2 bg-[#232a35]/50 border border-[#333b49] p-4 mt-2 mb-2 relative">
@@ -335,11 +490,24 @@ export default function Checkout() {
                                     items={displayItems}
                                     payer={{ email, phone, firstName, lastName }}
                                     shippingMethod={shippingMethod}
-                                    shippingAddress={shippingMethod === 'shipping' ? { address, city, postalCode } : null}
+                                    shippingAddress={shippingMethod === 'shipping' ? {
+                                        address,
+                                        number: number || '1',
+                                        city,
+                                        province,
+                                        postalCode,
+                                        branchCode: selectedBranch?.codigo,
+                                    } : null}
+                                    shippingCost={displayShipping}
+                                    shippingCarrier={selectedShipping?.carrier}
+                                    shippingService={selectedShipping?.service}
+                                    shippingIsBranch={selectedShipping?.isBranch}
+                                    disabled={!addressComplete}
                                 />
                             ) : (
                                 <button
                                     type="submit"
+                                    disabled={!addressComplete}
                                     className="group w-full relative overflow-hidden bg-primary py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />

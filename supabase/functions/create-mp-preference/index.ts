@@ -32,9 +32,16 @@ interface CheckoutPayload {
   shippingMethod: 'shipping' | 'pickup'
   shippingAddress?: {
     address: string
+    number?: string
     city: string
+    province: string
     postalCode: string
+    branchCode?: string
   } | null
+  shippingCost?: number
+  shippingCarrier?: string
+  shippingService?: string
+  shippingIsBranch?: boolean
 }
 
 Deno.serve(async (req: Request) => {
@@ -53,8 +60,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { items, payer, shippingMethod, shippingAddress }: CheckoutPayload =
-      await req.json()
+    const {
+      items,
+      payer,
+      shippingMethod,
+      shippingAddress,
+      shippingCost: cotizedShippingCost,
+      shippingCarrier,
+      shippingService,
+      shippingIsBranch,
+    }: CheckoutPayload = await req.json()
 
     if (!items?.length) {
       return new Response(
@@ -66,6 +81,13 @@ Deno.serve(async (req: Request) => {
     if (!payer?.email) {
       return new Response(
         JSON.stringify({ error: 'El email del comprador es obligatorio.' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (shippingMethod === 'shipping' && !shippingAddress) {
+      return new Response(
+        JSON.stringify({ error: 'Dirección de envío requerida.' }),
         { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
       )
     }
@@ -87,8 +109,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Compute totals ──
+    // Para envío automático (shipping), usar el costo cotizado por envia.com
+    // Para retiro (pickup), siempre 0
+    // El costo cotizado ya viene validado del frontend (visto por el usuario)
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0)
-    const shippingCost = shippingMethod === 'pickup' ? 0 : (subtotal >= 200 ? 0 : 12)
+    const shippingCost = shippingMethod === 'pickup' ? 0 : (cotizedShippingCost ?? 0)
     const total = subtotal + shippingCost
 
     // ── 1. Create order in DB (status: pending) ──
@@ -105,6 +130,10 @@ Deno.serve(async (req: Request) => {
         shipping_address: shippingMethod === 'shipping' && shippingAddress
           ? shippingAddress
           : null,
+        shipping_cost: shippingCost,
+        shipping_carrier: shippingCarrier || null,
+        shipping_service: shippingService || null,
+        shipping_is_branch: shippingIsBranch || false,
       })
       .select('id')
       .single()

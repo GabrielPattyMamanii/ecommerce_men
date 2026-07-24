@@ -4,7 +4,23 @@ import ProductImageUploader from './ProductImageUploader'
 import ProductSizeManager from './ProductSizeManager'
 import ProductColorManager from './ProductColorManager'
 
-const EMPTY_FORM = { name: '', description: '', retail_price: '', wholesale_price: '', dozen_height: '', dozen_width: '', dozen_length: '', dozen_weight: '', stock: '', category_id: '', price_on_request: false }
+const EMPTY_FORM = {
+  name: '',
+  description: '',
+  retail_price: '',
+  wholesale_price: '',
+  unit_height: '',
+  unit_width: '',
+  unit_length: '',
+  unit_weight: '',
+  dozen_height: '',
+  dozen_width: '',
+  dozen_length: '',
+  dozen_weight: '',
+  stock: '',
+  category_id: '',
+  price_on_request: false,
+}
 
 /**
  * El padre le pasa un `key` distinto cada vez que abre el popup (ver
@@ -21,6 +37,10 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 description:       initialProduct.description || '',
                 retail_price:      initialProduct.retail_price ?? '',
                 wholesale_price:   initialProduct.wholesale_price ?? '',
+                unit_height:       initialProduct.unit_height ?? '',
+                unit_width:        initialProduct.unit_width ?? '',
+                unit_length:       initialProduct.unit_length ?? '',
+                unit_weight:       initialProduct.unit_weight ?? '',
                 dozen_height:      initialProduct.dozen_height ?? '',
                 dozen_width:       initialProduct.dozen_width ?? '',
                 dozen_length:      initialProduct.dozen_length ?? '',
@@ -168,6 +188,47 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                         placeholder="0.00" style={{ ...S.input, opacity: applyDiscount ? 0.6 : 1 }}
                                         readOnly={applyDiscount}
                                     />
+                                </div>
+                            </div>
+
+                            {/* Dimensiones de la unidad (retail) — opcional pero necesarias para envío */}
+                            <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
+                                <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la unidad (obligatoria para envío)</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                                    <div>
+                                        <label style={S.label}>Alto (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.unit_height}
+                                            onChange={e => setForm(p => ({ ...p, unit_height: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={S.label}>Ancho (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.unit_width}
+                                            onChange={e => setForm(p => ({ ...p, unit_width: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={S.label}>Largo (cm)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.unit_length}
+                                            onChange={e => setForm(p => ({ ...p, unit_length: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={S.label}>Peso (kg)</label>
+                                        <input
+                                            type="number" min="0" step="0.01" value={form.unit_weight}
+                                            onChange={e => setForm(p => ({ ...p, unit_weight: e.target.value }))}
+                                            placeholder="0.00" style={S.input}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

@@ -9,7 +9,16 @@ export function useCheckoutPro() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const checkout = useCallback(async ({ items, payer, shippingMethod, shippingAddress }) => {
+  const checkout = useCallback(async ({
+    items,
+    payer,
+    shippingMethod,
+    shippingAddress,
+    shippingCost,
+    shippingCarrier,
+    shippingService,
+    shippingIsBranch,
+  }) => {
     setIsLoading(true)
     setError(null)
 
@@ -32,6 +41,10 @@ export function useCheckoutPro() {
         },
         shippingMethod,
         shippingAddress: shippingAddress ?? null,
+        shippingCost: shippingCost ?? 0,
+        shippingCarrier: shippingCarrier ?? null,
+        shippingService: shippingService ?? null,
+        shippingIsBranch: shippingIsBranch ?? false,
       }
 
       const { data, error: fnError } = await supabase.functions.invoke(

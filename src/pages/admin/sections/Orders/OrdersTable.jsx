@@ -93,7 +93,7 @@ export default function OrdersTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('orders')
-            .select('id, status, total, payment_id, customer_name, customer_email, shipping_type, created_at, profiles(full_name)')
+            .select('id, status, total, payment_id, customer_name, customer_email, shipping_type, shipping_carrier, tracking_number, shipping_status, created_at, profiles(full_name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setOrders(data ?? [])
@@ -102,7 +102,7 @@ export default function OrdersTable() {
 
     useEffect(() => { load() }, [])
 
-    /* ─ Marcar como enviado ─ */
+    /* ─ Marcar como enviado (retiro manual) ─ */
     async function markShipped(id) {
         setToggling(id)
         setError(null)
@@ -112,6 +112,24 @@ export default function OrdersTable() {
             .eq('id', id)
         if (err) setError(err.message)
         else load()
+        setToggling(null)
+    }
+
+    /* ─ Generar guía de envío (envia.com) ─ */
+    async function generateShippingLabel(id) {
+        setToggling(id)
+        setError(null)
+        try {
+            const { data, error: err } = await supabase.functions.invoke(
+                'envia-generar-guia',
+                { body: { orderId: id } }
+            )
+            if (err) throw err
+            // Recarga la tabla para mostrar el tracking actualizado
+            await load()
+        } catch (err) {
+            setError(err?.message ?? 'Error al generar guía')
+        }
         setToggling(null)
     }
 
@@ -199,10 +217,10 @@ export default function OrdersTable() {
                         <table className="admin-orders__table">
                             <thead>
                                 <tr>
-                                    {['Order ID', 'Customer', 'Status', 'Total', 'Shipping', 'Payment ID', 'Date', 'Actions'].map((h, i) => (
+                                    {['Order ID', 'Customer', 'Status', 'Total', 'Shipping', 'Payment ID', 'Tracking', 'Date', 'Actions'].map((h, i) => (
                                         <th
                                             key={h}
-                                            className={`admin-orders__th${i === 7 ? ' admin-orders__th--right' : ''}`}
+                                            className={`admin-orders__th${i === 8 ? ' admin-orders__th--right' : ''}`}
                                         >
                                             {h}
                                         </th>
@@ -254,6 +272,20 @@ export default function OrdersTable() {
                                             }
                                         </td>
 
+                                        {/* Tracking */}
+                                        <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                            {order.tracking_number ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                                    <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>{order.tracking_number}</span>
+                                                    {order.shipping_status && (
+                                                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{order.shipping_status}</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: '#334155' }}>—</span>
+                                            )}
+                                        </td>
+
                                         {/* Fecha */}
                                         <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#64748b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                                             {new Date(order.created_at).toLocaleDateString('es-AR', {
@@ -261,9 +293,26 @@ export default function OrdersTable() {
                                             })}
                                         </td>
 
-                                        {/* Acción: solo órdenes 'paid' pueden marcarse como shipped */}
+                                        {/* Acciones según shipping_type y status */}
                                         <td className="admin-orders__td admin-orders__td--right">
-                                            {order.status === 'paid' && (
+                                            {order.status === 'paid' && order.shipping_type === 'shipping' && !order.tracking_number && (
+                                                <button
+                                                    onClick={() => generateShippingLabel(order.id)}
+                                                    disabled={toggling === order.id}
+                                                    style={{
+                                                        ...S.btnShip,
+                                                        opacity: toggling === order.id ? 0.6 : 1,
+                                                        cursor: toggling === order.id ? 'not-allowed' : 'pointer',
+                                                    }}
+                                                    title="Generar guía de envío con envia.com"
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                                                        {toggling === order.id ? 'progress_activity' : 'local_shipping'}
+                                                    </span>
+                                                    {toggling === order.id ? 'Generando…' : 'Generar guía'}
+                                                </button>
+                                            )}
+                                            {order.status === 'paid' && order.shipping_type === 'pickup' && (
                                                 <button
                                                     onClick={() => markShipped(order.id)}
                                                     disabled={toggling === order.id}
