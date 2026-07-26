@@ -3,8 +3,8 @@
 // Body: { items: [{productId, qty, type: 'retail'|'wholesale'}], destino: {city, province, postalCode} }
 
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { SITE_URL, buildCorsHeaders } from '@shared/cors.ts'
-import { carriersActivosAR, cotizarEnvio, sucursalesDisponibles } from '@shared/envia.ts'
+import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
+import { carriersActivosAR, cotizarEnvio, sucursalesDisponibles } from '../_shared/envia.ts'
 
 interface CartItem {
   productId: string
