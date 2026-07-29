@@ -284,10 +284,10 @@ export default function Checkout() {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        console.log('[CHECKOUT] Cotizar manual disparado')
+                                                        console.clear()
+                                                        console.log('%c═══ COTIZACIÓN INICIADA ═══', 'color: cyan; font-weight: bold; font-size: 14px')
                                                         setShippingLoading(true)
                                                         setShippingError(null)
-                                                        setSelectedShipping(null)
 
                                                         const cotizarManual = async () => {
                                                             try {
@@ -303,7 +303,12 @@ export default function Checkout() {
                                                                 }
                                                                 const carriers = ['correo_argentino', 'oca', 'andreani']
 
-                                                                console.log('[CHECKOUT-MANUAL] Enviando request...')
+                                                                console.log('%cORIGEN:', 'color: yellow; font-weight: bold', origen)
+                                                                console.log('%cCARRIERS:', 'color: yellow; font-weight: bold', carriers)
+                                                                console.log('%cDESTINO:', 'color: yellow; font-weight: bold', { city, province, postalCode })
+                                                                console.log('%cITEMS:', 'color: yellow; font-weight: bold', items)
+
+                                                                console.log('%c→ Enviando a Edge Function...', 'color: blue')
                                                                 const { data, error } = await supabase.functions.invoke('envia-cotizar', {
                                                                     body: {
                                                                         items: items.map(i => ({ productId: i.productId, qty: i.qty })),
@@ -313,23 +318,38 @@ export default function Checkout() {
                                                                     },
                                                                 })
 
-                                                                console.log('[CHECKOUT-MANUAL] Response:', data, error)
+                                                                if (error) {
+                                                                    console.error('%c❌ ERROR DE SUPABASE:', 'color: red; font-weight: bold', error)
+                                                                    throw error
+                                                                }
 
-                                                                if (error) throw error
+                                                                console.log('%c← RESPONSE RECIBIDA:', 'color: green; font-weight: bold')
+                                                                console.log('%cData:', 'color: green', data)
+                                                                console.log('%cError field:', 'color: green', data?.error)
+
                                                                 if (data?.error) {
-                                                                    console.error('[CHECKOUT-MANUAL] Error:', data.error)
+                                                                    console.error('%c⚠️ ERROR EN RESPONSE:', 'color: orange; font-weight: bold', data.error)
                                                                     setShippingError(data.error)
                                                                     setShippingOptions([])
+                                                                } else if (data?.opciones?.length > 0) {
+                                                                    console.log('%c✅ ÉXITO - Opciones encontradas:', 'color: green; font-weight: bold', data.opciones.length)
+                                                                    console.table(data.opciones)
+                                                                    setShippingOptions(data.opciones)
                                                                 } else {
-                                                                    console.log('[CHECKOUT-MANUAL] Opciones:', data?.opciones)
-                                                                    setShippingOptions(data?.opciones || [])
+                                                                    console.warn('%c⚠️ SIN OPCIONES', 'color: orange; font-weight: bold')
+                                                                    setShippingOptions([])
                                                                 }
                                                             } catch (err) {
-                                                                console.error('[CHECKOUT-MANUAL] Exception:', err)
-                                                                setShippingError(err?.message || 'Error al cotizar')
+                                                                console.error('%c🔥 EXCEPTION CAPTURADA:', 'color: red; font-weight: bold; font-size: 14px')
+                                                                console.error('%cNombre:', 'color: red', err?.name)
+                                                                console.error('%cMensaje:', 'color: red', err?.message)
+                                                                console.error('%cStack:', 'color: red', err?.stack)
+                                                                console.error('%cObjeto completo:', 'color: red', err)
+                                                                setShippingError(err?.message || 'Error desconocido')
                                                                 setShippingOptions([])
                                                             } finally {
                                                                 setShippingLoading(false)
+                                                                console.log('%c═══════════════════════════', 'color: cyan; font-weight: bold; font-size: 14px')
                                                             }
                                                         }
                                                         cotizarManual()
