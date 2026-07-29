@@ -89,24 +89,24 @@ export function ShippingOptions({ onSelect, selectedOption, opciones = [], loadi
               <button
                 onClick={() => handleSelectOption(opcion)}
                 style={{
-                  width: '100%', padding: '1rem', background: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#3b82f6' : '#232a35',
-                  border: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '1px solid #3b82f6' : '1px solid #3f4452',
+                  width: '100%', padding: '1rem', background: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#1e293b' : '#232a35',
+                  border: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '1px solid #10b981' : '1px solid #3f4452',
                   borderRadius: '2px', color: 'white', cursor: 'pointer', textAlign: 'left', display: 'flex',
                   justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s',
                 }}
                 onMouseEnter={e => e.target.style.borderColor = '#4a5568'}
-                onMouseLeave={e => e.target.style.borderColor = selectedOption?.carrier === opcion.carrier ? '#3b82f6' : '#3f4452'}
+                onMouseLeave={e => e.target.style.borderColor = selectedOption?.carrier === opcion.carrier ? '#10b981' : '#3f4452'}
               >
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', color: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#10b981' : 'white' }}>
                     {opcion.carrier} — {opcion.dropOffDescription || opcion.service}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#cbd5e1', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '0.75rem', color: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#6ee7b7' : '#cbd5e1', fontFamily: 'monospace' }}>
                     Entrega estimada: {opcion.dias || 'N/A'} días
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#3b82f6' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#10b981' : '#3b82f6' }}>
                     ${opcion.precio?.toFixed(2) || '0.00'}
                   </div>
                 </div>

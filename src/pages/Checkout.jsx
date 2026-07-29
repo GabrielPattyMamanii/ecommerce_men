@@ -100,8 +100,7 @@ export default function Checkout() {
     const displayShipping = shippingMethod === 'pickup'
       ? 0
       : (selectedShippingOption?.precio ?? (shipping || 0))
-    const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
-    const displayTotal = displaySubtotal + displayShipping + displayTax
+    const displayTotal = displaySubtotal + displayShipping
 
     // Build current direccion object for ShippingOptions component
     const currentDireccion = {
@@ -530,10 +529,6 @@ export default function Checkout() {
                                         <span className="font-bold text-primary uppercase">
                                             {displayShipping === 0 ? 'Free' : `$${displayShipping.toFixed(2)}`}
                                         </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400 uppercase">Tax [Est.]</span>
-                                        <span className="font-medium text-white">${displayTax.toFixed(2)}</span>
                                     </div>
                                     <div className="h-px bg-[#333b49] my-2" />
                                     <div className="flex justify-between text-base font-bold items-center">
