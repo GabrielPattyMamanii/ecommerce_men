@@ -1,52 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../../services/supabaseClient'
 
-export function ShippingOptions({ items, direccion, onSelect, selectedOption }) {
-  const [opciones, setOpciones] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [expandedSucursal, setExpandedSucursal] = useState(null)
+export function ShippingOptions({ onSelect, selectedOption, opciones = [], loading = false, error = null, direccion }) {
   const [sucursales, setSucursales] = useState([])
   const [loadingSucursales, setLoadingSucursales] = useState(false)
-
-  // Cotizar envío cuando la dirección está completa
-  useEffect(() => {
-    if (!items?.length || !direccion?.street || !direccion?.number || !direccion?.city || !direccion?.province || !direccion?.postalCode) {
-      setOpciones([])
-      return
-    }
-
-    const timer = setTimeout(() => cotizar(), 600)
-    return () => clearTimeout(timer)
-  }, [items, direccion])
-
-  async function cotizar() {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('envia-cotizar', {
-        body: {
-          items: items.map(i => ({ productId: i.productId, qty: i.qty })),
-          destino: direccion,
-        },
-      })
-
-      if (fnError) throw fnError
-
-      if (data?.error) {
-        setError(data.error)
-        setOpciones([])
-      } else {
-        setOpciones(data?.opciones || [])
-      }
-    } catch (err) {
-      setError(err?.message || 'Error al cotizar envío')
-      setOpciones([])
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function cargarSucursales(opcion) {
     if (opcion.dropOffType !== 'Branch') return
@@ -63,9 +20,8 @@ export function ShippingOptions({ items, direccion, onSelect, selectedOption }) 
 
       if (fnError) throw fnError
       setSucursales(data?.sucursales || [])
-      setExpandedSucursal(opcion.carrier)
     } catch (err) {
-      setError(`Error al cargar sucursales: ${err?.message}`)
+      console.error('Error al cargar sucursales:', err)
     } finally {
       setLoadingSucursales(false)
     }
@@ -78,7 +34,7 @@ export function ShippingOptions({ items, direccion, onSelect, selectedOption }) 
     onSelect(opcion)
   }
 
-  if (!items?.length || !direccion?.street) {
+  if (!opciones?.length && !loading && !error) {
     return null
   }
 
@@ -143,15 +99,15 @@ export function ShippingOptions({ items, direccion, onSelect, selectedOption }) 
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                    {opcion.carrier} — {opcion.serviceDescription}
+                    {opcion.carrier} — {opcion.dropOffDescription || opcion.service}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#cbd5e1', fontFamily: 'monospace' }}>
-                    Entrega estimada: {opcion.estimatedDays} días
+                    Entrega estimada: {opcion.dias || 'N/A'} días
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#3b82f6' }}>
-                    ${opcion.price.toFixed(2)}
+                    ${opcion.precio?.toFixed(2) || '0.00'}
                   </div>
                 </div>
               </button>

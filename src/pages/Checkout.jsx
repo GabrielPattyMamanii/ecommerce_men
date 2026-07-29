@@ -381,10 +381,12 @@ export default function Checkout() {
                                             ) : null}
 
                                             <ShippingOptions
-                                                items={displayItems}
                                                 direccion={currentDireccion}
                                                 onSelect={setSelectedShippingOption}
                                                 selectedOption={selectedShippingOption}
+                                                opciones={shippingOptions}
+                                                loading={shippingLoading}
+                                                error={shippingError}
                                             />
                                         </>
                                     ) : (

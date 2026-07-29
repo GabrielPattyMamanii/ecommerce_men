@@ -82,26 +82,22 @@ Deno.serve(async (req: Request) => {
     }
     console.log('[ENVIA-COTIZAR]    ✅ Carriers OK')
 
-    // 2️⃣ PREPARAR ORIGEN (desde secrets, con fallback frontend)
+    // 2️⃣ PREPARAR ORIGEN (prioridad: secrets > frontend)
     console.log('[ENVIA-COTIZAR] 2️⃣ PREPARAR ORIGEN')
     let origen: Origen
     try {
       origen = buildOrigenFromEnv()
-      console.log('[ENVIA-COTIZAR]    ✅ Origen desde SECRETS:')
-      console.log(`[ENVIA-COTIZAR]       Nombre: ${origen.nombre}`)
-      console.log(`[ENVIA-COTIZAR]       Dirección: ${origen.calle} ${origen.numero}, ${origen.ciudad}`)
-      console.log(`[ENVIA-COTIZAR]       CP: ${origen.cp}`)
-      console.log(`[ENVIA-COTIZAR]       Provincia: ${origen.provincia}`)
+      console.log('[ENVIA-COTIZAR]    ✅ Origen desde SECRETS')
     } catch (secretErr) {
-      console.warn('[ENVIA-COTIZAR]    ⚠️ No se pudo leer secrets:', secretErr)
+      console.warn('[ENVIA-COTIZAR]    ⚠️ Secrets no disponibles, usando frontend')
       if (origenFrontend?.nombre && origenFrontend?.calle) {
-        console.log('[ENVIA-COTIZAR]    ✅ Usando origen del frontend como fallback')
         origen = origenFrontend
+        console.log('[ENVIA-COTIZAR]    ✅ Origen del frontend OK')
       } else {
-        throw new Error('Origen no disponible: ' + (secretErr as Error).message)
+        throw new Error('Origen requerido: ' + (secretErr as Error).message)
       }
     }
-    console.log('[ENVIA-COTIZAR] ✅ Origen preparado')
+    console.log('[ENVIA-COTIZAR] ✅ Origen listo: ' + origen.nombre)
 
     // Fetch productos
     console.log('[ENVIA-COTIZAR] 1️⃣ Leyendo productos...')
