@@ -301,7 +301,7 @@ export default function Checkout() {
                                                                     provincia: 'Buenos Aires',
                                                                     cp: 'B1768DTB',
                                                                 }
-                                                                const carriers = ['correo_argentino', 'oca', 'andreani']
+                                                                const carriers = ['correos', 'oca', 'andreani']
 
                                                                 console.log('%cORIGEN:', 'color: yellow; font-weight: bold', origen)
                                                                 console.log('%cCARRIERS:', 'color: yellow; font-weight: bold', carriers)
