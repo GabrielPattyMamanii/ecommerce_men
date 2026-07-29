@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
       .eq('status', 'pending')
       .select(`
         id, total, customer_email, customer_name, customer_phone,
-        shipping_type, shipping_address,
+        shipping_type, shipping_address, shipping_quote,
         order_items ( quantity, unit_price, spec, products ( name ) )
       `)
       .single()
@@ -156,13 +156,19 @@ async function sendConfirmationEmail(order: Record<string, any>) {
         ? `
       <div style="margin-top:24px;padding:16px;background:#0a0f14;border-left:3px solid #00f0ff;">
         <p style="margin:0;font-family:'Courier New',monospace;font-size:12px;color:#00f0ff;text-transform:uppercase;letter-spacing:2px;">
-          Envío a domicilio
+          Envío a domicilio ${order.shipping_quote ? `— ${escapeHtml(order.shipping_quote.serviceDescription || '')}` : ''}
         </p>
         <p style="margin:8px 0 0;font-size:13px;color:#ccc;">
-          ${escapeHtml(order.shipping_address.address ?? '')}
-          ${order.shipping_address.city ? `, ${escapeHtml(order.shipping_address.city)}` : ''}
+          ${escapeHtml(order.shipping_address.street ?? '')} ${escapeHtml(order.shipping_address.number ?? '')},
+          ${escapeHtml(order.shipping_address.city ?? '')}
+          ${order.shipping_address.province ? `, ${escapeHtml(order.shipping_address.province)}` : ''}
           ${order.shipping_address.postalCode ? ` (${escapeHtml(order.shipping_address.postalCode)})` : ''}
         </p>
+        ${order.shipping_quote ? `
+        <p style="margin:12px 0 0;font-size:12px;color:#888;font-family:'Courier New',monospace;">
+          Entrega estimada: ${order.shipping_quote.estimatedDays} días • $${Number(order.shipping_quote.price).toFixed(2)}
+        </p>
+        ` : ''}
       </div>`
         : ''
 

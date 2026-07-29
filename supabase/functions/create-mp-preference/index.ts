@@ -26,15 +26,33 @@ interface Payer {
   lastName: string
 }
 
+interface ShippingAddress {
+  street: string
+  number: string
+  city: string
+  province: string
+  postalCode: string
+  email: string
+}
+
+interface ShippingQuote {
+  carrier: string
+  service: string
+  serviceDescription: string
+  price: number
+  currency: string
+  estimatedDays: number
+  dropOffType: 'Delivery' | 'Branch'
+  sucursalCodigo?: string
+  sucursalDireccion?: string
+}
+
 interface CheckoutPayload {
   items: CartItem[]
   payer: Payer
   shippingMethod: 'shipping' | 'pickup'
-  shippingAddress?: {
-    address: string
-    city: string
-    postalCode: string
-  } | null
+  shippingAddress?: ShippingAddress | null
+  shippingQuote?: ShippingQuote | null
 }
 
 Deno.serve(async (req: Request) => {
@@ -88,7 +106,8 @@ Deno.serve(async (req: Request) => {
 
     // ── Compute totals ──
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0)
-    const shippingCost = shippingMethod === 'pickup' ? 0 : (subtotal >= 200 ? 0 : 12)
+    // Use actual shipping quote price from envia.com, or 0 for pickup
+    const shippingCost = shippingMethod === 'pickup' ? 0 : (shippingQuote?.price ?? 0)
     const total = subtotal + shippingCost
 
     // ── 1. Create order in DB (status: pending) ──
@@ -104,6 +123,9 @@ Deno.serve(async (req: Request) => {
         shipping_type: shippingMethod,
         shipping_address: shippingMethod === 'shipping' && shippingAddress
           ? shippingAddress
+          : null,
+        shipping_quote: shippingMethod === 'shipping' && shippingQuote
+          ? shippingQuote
           : null,
       })
       .select('id')

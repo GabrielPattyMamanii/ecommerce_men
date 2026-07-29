@@ -4,10 +4,12 @@ import { useCheckoutPro } from '../../hooks/useCheckoutPro'
  * Botón de pago con Mercado Pago (Checkout PRO redirect).
  * Maneja estados de carga, error y disabled.
  */
-export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress }) {
+export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress, shippingQuote, isShippingComplete }) {
   const { checkout, isLoading, error } = useCheckoutPro()
 
   const missingPayer = !payer?.email || !payer?.firstName || !payer?.lastName
+  // Para shipping, requiere que se haya elegido una opción de envío
+  const shippingMissing = shippingMethod === 'shipping' && !isShippingComplete
 
   return (
     <div className="space-y-4">
@@ -20,14 +22,19 @@ export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress
 
       <button
         type="button"
-        onClick={() => checkout({ items, payer, shippingMethod, shippingAddress })}
-        disabled={isLoading || !items?.length || missingPayer}
+        onClick={() => checkout({ items, payer, shippingMethod, shippingAddress, shippingQuote })}
+        disabled={isLoading || !items?.length || missingPayer || shippingMissing}
         className="group w-full relative overflow-hidden py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,157,227,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
         style={{ backgroundColor: '#009EE3' }}
       >
         <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
         <span className="relative text-white text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
-          {isLoading ? (
+          {shippingMissing ? (
+            <>
+              <span className="material-symbols-outlined text-xl">info</span>
+              Elegí un método de envío
+            </>
+          ) : isLoading ? (
             <>
               <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
               Redirigiendo a Mercado Pago…

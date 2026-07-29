@@ -41,7 +41,7 @@ export function CartProvider({ children }) {
      * Añade un producto al carrito. Si ya existe la misma variante (id único
      * = productId + color + size) incrementa la cantidad en `qty`.
      *
-     * @param {{ id: string, name: string, retail_price: number, images: string[] }} product
+     * @param {{ id: string, name: string, retail_price: number, weight_kg: number, height_cm: number, width_cm: number, length_cm: number, images: string[] }} product
      * @param {string} color  — valor del color seleccionado (ej. 'midnight_blk')
      * @param {string} size   — talla seleccionada (ej. 'M')
      * @param {number} qty    — cantidad a agregar (default 1)
@@ -68,6 +68,12 @@ export function CartProvider({ children }) {
                     price:     product.retail_price,
                     qty:       qty,
                     img:       product.images?.[0] ?? '',
+                    dimensions: {
+                        weight_kg: product.weight_kg,
+                        height_cm: product.height_cm,
+                        width_cm: product.width_cm,
+                        length_cm: product.length_cm,
+                    },
                 },
             ])
         }
@@ -80,7 +86,7 @@ export function CartProvider({ children }) {
      * (`${productId}-wholesale`) para no mezclarse con ítems por menor
      * del mismo producto.
      *
-     * @param {{ id: string, name: string, wholesale_price: number, images: string[] }} product
+     * @param {{ id: string, name: string, wholesale_price: number, dozen_height: number, dozen_width: number, dozen_length: number, dozen_weight: number, images: string[] }} product
      * @param {number} dozens — cantidad de docenas
      */
     function addWholesaleItem(product, dozens) {
@@ -101,6 +107,12 @@ export function CartProvider({ children }) {
                     price:     product.wholesale_price,
                     qty:       dozens,
                     img:       product.images?.[0] ?? '',
+                    dimensions: {
+                        dozen_height: product.dozen_height,
+                        dozen_width: product.dozen_width,
+                        dozen_length: product.dozen_length,
+                        dozen_weight: product.dozen_weight,
+                    },
                 },
             ])
         }

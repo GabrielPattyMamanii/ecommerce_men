@@ -86,6 +86,7 @@ export default function OrdersTable() {
     const [loading, setLoading]   = useState(true)
     const [error, setError]       = useState(null)
     const [toggling, setToggling] = useState(null) // id de la orden en proceso
+    const [generating, setGenerating] = useState(null) // id de la orden siendo procesada para generar guía
 
     /* ─ Fetch órdenes con nombre del cliente ─ */
     async function load() {
@@ -113,6 +114,28 @@ export default function OrdersTable() {
         if (err) setError(err.message)
         else load()
         setToggling(null)
+    }
+
+    /* ─ Generar guía de envío (admin-only) ─ */
+    async function generateGuide(id) {
+        setGenerating(id)
+        setError(null)
+        try {
+            const { data, error: err } = await supabase.functions.invoke('envia-generar', {
+                body: { orderId: id },
+            })
+            if (err) throw err
+            if (data?.error) setError(data.error)
+            else {
+                // Mostrar tracking info y recargar
+                console.log('Guía generada:', data)
+                load()
+            }
+        } catch (err) {
+            setError(err?.message || 'Error al generar guía')
+        } finally {
+            setGenerating(null)
+        }
     }
 
     /* ─ Totales rápidos para el sub-header ─ */
@@ -261,25 +284,76 @@ export default function OrdersTable() {
                                             })}
                                         </td>
 
-                                        {/* Acción: solo órdenes 'paid' pueden marcarse como shipped */}
+                                        {/* Acciones: generar guía (si envío) o marcar como shipped */}
                                         <td className="admin-orders__td admin-orders__td--right">
-                                            {order.status === 'paid' && (
-                                                <button
-                                                    onClick={() => markShipped(order.id)}
-                                                    disabled={toggling === order.id}
-                                                    style={{
-                                                        ...S.btnShip,
-                                                        opacity: toggling === order.id ? 0.6 : 1,
-                                                        cursor: toggling === order.id ? 'not-allowed' : 'pointer',
-                                                    }}
-                                                    aria-label="Mark order as shipped"
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
-                                                        {toggling === order.id ? 'progress_activity' : 'local_shipping'}
-                                                    </span>
-                                                    {toggling === order.id ? 'Updating…' : 'Mark Shipped'}
-                                                </button>
-                                            )}
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                {/* Generar guía de envío: solo para órdenes 'paid' con shipping_type='shipping' */}
+                                                {order.status === 'paid' && order.shipping_type === 'shipping' && !order.shipping_tracking_number && (
+                                                    <button
+                                                        onClick={() => generateGuide(order.id)}
+                                                        disabled={generating === order.id}
+                                                        style={{
+                                                            ...S.btnShip,
+                                                            opacity: generating === order.id ? 0.6 : 1,
+                                                            cursor: generating === order.id ? 'not-allowed' : 'pointer',
+                                                            background: generating === order.id
+                                                                ? 'rgba(59,130,246,0.08)'
+                                                                : 'rgba(168,85,247,0.08)',
+                                                            borderColor: generating === order.id
+                                                                ? 'rgba(59,130,246,0.35)'
+                                                                : 'rgba(168,85,247,0.35)',
+                                                            color: '#a855f7',
+                                                        }}
+                                                        aria-label="Generate shipping guide"
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                                                            {generating === order.id ? 'progress_activity' : 'inventory_2'}
+                                                        </span>
+                                                        {generating === order.id ? 'Generando…' : 'Generar Guía'}
+                                                    </button>
+                                                )}
+
+                                                {/* Mostrar tracking si ya está generada */}
+                                                {order.shipping_tracking_number && order.shipping_type === 'shipping' && (
+                                                    <a
+                                                        href={order.shipping_tracking_url || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            ...S.btnShip,
+                                                            color: '#10b981',
+                                                            textDecoration: 'none',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                        }}
+                                                        title={`Tracking: ${order.shipping_tracking_number}`}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                                                            check_circle
+                                                        </span>
+                                                        {order.shipping_tracking_number.slice(0, 12)}…
+                                                    </a>
+                                                )}
+
+                                                {/* Mark Shipped: disponible siempre que sea paid */}
+                                                {order.status === 'paid' && (
+                                                    <button
+                                                        onClick={() => markShipped(order.id)}
+                                                        disabled={toggling === order.id}
+                                                        style={{
+                                                            ...S.btnShip,
+                                                            opacity: toggling === order.id ? 0.6 : 1,
+                                                            cursor: toggling === order.id ? 'not-allowed' : 'pointer',
+                                                        }}
+                                                        aria-label="Mark order as shipped"
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
+                                                            {toggling === order.id ? 'progress_activity' : 'local_shipping'}
+                                                        </span>
+                                                        {toggling === order.id ? 'Updating…' : 'Mark Shipped'}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
 
                                     </tr>

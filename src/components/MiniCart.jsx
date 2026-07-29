@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { formatDimensions } from '../lib/cartDimensions'
 
 const FREE_SHIPPING_THRESHOLD = 200
 
@@ -21,7 +22,9 @@ function CartSectionHeader({ icon, label, count, accent }) {
 }
 
 /* ── Fila de ítem del carrito ── */
-function CartLineItem({ id, name, spec, price, qty, img, changeQty, removeItem }) {
+function CartLineItem({ id, name, spec, price, qty, img, type, dimensions, changeQty, removeItem }) {
+    const dimensionLabel = formatDimensions(dimensions, type)
+
     return (
         <div className="flex gap-4 group relative">
             {/* Indicador izquierdo de hover */}
@@ -51,6 +54,12 @@ function CartLineItem({ id, name, spec, price, qty, img, changeQty, removeItem }
                     <p className="mt-1 text-[10px] text-slate-500 uppercase tracking-wider font-mono">
                         {spec}
                     </p>
+                    {dimensionLabel !== '—' && (
+                        <p className="mt-1 text-[9px] text-slate-600 uppercase tracking-wider font-mono">
+                            <span className="material-symbols-outlined" style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '2px' }}>straighten</span>
+                            {dimensionLabel}
+                        </p>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between mt-2">
@@ -204,7 +213,13 @@ export default function MiniCart() {
                                     />
                                     <div className="space-y-6">
                                         {retailItems.map(item => (
-                                            <CartLineItem key={item.id} {...item} changeQty={changeQty} removeItem={removeItem} />
+                                            <CartLineItem
+                                                key={item.id}
+                                                {...item}
+                                                type="retail"
+                                                changeQty={changeQty}
+                                                removeItem={removeItem}
+                                            />
                                         ))}
                                     </div>
                                 </div>
@@ -220,7 +235,13 @@ export default function MiniCart() {
                                     />
                                     <div className="space-y-6">
                                         {wholesaleItems.map(item => (
-                                            <CartLineItem key={item.id} {...item} changeQty={changeQty} removeItem={removeItem} />
+                                            <CartLineItem
+                                                key={item.id}
+                                                {...item}
+                                                type="wholesale"
+                                                changeQty={changeQty}
+                                                removeItem={removeItem}
+                                            />
                                         ))}
                                     </div>
                                 </div>

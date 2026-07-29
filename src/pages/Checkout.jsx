@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
+import { ShippingOptions } from '../components/checkout/ShippingOptions'
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
 const ORDER_ITEMS = [
@@ -67,9 +68,12 @@ export default function Checkout() {
     const [phone, setPhone]         = useState('')
     const [firstName, setFirstName] = useState('')
     const [lastName, setLastName]   = useState('')
-    const [address, setAddress]     = useState('')
+    const [street, setStreet]       = useState('')
+    const [number, setNumber]       = useState('')
     const [city, setCity]           = useState('')
+    const [province, setProvince]   = useState('Buenos Aires')
     const [postalCode, setPostalCode] = useState('')
+    const [selectedShippingOption, setSelectedShippingOption] = useState(null)
 
     /* Pre-llenar email si el usuario está logueado */
     useEffect(() => {
@@ -81,9 +85,17 @@ export default function Checkout() {
     const retailItems = displayItems.filter(i => (i.type ?? 'retail') === 'retail')
     const wholesaleItems = displayItems.filter(i => i.type === 'wholesale')
     const displaySubtotal = subtotal || ORDER_ITEMS.reduce((s, i) => s + i.price * i.qty, 0)
-    const displayShipping = shippingMethod === 'pickup' ? 0 : (shipping || 0)
+    // Use actual shipping quote price from envia.com, or fallback to flat rate
+    const displayShipping = shippingMethod === 'pickup'
+      ? 0
+      : (selectedShippingOption?.price ?? (shipping || 0))
     const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
     const displayTotal = displaySubtotal + displayShipping + displayTax
+
+    // Build current direccion object for ShippingOptions component
+    const currentDireccion = {
+      street, number, city, province, postalCode,
+    }
 
     return (
         <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
@@ -238,9 +250,53 @@ export default function Checkout() {
                                     
                                     {shippingMethod === 'shipping' ? (
                                         <>
-                                            <FormField label="Address Line 1" type="text" colSpan={2} required value={address} onChange={e => setAddress(e.target.value)} />
-                                            <FormField label="City / Sector" type="text" required value={city} onChange={e => setCity(e.target.value)} />
+                                            <FormField label="Street" type="text" required value={street} onChange={e => setStreet(e.target.value)} />
+                                            <FormField label="Number" type="text" required value={number} onChange={e => setNumber(e.target.value)} />
+                                            <FormField label="City" type="text" required value={city} onChange={e => setCity(e.target.value)} />
+                                            <div className="col-span-1 sm:col-span-2">
+                                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
+                                                    Province
+                                                </label>
+                                                <select
+                                                    value={province}
+                                                    onChange={e => setProvince(e.target.value)}
+                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
+                                                >
+                                                    <option value="Buenos Aires">Buenos Aires</option>
+                                                    <option value="Catamarca">Catamarca</option>
+                                                    <option value="Chaco">Chaco</option>
+                                                    <option value="Chubut">Chubut</option>
+                                                    <option value="Córdoba">Córdoba</option>
+                                                    <option value="Corrientes">Corrientes</option>
+                                                    <option value="Distrito Federal">Distrito Federal</option>
+                                                    <option value="Entre Ríos">Entre Ríos</option>
+                                                    <option value="Formosa">Formosa</option>
+                                                    <option value="Jujuy">Jujuy</option>
+                                                    <option value="La Pampa">La Pampa</option>
+                                                    <option value="La Rioja">La Rioja</option>
+                                                    <option value="Mendoza">Mendoza</option>
+                                                    <option value="Misiones">Misiones</option>
+                                                    <option value="Neuquén">Neuquén</option>
+                                                    <option value="Río Negro">Río Negro</option>
+                                                    <option value="Salta">Salta</option>
+                                                    <option value="San Juan">San Juan</option>
+                                                    <option value="San Luis">San Luis</option>
+                                                    <option value="Santa Cruz">Santa Cruz</option>
+                                                    <option value="Santa Fe">Santa Fe</option>
+                                                    <option value="Santiago del Estero">Santiago del Estero</option>
+                                                    <option value="Tierra del Fuego">Tierra del Fuego</option>
+                                                    <option value="Tucumán">Tucumán</option>
+                                                </select>
+                                            </div>
                                             <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+
+                                            {/* Shipping options component */}
+                                            <ShippingOptions
+                                                items={displayItems}
+                                                direccion={currentDireccion}
+                                                onSelect={setSelectedShippingOption}
+                                                selectedOption={selectedShippingOption}
+                                            />
                                         </>
                                     ) : (
                                         <div className="col-span-1 sm:col-span-2 bg-[#232a35]/50 border border-[#333b49] p-4 mt-2 mb-2 relative">
@@ -335,7 +391,9 @@ export default function Checkout() {
                                     items={displayItems}
                                     payer={{ email, phone, firstName, lastName }}
                                     shippingMethod={shippingMethod}
-                                    shippingAddress={shippingMethod === 'shipping' ? { address, city, postalCode } : null}
+                                    shippingAddress={shippingMethod === 'shipping' ? { street, number, city, province, postalCode, email } : null}
+                                    shippingQuote={shippingMethod === 'shipping' ? selectedShippingOption : null}
+                                    isShippingComplete={shippingMethod === 'shipping' && selectedShippingOption}
                                 />
                             ) : (
                                 <button
