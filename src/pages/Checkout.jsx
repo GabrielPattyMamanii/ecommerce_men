@@ -94,7 +94,6 @@ export default function Checkout() {
         if (shippingMethod !== 'shipping' || !city || !province || !postalCode || items.length === 0) {
             setShippingOptions([])
             setSelectedShipping(null)
-            setSelectedBranch(null)
             return
         }
 
@@ -104,23 +103,39 @@ export default function Checkout() {
             setSelectedShipping(null)
 
             try {
+                // Datos del origen (hardcodeados por ahora - cambiar según tu ubicación real)
+                const origen = {
+                    nombre: 'NEXO Performance',
+                    telefono: '1159691814',
+                    email: 'codebygabrielpatty@gmail.com',
+                    calle: 'Gral. Pintos',
+                    numero: '2383',
+                    ciudad: 'Buenos Aires',
+                    provincia: 'Buenos Aires',
+                    cp: 'B1768DTB',
+                }
+
+                // Carriers a cotizar
+                const carriers = ['correo_argentino', 'oca', 'andreani']
+
                 const { data, error } = await supabase.functions.invoke('envia-cotizar', {
                     body: {
                         items: items.map(i => ({
                             productId: i.productId,
                             qty: i.qty,
-                            type: i.type,
                         })),
                         destino: {
                             city,
                             province,
                             postalCode,
                         },
+                        origen,
+                        carriers,
                     },
                 })
 
                 if (error) throw error
-                setShippingOptions(data.opciones || [])
+                setShippingOptions(data?.opciones || [])
             } catch (err) {
                 setShippingError(err?.message ?? 'Error al cotizar envío')
                 setShippingOptions([])
