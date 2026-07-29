@@ -28,6 +28,8 @@ export interface Origen {
 }
 
 export interface Destino {
+  calle?: string
+  numero?: string
   ciudad: string
   provincia: string
   codigoPostal: string
@@ -58,6 +60,9 @@ export async function cotizarEnvio(
     throw new Error('Provincia inválida en origen o destino')
   }
 
+  console.log(`[COTIZAR] Origen province code: ${origenProv.code}`)
+  console.log(`[COTIZAR] Destino province code: ${destinoProv.code}`)
+
   const opciones: OpcionEnvio[] = []
   const endpoint = `${API_URL}/ship/rate/`
 
@@ -80,8 +85,8 @@ export async function cotizarEnvio(
         destination: {
           name: 'Destinatario',
           phone: '0000000000',
-          street: destino.ciudad,
-          number: '1',
+          street: destino.calle || destino.ciudad,
+          number: destino.numero || '1',
           city: destino.ciudad,
           state: destinoProv.code,
           postalCode: destino.codigoPostal,
@@ -104,6 +109,8 @@ export async function cotizarEnvio(
         },
       }
 
+      console.log(`[COTIZAR:${carrier}] Body a enviar:`, JSON.stringify(body, null, 2))
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -117,11 +124,13 @@ export async function cotizarEnvio(
 
       if (!res.ok) {
         const err = await res.text()
-        console.warn(`[COTIZAR:${carrier}] Error: ${err.substring(0, 200)}`)
+        console.error(`[COTIZAR:${carrier}] HTTP Error ${res.status}: ${err.substring(0, 300)}`)
         continue
       }
 
-      const { data } = await res.json()
+      const jsonResp = await res.json()
+      console.log(`[COTIZAR:${carrier}] Response completo:`, JSON.stringify(jsonResp, null, 2))
+      const { data } = jsonResp
 
       for (const opt of data || []) {
         opciones.push({

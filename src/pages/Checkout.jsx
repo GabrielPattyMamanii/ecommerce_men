@@ -312,7 +312,7 @@ export default function Checkout() {
                                                                 const { data, error } = await supabase.functions.invoke('envia-cotizar', {
                                                                     body: {
                                                                         items: items.map(i => ({ productId: i.productId, qty: i.qty })),
-                                                                        destino: { city, province, postalCode },
+                                                                        destino: { street, number, city, province, postalCode },
                                                                         origen,
                                                                         carriers,
                                                                     },

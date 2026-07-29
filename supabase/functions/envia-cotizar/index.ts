@@ -4,7 +4,7 @@ import { cotizarEnvio, type Origen, type Destino, type Paquete } from '../_share
 
 interface Request_ {
   items: Array<{ productId: string; qty: number }>
-  destino: { city: string; province: string; postalCode: string }
+  destino: { street: string; number: string; city: string; province: string; postalCode: string }
   origen?: Origen
   carriers: string[]
 }
@@ -173,9 +173,17 @@ Deno.serve(async (req: Request) => {
     console.log('[ENVIA-COTIZAR] ✅ Paquete final:', JSON.stringify(paquete))
 
     // Cotizar
+    const destinoTransformado = {
+      calle: destino.street || '',
+      numero: destino.number || '1',
+      ciudad: destino.city,
+      provincia: destino.province,
+      codigoPostal: destino.postalCode,
+    }
+
     console.log('[ENVIA-COTIZAR] 4️⃣ Enviando a cotizarEnvio()...')
     console.log('[ENVIA-COTIZAR]   origen:', JSON.stringify(origen))
-    console.log('[ENVIA-COTIZAR]   destino:', JSON.stringify({ ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode }))
+    console.log('[ENVIA-COTIZAR]   destino (transformado):', JSON.stringify(destinoTransformado))
     console.log('[ENVIA-COTIZAR]   paquete:', JSON.stringify(paquete))
     console.log('[ENVIA-COTIZAR]   carriers:', carriers)
 
@@ -183,7 +191,7 @@ Deno.serve(async (req: Request) => {
     try {
       opciones = await cotizarEnvio(
         origen,
-        { ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode },
+        destinoTransformado,
         paquete,
         carriers
       )
