@@ -1,7 +1,5 @@
-// Mapeo de provincias argentinas a códigos de 2 letras (envia.com state codes)
-// Distinto del código CPA postal (ej: "B1772" = Buenos Aires, pero state = "BA")
-// Ref: gotcha #4 de ENVIOS.md
-
+// Lista de provincias argentinas con códigos de 2 letras para envia.com
+// Nota: CABA usa código "CABA" para coincidir con API de envia.com
 export const PROVINCIAS = [
   { nombre: 'Buenos Aires', codigo: 'BA' },
   { nombre: 'CABA', codigo: 'CABA' },
@@ -29,12 +27,12 @@ export const PROVINCIAS = [
   { nombre: 'Tucumán', codigo: 'TM' },
 ]
 
-export function provinciaCodigoByNombre(nombre: string): string {
+export function provinciaCodigoByNombre(nombre) {
   const found = PROVINCIAS.find(p => p.nombre.toLowerCase() === nombre.toLowerCase())
   return found?.codigo || ''
 }
 
-export function provinciaNombreByCodigo(codigo: string): string {
+export function provinciaNombreByCodigo(codigo) {
   const found = PROVINCIAS.find(p => p.codigo === codigo.toUpperCase())
   return found?.nombre || ''
 }

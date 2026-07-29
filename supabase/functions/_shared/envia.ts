@@ -57,7 +57,7 @@ export async function armarPaquete(
   console.log('[ARMAR-PAQUETE] Querying products from Supabase...')
   const { data: products, error } = await supabaseAdmin
     .from('products')
-    .select('id, unit_weight, unit_height, unit_width, unit_length')
+    .select('id, weight_kg, height_cm, width_cm, length_cm')
     .in('id', productIds)
 
   if (error) {
@@ -82,15 +82,15 @@ export async function armarPaquete(
       return { error: 'FALTA_PESO', productId: item.productId }
     }
 
-    if (!product.unit_weight) {
-      console.error(`[ARMAR-PAQUETE] Product ${item.productId} has no unit_weight`)
+    if (!product.weight_kg) {
+      console.error(`[ARMAR-PAQUETE] Product ${item.productId} has no weight_kg`)
       return { error: 'FALTA_PESO', productId: item.productId }
     }
 
-    totalWeight += (product.unit_weight || 0) * item.qty
-    maxHeight = Math.max(maxHeight, product.unit_height || 0)
-    maxWidth = Math.max(maxWidth, product.unit_width || 0)
-    totalLength += (product.unit_length || 0) * item.qty
+    totalWeight += (product.weight_kg || 0) * item.qty
+    maxHeight = Math.max(maxHeight, product.height_cm || 0)
+    maxWidth = Math.max(maxWidth, product.width_cm || 0)
+    totalLength += (product.length_cm || 0) * item.qty
   }
 
   const finalPackage = {
@@ -131,6 +131,22 @@ export async function cotizarEnvio(
   console.log('[COTIZAR-ENVIO] Paquete:', paquete)
   console.log('[COTIZAR-ENVIO] Destino:', destino)
 
+  console.log('[COTIZAR-ENVIO] Building origin from environment secrets...')
+  const origen = buildOrigenFromEnv()
+  console.log('[COTIZAR-ENVIO] Origin loaded:', {
+    ciudad: origen.ciudad,
+    provincia: origen.provincia,
+    cp: origen.cp,
+    calle: origen.calle,
+    numero: origen.numero,
+  })
+
+  const origenProvinceCode = provinciaCodigoByNombre(origen.provincia)
+  if (!origenProvinceCode) {
+    console.error(`[COTIZAR-ENVIO] Invalid origin province: ${origen.provincia}`)
+    throw new Error(`Invalid origin province in secrets: ${origen.provincia}`)
+  }
+
   console.log('[COTIZAR-ENVIO] Fetching active carriers...')
   const carriers = await carriersActivosAR()
   console.log(`[COTIZAR-ENVIO] Active carriers: ${carriers.join(', ')}`)
@@ -140,13 +156,13 @@ export async function cotizarEnvio(
     throw new Error('No carriers active in account')
   }
 
-  console.log(`[COTIZAR-ENVIO] Converting province "${destino.province}" to code...`)
-  const provinceCode = provinciaCodigoByNombre(destino.province)
-  if (!provinceCode) {
-    console.error(`[COTIZAR-ENVIO] Unknown province: ${destino.province}`)
-    throw new Error(`Unknown province: ${destino.province}`)
+  console.log(`[COTIZAR-ENVIO] Converting destination province "${destino.province}" to code...`)
+  const destinoProvinceCode = provinciaCodigoByNombre(destino.province)
+  if (!destinoProvinceCode) {
+    console.error(`[COTIZAR-ENVIO] Unknown destination province: ${destino.province}`)
+    throw new Error(`Unknown destination province: ${destino.province}`)
   }
-  console.log(`[COTIZAR-ENVIO] Province code: ${provinceCode}`)
+  console.log(`[COTIZAR-ENVIO] Destination province code: ${destinoProvinceCode}`)
 
   const quotes: QuoteOption[] = []
 
@@ -158,15 +174,15 @@ export async function cotizarEnvio(
         carrier,
         origin: {
           country: 'AR',
-          state: 'BA', // origin is always Buenos Aires for this project
-          city: 'Buenos Aires',
-          postalCode: '1772',
-          street: Deno.env.get('ENVIA_ORIGEN_CALLE') || '',
-          number: Deno.env.get('ENVIA_ORIGEN_NUMERO') || '',
+          state: origenProvinceCode,
+          city: origen.ciudad,
+          postalCode: origen.cp,
+          street: origen.calle,
+          number: origen.numero,
         },
         destination: {
           country: 'AR',
-          state: provinceCode,
+          state: destinoProvinceCode,
           city: destino.city,
           postalCode: destino.postalCode,
           street: destino.street,
@@ -290,16 +306,24 @@ export interface OrigenEnvio {
 }
 
 function buildOrigenFromEnv(): OrigenEnvio {
+  const requireEnv = (key: string): string => {
+    const value = Deno.env.get(key)
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${key}`)
+    }
+    return value
+  }
+
   return {
-    nombre: Deno.env.get('ENVIA_ORIGEN_NOMBRE') || '',
+    nombre: requireEnv('ENVIA_ORIGEN_NOMBRE'),
     empresa: Deno.env.get('ENVIA_ORIGEN_EMPRESA'),
-    telefono: Deno.env.get('ENVIA_ORIGEN_TELEFONO') || '',
+    telefono: requireEnv('ENVIA_ORIGEN_TELEFONO'),
     email: Deno.env.get('ENVIA_ORIGEN_EMAIL'),
-    calle: Deno.env.get('ENVIA_ORIGEN_CALLE') || '',
-    numero: Deno.env.get('ENVIA_ORIGEN_NUMERO') || '',
-    ciudad: Deno.env.get('ENVIA_ORIGEN_CIUDAD') || 'Buenos Aires',
-    provincia: Deno.env.get('ENVIA_ORIGEN_PROVINCIA') || 'Buenos Aires',
-    cp: Deno.env.get('ENVIA_ORIGEN_CP') || '1772',
+    calle: requireEnv('ENVIA_ORIGEN_CALLE'),
+    numero: requireEnv('ENVIA_ORIGEN_NUMERO'),
+    ciudad: requireEnv('ENVIA_ORIGEN_CIUDAD'),
+    provincia: requireEnv('ENVIA_ORIGEN_PROVINCIA'),
+    cp: requireEnv('ENVIA_ORIGEN_CP'),
   }
 }
 
@@ -316,8 +340,12 @@ export async function generarEnvio(
   labelUrl: string
 }> {
   const origen = buildOrigenFromEnv()
-  const provinceCode = provinciaCodigoByNombre(destino.province)
-  if (!provinceCode) throw new Error(`Unknown province: ${destino.province}`)
+
+  const origenProvinceCode = provinciaCodigoByNombre(origen.provincia)
+  if (!origenProvinceCode) throw new Error(`Invalid origin province: ${origen.provincia}`)
+
+  const destinoProvinceCode = provinciaCodigoByNombre(destino.province)
+  if (!destinoProvinceCode) throw new Error(`Unknown destination province: ${destino.province}`)
 
   const body = {
     shipment: {
@@ -325,7 +353,7 @@ export async function generarEnvio(
       service,
       origin: {
         country: 'AR',
-        state: 'BA',
+        state: origenProvinceCode,
         city: origen.ciudad,
         postalCode: origen.cp,
         street: origen.calle,
@@ -336,7 +364,7 @@ export async function generarEnvio(
       },
       destination: {
         country: 'AR',
-        state: provinceCode,
+        state: destinoProvinceCode,
         city: destino.city,
         postalCode: destino.postalCode,
         street: destino.street,

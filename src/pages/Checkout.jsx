@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
 import { ShippingOptions } from '../components/checkout/ShippingOptions'
+import { PROVINCIAS } from '../constants/provincias'
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
 const ORDER_ITEMS = [
@@ -262,30 +263,11 @@ export default function Checkout() {
                                                     onChange={e => setProvince(e.target.value)}
                                                     className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
                                                 >
-                                                    <option value="Buenos Aires">Buenos Aires</option>
-                                                    <option value="Catamarca">Catamarca</option>
-                                                    <option value="Chaco">Chaco</option>
-                                                    <option value="Chubut">Chubut</option>
-                                                    <option value="Córdoba">Córdoba</option>
-                                                    <option value="Corrientes">Corrientes</option>
-                                                    <option value="Distrito Federal">Distrito Federal</option>
-                                                    <option value="Entre Ríos">Entre Ríos</option>
-                                                    <option value="Formosa">Formosa</option>
-                                                    <option value="Jujuy">Jujuy</option>
-                                                    <option value="La Pampa">La Pampa</option>
-                                                    <option value="La Rioja">La Rioja</option>
-                                                    <option value="Mendoza">Mendoza</option>
-                                                    <option value="Misiones">Misiones</option>
-                                                    <option value="Neuquén">Neuquén</option>
-                                                    <option value="Río Negro">Río Negro</option>
-                                                    <option value="Salta">Salta</option>
-                                                    <option value="San Juan">San Juan</option>
-                                                    <option value="San Luis">San Luis</option>
-                                                    <option value="Santa Cruz">Santa Cruz</option>
-                                                    <option value="Santa Fe">Santa Fe</option>
-                                                    <option value="Santiago del Estero">Santiago del Estero</option>
-                                                    <option value="Tierra del Fuego">Tierra del Fuego</option>
-                                                    <option value="Tucumán">Tucumán</option>
+                                                    {PROVINCIAS.map(prov => (
+                                                        <option key={prov.codigo} value={prov.nombre}>
+                                                            {prov.nombre}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </div>
                                             <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
