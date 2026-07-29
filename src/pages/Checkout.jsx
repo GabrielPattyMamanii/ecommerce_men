@@ -3,12 +3,9 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
-<<<<<<< HEAD
 import { ShippingOptions } from '../components/checkout/ShippingOptions'
 import { PROVINCIAS } from '../constants/provincias'
-=======
 import { supabase } from '../services/supabaseClient'
->>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
 const ORDER_ITEMS = [
