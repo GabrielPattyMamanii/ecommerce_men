@@ -85,8 +85,8 @@ export async function cotizarEnvio(
         destination: {
           name: 'Destinatario',
           phone: '0000000000',
-          street: destino.calle || destino.ciudad,
-          number: destino.numero || '1',
+          street: destino.calle,
+          number: destino.numero,
           city: destino.ciudad,
           state: destinoProv.code,
           postalCode: destino.codigoPostal,
