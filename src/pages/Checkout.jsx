@@ -102,8 +102,9 @@ export default function Checkout() {
             setShippingError(null)
             setSelectedShipping(null)
 
+            console.log('[CHECKOUT-COTIZAR] Iniciando cotización...')
+
             try {
-                // Datos del origen (hardcodeados por ahora - cambiar según tu ubicación real)
                 const origen = {
                     nombre: 'NEXO Performance',
                     telefono: '1159691814',
@@ -115,8 +116,12 @@ export default function Checkout() {
                     cp: 'B1768DTB',
                 }
 
-                // Carriers a cotizar
                 const carriers = ['correo_argentino', 'oca', 'andreani']
+
+                console.log('[CHECKOUT-COTIZAR] Origen:', origen)
+                console.log('[CHECKOUT-COTIZAR] Carriers:', carriers)
+                console.log('[CHECKOUT-COTIZAR] Destino:', { city, province, postalCode })
+                console.log('[CHECKOUT-COTIZAR] Items:', items)
 
                 const { data, error } = await supabase.functions.invoke('envia-cotizar', {
                     body: {
@@ -134,10 +139,27 @@ export default function Checkout() {
                     },
                 })
 
-                if (error) throw error
-                setShippingOptions(data?.opciones || [])
+                console.log('[CHECKOUT-COTIZAR] Response data:', data)
+                console.log('[CHECKOUT-COTIZAR] Response error:', error)
+
+                if (error) {
+                    console.error('[CHECKOUT-COTIZAR] Error from function:', error)
+                    throw error
+                }
+
+                if (data?.error) {
+                    console.error('[CHECKOUT-COTIZAR] Error in response:', data.error)
+                    setShippingError(data.error)
+                    setShippingOptions([])
+                } else {
+                    console.log('[CHECKOUT-COTIZAR] Opciones obtenidas:', data?.opciones?.length)
+                    setShippingOptions(data?.opciones || [])
+                }
             } catch (err) {
-                setShippingError(err?.message ?? 'Error al cotizar envío')
+                const errMsg = err?.message ?? 'Error al cotizar envío'
+                console.error('[CHECKOUT-COTIZAR] Exception:', errMsg)
+                console.error('[CHECKOUT-COTIZAR] Full error:', err)
+                setShippingError(errMsg)
                 setShippingOptions([])
             } finally {
                 setShippingLoading(false)
@@ -335,7 +357,87 @@ export default function Checkout() {
                                             </div>
                                             <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
 
+                                            {/* Botón Cotizar Manual */}
+                                            <div className="col-span-1 sm:col-span-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        console.log('[CHECKOUT] Cotizar manual disparado')
+                                                        setShippingLoading(true)
+                                                        setShippingError(null)
+                                                        setSelectedShipping(null)
+
+                                                        const cotizarManual = async () => {
+                                                            try {
+                                                                const origen = {
+                                                                    nombre: 'NEXO Performance',
+                                                                    telefono: '1159691814',
+                                                                    email: 'codebygabrielpatty@gmail.com',
+                                                                    calle: 'Gral. Pintos',
+                                                                    numero: '2383',
+                                                                    ciudad: 'Buenos Aires',
+                                                                    provincia: 'Buenos Aires',
+                                                                    cp: 'B1768DTB',
+                                                                }
+                                                                const carriers = ['correo_argentino', 'oca', 'andreani']
+
+                                                                console.log('[CHECKOUT-MANUAL] Enviando request...')
+                                                                const { data, error } = await supabase.functions.invoke('envia-cotizar', {
+                                                                    body: {
+                                                                        items: items.map(i => ({ productId: i.productId, qty: i.qty })),
+                                                                        destino: { city, province, postalCode },
+                                                                        origen,
+                                                                        carriers,
+                                                                    },
+                                                                })
+
+                                                                console.log('[CHECKOUT-MANUAL] Response:', data, error)
+
+                                                                if (error) throw error
+                                                                if (data?.error) {
+                                                                    console.error('[CHECKOUT-MANUAL] Error:', data.error)
+                                                                    setShippingError(data.error)
+                                                                    setShippingOptions([])
+                                                                } else {
+                                                                    console.log('[CHECKOUT-MANUAL] Opciones:', data?.opciones)
+                                                                    setShippingOptions(data?.opciones || [])
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('[CHECKOUT-MANUAL] Exception:', err)
+                                                                setShippingError(err?.message || 'Error al cotizar')
+                                                                setShippingOptions([])
+                                                            } finally {
+                                                                setShippingLoading(false)
+                                                            }
+                                                        }
+                                                        cotizarManual()
+                                                    }}
+                                                    disabled={shippingLoading || !street || !number || !city || !province || !postalCode}
+                                                    className="w-full py-3 px-4 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold uppercase text-sm transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">
+                                                        {shippingLoading ? 'progress_activity' : 'local_shipping'}
+                                                    </span>
+                                                    {shippingLoading ? 'Cotizando...' : 'Cotizar Envío'}
+                                                </button>
+                                            </div>
+
                                             {/* Shipping options component */}
+                                            {shippingOptions.length > 0 || shippingError ? (
+                                                <div className="col-span-1 sm:col-span-2">
+                                                    {shippingError && (
+                                                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded text-sm font-mono mb-3">
+                                                            {shippingError}
+                                                        </div>
+                                                    )}
+                                                    {shippingOptions.length > 0 && (
+                                                        <div className="bg-green-500/10 border border-green-500/30 text-green-400 p-3 rounded text-sm font-mono">
+                                                            ✓ {shippingOptions.length} opciones disponibles
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : null}
+
                                             <ShippingOptions
                                                 items={displayItems}
                                                 direccion={currentDireccion}
