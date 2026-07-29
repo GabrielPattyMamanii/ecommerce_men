@@ -1,26 +1,12 @@
-// Supabase Edge Function — cotización de envíos
-// POST /functions/v1/envia-cotizar
-// Body: { items: [{productId, qty, type: 'retail'|'wholesale'}], destino: {city, province, postalCode} }
-
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
-import { carriersActivosAR, cotizarEnvio, sucursalesDisponibles } from '../_shared/envia.ts'
+import { buildCorsHeaders } from '../_shared/cors.ts'
+import { cotizarEnvio, type Origen, type Destino, type Paquete } from '../_shared/envia.ts'
 
-interface CartItem {
-  productId: string
-  qty: number
-  type: 'retail' | 'wholesale'
-}
-
-interface Destino {
-  city: string
-  province: string
-  postalCode: string
-}
-
-interface CotizacionRequest {
-  items: CartItem[]
-  destino: Destino
+interface Request_ {
+  items: Array<{ productId: string; qty: number }>
+  destino: { city: string; province: string; postalCode: string }
+  origen: Origen
+  carriers: string[]
 }
 
 Deno.serve(async (req: Request) => {
@@ -31,23 +17,18 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { items, destino }: CotizacionRequest = await req.json()
+    const { items, destino, origen, carriers }: Request_ = await req.json()
 
-    if (!items?.length) {
-      return new Response(
-        JSON.stringify({ error: 'Carrito vacío' }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      )
-    }
+    console.log('[ENVIA-COTIZAR] Request recibido:', { itemCount: items?.length, carriers: carriers?.length })
 
-    if (!destino?.city || !destino?.province || !destino?.postalCode) {
-      return new Response(
-        JSON.stringify({ error: 'Destino incompleto' }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Validar request
+    if (!items?.length) throw new Error('Items requeridos')
+    if (!destino?.city || !destino?.province || !destino?.postalCode) throw new Error('Destino incompleto')
+    if (!origen?.nombre || !origen?.calle) throw new Error('Origen incompleto')
+    if (!carriers?.length) throw new Error('Sin carriers')
 
-    // ── Fetch producto data + validar peso/dimensiones ──
+    // Fetch productos
+    console.log('[ENVIA-COTIZAR] Leyendo productos...')
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -56,107 +37,72 @@ Deno.serve(async (req: Request) => {
     const productIds = [...new Set(items.map(i => i.productId))]
     const { data: products, error: prodErr } = await supabaseAdmin
       .from('products')
-      .select('id, name, unit_weight, unit_height, unit_width, unit_length, dozen_weight, dozen_height, dozen_width, dozen_length')
+      .select('id, name, weight_kg, height_cm, width_cm, length_cm')
       .in('id', productIds)
 
     if (prodErr) throw prodErr
+    console.log('[ENVIA-COTIZAR] Productos encontrados:', products?.length)
 
-    const productMap = Object.fromEntries(products.map(p => [p.id, p]))
+    const productMap = Object.fromEntries(products?.map(p => [p.id, p]) || [])
 
-    // ── Validar que todos los items tengan peso/dimensiones ──
-    const missingDimensions: string[] = []
-
+    // Validar dimensiones
+    const missingDims: string[] = []
     for (const item of items) {
-      const product = productMap[item.productId]
-      if (!product) {
-        missingDimensions.push(`Producto no encontrado: ${item.productId}`)
-        continue
-      }
-
-      if (item.type === 'retail') {
-        // Retail requiere unit_*
-        if (!product.unit_weight || !product.unit_height || !product.unit_width || !product.unit_length) {
-          missingDimensions.push(`${product.name} (retail): faltan peso/dimensiones`)
-        }
-      } else {
-        // Wholesale requiere dozen_*
-        if (!product.dozen_weight || !product.dozen_height || !product.dozen_width || !product.dozen_length) {
-          missingDimensions.push(`${product.name} (docena): faltan peso/dimensiones`)
-        }
+      const p = productMap[item.productId]
+      if (!p) missingDims.push(`${item.productId}: no encontrado`)
+      else if (!p.weight_kg || !p.height_cm || !p.width_cm || !p.length_cm) {
+        missingDims.push(`${p.name}: faltan dimensiones`)
       }
     }
 
-    if (missingDimensions.length > 0) {
-      return new Response(
-        JSON.stringify({ error: missingDimensions.join('; ') }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      )
+    if (missingDims.length) {
+      throw new Error(`Dimensiones faltantes: ${missingDims.join('; ')}`)
     }
 
-    // ── Calcular paquete combinado ──
-    // Suma de pesos, bounding box de dimensiones
+    // Calcular paquete
+    console.log('[ENVIA-COTIZAR] Calculando paquete...')
     let totalWeight = 0
     let maxHeight = 0
     let maxWidth = 0
     let totalLength = 0
 
     for (const item of items) {
-      const product = productMap[item.productId]
-      const dims = item.type === 'retail'
-        ? {
-            weight: product.unit_weight,
-            height: product.unit_height,
-            width: product.unit_width,
-            length: product.unit_length,
-          }
-        : {
-            weight: product.dozen_weight,
-            height: product.dozen_height,
-            width: product.dozen_width,
-            length: product.dozen_length,
-          }
-
-      totalWeight += dims.weight * item.qty
-      maxHeight = Math.max(maxHeight, dims.height)
-      maxWidth = Math.max(maxWidth, dims.width)
-      totalLength += dims.length * item.qty
+      const p = productMap[item.productId]
+      totalWeight += (p.weight_kg || 0) * item.qty
+      maxHeight = Math.max(maxHeight, p.height_cm || 0)
+      maxWidth = Math.max(maxWidth, p.width_cm || 0)
+      totalLength += (p.length_cm || 0) * item.qty
     }
 
-    // ── Cotizar ──
-    const carriers = await carriersActivosAR()
-    if (!carriers.length) {
-      return new Response(
-        JSON.stringify({ error: 'Sin carriers activos' }),
-        { status: 503, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      )
+    const paquete: Paquete = {
+      peso: Math.max(0.1, totalWeight),
+      alto: Math.max(1, maxHeight),
+      ancho: Math.max(1, maxWidth),
+      largo: Math.max(1, totalLength),
     }
 
+    console.log('[ENVIA-COTIZAR] Paquete:', paquete)
+
+    // Cotizar
+    console.log('[ENVIA-COTIZAR] Cotizando con carriers:', carriers)
     const opciones = await cotizarEnvio(
-      { peso: totalWeight, alto: maxHeight, ancho: maxWidth, largo: totalLength },
+      origen,
       { ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode },
+      paquete,
       carriers
     )
 
-    // ── Enriquecer con sucursales si aplica ──
-    const opcionesEnriquecidas = await Promise.all(
-      opciones.map(async op => {
-        if (op.isBranch) {
-          const sucursales = await sucursalesDisponibles(op.carrier, destino.postalCode, destino.province)
-          return { ...op, sucursales }
-        }
-        return { ...op, sucursales: [] }
-      })
-    )
+    console.log('[ENVIA-COTIZAR] Opciones obtenidas:', opciones.length)
 
     return new Response(
-      JSON.stringify({ opciones: opcionesEnriquecidas }),
+      JSON.stringify({ opciones }),
       { headers: { ...CORS, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
-    console.error('envia-cotizar error:', err)
-    const message = err instanceof Error ? err.message : JSON.stringify(err)
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[ENVIA-COTIZAR] Error:', msg)
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
     )
   }
