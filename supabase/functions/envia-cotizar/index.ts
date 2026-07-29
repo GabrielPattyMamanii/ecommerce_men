@@ -5,8 +5,38 @@ import { cotizarEnvio, type Origen, type Destino, type Paquete } from '../_share
 interface Request_ {
   items: Array<{ productId: string; qty: number }>
   destino: { city: string; province: string; postalCode: string }
-  origen: Origen
+  origen?: Origen
   carriers: string[]
+}
+
+function buildOrigenFromEnv(): Origen {
+  const nombre = Deno.env.get('ENVIA_ORIGEN_NOMBRE')
+  const telefono = Deno.env.get('ENVIA_ORIGEN_TELEFONO')
+  const email = Deno.env.get('ENVIA_ORIGEN_EMAIL')
+  const calle = Deno.env.get('ENVIA_ORIGEN_CALLE')
+  const numero = Deno.env.get('ENVIA_ORIGEN_NUMERO')
+  const ciudad = Deno.env.get('ENVIA_ORIGEN_CIUDAD')
+  const provincia = Deno.env.get('ENVIA_ORIGEN_PROVINCIA')
+  const cp = Deno.env.get('ENVIA_ORIGEN_CP')
+
+  if (!nombre) throw new Error('Missing secret: ENVIA_ORIGEN_NOMBRE')
+  if (!telefono) throw new Error('Missing secret: ENVIA_ORIGEN_TELEFONO')
+  if (!calle) throw new Error('Missing secret: ENVIA_ORIGEN_CALLE')
+  if (!numero) throw new Error('Missing secret: ENVIA_ORIGEN_NUMERO')
+  if (!ciudad) throw new Error('Missing secret: ENVIA_ORIGEN_CIUDAD')
+  if (!provincia) throw new Error('Missing secret: ENVIA_ORIGEN_PROVINCIA')
+  if (!cp) throw new Error('Missing secret: ENVIA_ORIGEN_CP')
+
+  return {
+    nombre,
+    telefono,
+    email: email || '',
+    calle,
+    numero,
+    ciudad,
+    provincia,
+    cp,
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -17,36 +47,61 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log('[ENVIA-COTIZAR] ========== INICIO ==========')
+    console.log('[ENVIA-COTIZAR] ═══════════════════════════════════════════')
+    console.log('[ENVIA-COTIZAR] 🚀 INICIO DE COTIZACIÓN')
+    console.log('[ENVIA-COTIZAR] ═══════════════════════════════════════════')
 
     const bodyRaw = await req.json()
-    console.log('[ENVIA-COTIZAR] Raw body recibido:', JSON.stringify(bodyRaw))
+    console.log('[ENVIA-COTIZAR] 📦 Raw body recibido:')
+    console.log(JSON.stringify(bodyRaw, null, 2))
 
-    const { items, destino, origen, carriers }: Request_ = bodyRaw
-    console.log('[ENVIA-COTIZAR] Parsed - items:', items?.length, 'carriers:', carriers?.length)
-    console.log('[ENVIA-COTIZAR] origen:', origen)
-    console.log('[ENVIA-COTIZAR] destino:', destino)
-    console.log('[ENVIA-COTIZAR] carriers:', carriers)
+    const { items, destino, origen: origenFrontend, carriers }: Request_ = bodyRaw
 
-    // Validar request
-    console.log('[ENVIA-COTIZAR] Validando...')
+    console.log('[ENVIA-COTIZAR] ✓ Items:', items?.length ?? 0)
+    console.log('[ENVIA-COTIZAR] ✓ Carriers enviados:', carriers?.length ?? 0)
+    console.log('[ENVIA-COTIZAR] ✓ Destino:', destino ? `${destino.city}, ${destino.province}` : 'VACÍO')
+    console.log('[ENVIA-COTIZAR] ✓ Origen (frontend):', origenFrontend ? origenFrontend.nombre : 'NO ENVIADO')
+
+    // 1️⃣ VALIDAR REQUEST
+    console.log('[ENVIA-COTIZAR] 1️⃣ VALIDACIÓN DE REQUEST')
     if (!items?.length) {
       console.error('[ENVIA-COTIZAR] ❌ Items vacío')
       throw new Error('Items requeridos')
     }
+    console.log('[ENVIA-COTIZAR]    ✅ Items OK')
+
     if (!destino?.city || !destino?.province || !destino?.postalCode) {
-      console.error('[ENVIA-COTIZAR] ❌ Destino incompleto:', destino)
-      throw new Error('Destino incompleto')
+      console.error('[ENVIA-COTIZAR] ❌ Destino incompleto:', JSON.stringify(destino))
+      throw new Error(`Destino incompleto: city=${destino?.city}, province=${destino?.province}, postalCode=${destino?.postalCode}`)
     }
-    if (!origen?.nombre || !origen?.calle) {
-      console.error('[ENVIA-COTIZAR] ❌ Origen incompleto:', origen)
-      throw new Error('Origen incompleto')
-    }
+    console.log('[ENVIA-COTIZAR]    ✅ Destino OK')
+
     if (!carriers?.length) {
-      console.error('[ENVIA-COTIZAR] ❌ Carriers vacío')
+      console.error('[ENVIA-COTIZAR] ❌ Carriers vacío:', carriers)
       throw new Error('Sin carriers')
     }
-    console.log('[ENVIA-COTIZAR] ✅ Validación OK')
+    console.log('[ENVIA-COTIZAR]    ✅ Carriers OK')
+
+    // 2️⃣ PREPARAR ORIGEN (desde secrets, con fallback frontend)
+    console.log('[ENVIA-COTIZAR] 2️⃣ PREPARAR ORIGEN')
+    let origen: Origen
+    try {
+      origen = buildOrigenFromEnv()
+      console.log('[ENVIA-COTIZAR]    ✅ Origen desde SECRETS:')
+      console.log(`[ENVIA-COTIZAR]       Nombre: ${origen.nombre}`)
+      console.log(`[ENVIA-COTIZAR]       Dirección: ${origen.calle} ${origen.numero}, ${origen.ciudad}`)
+      console.log(`[ENVIA-COTIZAR]       CP: ${origen.cp}`)
+      console.log(`[ENVIA-COTIZAR]       Provincia: ${origen.provincia}`)
+    } catch (secretErr) {
+      console.warn('[ENVIA-COTIZAR]    ⚠️ No se pudo leer secrets:', secretErr)
+      if (origenFrontend?.nombre && origenFrontend?.calle) {
+        console.log('[ENVIA-COTIZAR]    ✅ Usando origen del frontend como fallback')
+        origen = origenFrontend
+      } else {
+        throw new Error('Origen no disponible: ' + (secretErr as Error).message)
+      }
+    }
+    console.log('[ENVIA-COTIZAR] ✅ Origen preparado')
 
     // Fetch productos
     console.log('[ENVIA-COTIZAR] 1️⃣ Leyendo productos...')
