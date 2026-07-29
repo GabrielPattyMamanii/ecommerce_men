@@ -12,21 +12,103 @@ function buildAuthHeader() {
   return { Authorization: `Bearer ${ENVIA_TOKEN}` }
 }
 
-// ── 1. Carriers conocidos en Argentina
-// En lugar de hacer un endpoint que da 404, cotizamos contra carriers conocidos
-// y dejamos que envia.com rechace los que no estén activos
-const KNOWN_CARRIERS_AR = [
-  'correo_argentino',
-  'oca',
-  'andreani',
-  'bg_logistics',
-  'tamse',
-]
-
+// ── 1. Fetch active carriers from envia.com account
 export async function carriersActivosAR(): Promise<string[]> {
-  console.log('[CARRIERS-ACTIVOS] Using hardcoded carriers list (endpoint API era 404)')
-  console.log(`[CARRIERS-ACTIVOS] Will attempt to quote with: ${KNOWN_CARRIERS_AR.join(', ')}`)
-  return KNOWN_CARRIERS_AR
+  console.log('[CARRIERS-ACTIVOS] Fetching active carriers from envia.com...')
+  console.log('[CARRIERS-ACTIVOS] DEBUG: ENVIA_API_URL:', ENVIA_URL)
+  console.log('[CARRIERS-ACTIVOS] DEBUG: ENVIA_API_TOKEN loaded:', !!ENVIA_TOKEN)
+  console.log('[CARRIERS-ACTIVOS] DEBUG: ENVIA_API_TOKEN preview:', ENVIA_TOKEN?.substring(0, 30) + '...')
+
+  try {
+    // Attempt to get carriers from account endpoint
+    const url1 = `${ENVIA_URL}/v2/me/carriers`
+    console.log('[CARRIERS-ACTIVOS] Attempting GET:', url1)
+    const res = await fetch(url1, {
+      method: 'GET',
+      headers: buildAuthHeader(),
+    })
+
+    console.log(`[CARRIERS-ACTIVOS] /v2/me/carriers response status: ${res.status}`)
+
+    if (res.ok) {
+      const data = await res.json()
+      console.log('[CARRIERS-ACTIVOS] Response data:', JSON.stringify(data))
+
+      const carriers = data.data?.map((c: any) => c.id || c.name || c.code)?.filter(Boolean) || []
+      console.log(`[CARRIERS-ACTIVOS] Parsed carriers: ${carriers.join(', ')}`)
+
+      if (carriers.length === 0) {
+        console.warn('[CARRIERS-ACTIVOS] API returned empty carrier list')
+      }
+      return carriers
+    }
+
+    // If /v2/me/carriers fails, try /v2/carriers
+    const url2 = `${ENVIA_URL}/v2/carriers`
+    console.log('[CARRIERS-ACTIVOS] /v2/me/carriers failed, trying:', url2)
+    const altRes = await fetch(url2, {
+      method: 'GET',
+      headers: buildAuthHeader(),
+    })
+
+    console.log(`[CARRIERS-ACTIVOS] /v2/carriers response status: ${altRes.status}`)
+
+    if (altRes.ok) {
+      const altData = await altRes.json()
+      console.log('[CARRIERS-ACTIVOS] /v2/carriers response:', JSON.stringify(altData))
+
+      const carriers = altData.data?.map((c: any) => c.id || c.name || c.code)?.filter(Boolean) || []
+      console.log(`[CARRIERS-ACTIVOS] Parsed carriers from /v2/carriers: ${carriers.join(', ')}`)
+
+      if (carriers.length === 0) {
+        console.warn('[CARRIERS-ACTIVOS] /v2/carriers returned empty list')
+      }
+      return carriers
+    }
+
+    // Try /v2/account/carriers as third attempt
+    const url3 = `${ENVIA_URL}/v2/account/carriers`
+    console.log('[CARRIERS-ACTIVOS] Both previous endpoints failed, trying:', url3)
+    const url3Res = await fetch(url3, {
+      method: 'GET',
+      headers: buildAuthHeader(),
+    })
+
+    console.log(`[CARRIERS-ACTIVOS] /v2/account/carriers response status: ${url3Res.status}`)
+
+    if (url3Res.ok) {
+      const url3Data = await url3Res.json()
+      console.log('[CARRIERS-ACTIVOS] /v2/account/carriers response:', JSON.stringify(url3Data))
+
+      const carriers = url3Data.data?.map((c: any) => c.id || c.name || c.code)?.filter(Boolean) || []
+      console.log(`[CARRIERS-ACTIVOS] Parsed carriers from /v2/account/carriers: ${carriers.join(', ')}`)
+
+      if (carriers.length === 0) {
+        console.warn('[CARRIERS-ACTIVOS] /v2/account/carriers returned empty list')
+      }
+      return carriers
+    }
+
+    // All endpoints failed
+    const errText1 = await res.text()
+    const errText2 = await altRes.text()
+    const errText3 = await url3Res.text()
+    console.error('[CARRIERS-ACTIVOS] All three endpoints failed')
+    console.error(`[CARRIERS-ACTIVOS] /v2/me/carriers: ${res.status} - ${errText1}`)
+    console.error(`[CARRIERS-ACTIVOS] /v2/carriers: ${altRes.status} - ${errText2}`)
+    console.error(`[CARRIERS-ACTIVOS] /v2/account/carriers: ${url3Res.status} - ${errText3}`)
+
+    throw new Error(
+      `Cannot fetch active carriers. /v2/me/carriers (${res.status}), /v2/carriers (${altRes.status}). ` +
+      `Verify ENVIA_API_TOKEN is valid and carriers are configured in envia.com dashboard.`
+    )
+  } catch (err) {
+    console.error('[CARRIERS-ACTIVOS] Error fetching carriers:', {
+      name: err instanceof Error ? err.name : 'Unknown',
+      message: err instanceof Error ? err.message : String(err),
+    })
+    throw err
+  }
 }
 
 // ── 2. Package builder: sum weights, get max dimensions
