@@ -45,60 +45,123 @@ if (!API_TOKEN) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 1. Consultar carriers activos
+// 1. Carriers configurados por el usuario (env var)
 // ──────────────────────────────────────────────────────────────
 
-export async function carriersActivosAR(): Promise<string[]> {
-  const res = await fetch(`${API_URL}/v3/carriers/`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${API_TOKEN}` },
-  })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`carriersActivosAR failed: ${res.status} ${err}`)
+export function carriersActivosAR(): string[] {
+  const carriersEnv = Deno.env.get('ENVIA_CARRIERS_ACTIVOS')
+  if (!carriersEnv) {
+    throw new Error(
+      'ENVIA_CARRIERS_ACTIVOS environment variable not configured. ' +
+      'Set it to a comma-separated list: "correo_argentino,oca,andreani"'
+    )
   }
 
-  const { data } = (await res.json()) as { data: { name: string }[] }
-  return data.map(c => c.name)
+  const carriers = carriersEnv
+    .split(',')
+    .map(c => c.trim().toLowerCase())
+    .filter(c => c.length > 0)
+
+  console.log('[CARRIERS-ACTIVOS] Loaded from env:', carriers)
+
+  if (carriers.length === 0) {
+    throw new Error('ENVIA_CARRIERS_ACTIVOS is empty or invalid format')
+  }
+
+  return carriers
 }
 
 // ──────────────────────────────────────────────────────────────
 // 2. Cotizar envío contra cada carrier
+// Docs: https://docs.envia.com/docs/getting-started
+// Endpoint: POST /ship/rate/
 // ──────────────────────────────────────────────────────────────
+
+function requireEnv(key: string): string {
+  const value = Deno.env.get(key)
+  if (!value) throw new Error(`Missing required env: ${key}`)
+  return value
+}
 
 export async function cotizarEnvio(
   paquete: Paquete,
   destino: Destino,
   carriers: string[]
 ): Promise<OpcionEnvio[]> {
-  const provincia = getProvinceByNombre(destino.provincia)
-  if (!provincia) throw new Error(`Provincia no reconocida: ${destino.provincia}`)
+  console.log('[COTIZAR-ENVIO] ========== INICIANDO COTIZACIÓN ==========')
+  console.log('[COTIZAR-ENVIO] API_URL:', API_URL)
+  console.log('[COTIZAR-ENVIO] API_TOKEN loaded:', !!API_TOKEN)
+  console.log('[COTIZAR-ENVIO] Carriers a cotizar:', carriers)
+  console.log('[COTIZAR-ENVIO] Paquete:', paquete)
+  console.log('[COTIZAR-ENVIO] Destino:', destino)
 
-  // Gotcha #4: state = 2-letter code (BA, FM, etc)
-  // Gotcha #1: URLs with trailing slash
-  const baseUrl = `${API_URL}/v3/ship/rate/`.replace(/\/$/, '') + '/'
+  // Validar provincia destino
+  const provincia = getProvinceByNombre(destino.provincia)
+  if (!provincia) {
+    console.error('[COTIZAR-ENVIO] Provincia no reconocida:', destino.provincia)
+    throw new Error(`Provincia no reconocida: ${destino.provincia}`)
+  }
+  console.log('[COTIZAR-ENVIO] Código provincia destino:', provincia.code)
+
+  // Leer datos del origen desde env vars
+  console.log('[COTIZAR-ENVIO] Leyendo datos del origen desde env vars...')
+  const origenNombre = requireEnv('ENVIA_ORIGEN_NOMBRE')
+  const origenTelefono = requireEnv('ENVIA_ORIGEN_TELEFONO')
+  const origenCalle = requireEnv('ENVIA_ORIGEN_CALLE')
+  const origenNumero = requireEnv('ENVIA_ORIGEN_NUMERO')
+  const origenCiudad = requireEnv('ENVIA_ORIGEN_CIUDAD')
+  const origenCP = requireEnv('ENVIA_ORIGEN_CP')
+  const origenProvincia = requireEnv('ENVIA_ORIGEN_PROVINCIA')
+  const origenEmail = Deno.env.get('ENVIA_ORIGEN_EMAIL') || ''
+
+  const origenProvCode = getProvinceByNombre(origenProvincia)
+  if (!origenProvCode) {
+    console.error('[COTIZAR-ENVIO] Provincia origen no válida:', origenProvincia)
+    throw new Error(`Invalid origin province: ${origenProvincia}`)
+  }
+
+  console.log('[COTIZAR-ENVIO] Origen cargado:', {
+    nombre: origenNombre,
+    ciudad: origenCiudad,
+    provincia: origenProvCode.code,
+    cp: origenCP,
+  })
+
+  const endpoint = `${API_URL}/ship/rate/`
+  console.log('[COTIZAR-ENVIO] Endpoint:', endpoint)
 
   const opciones: OpcionEnvio[] = []
 
   for (const carrier of carriers) {
+    console.log(`\n[COTIZAR-ENVIO:${carrier}] Cotizando con ${carrier}...`)
+
     try {
+      // Estructura según docs: https://docs.envia.com/docs/getting-started
       const body = {
-        shipment: {
-          carrier,
-          origin: {
-            // Origin is configured via env vars (ver envia-generar-guia)
-            state: 'BA', // default Buenos Aires (el user va a completar su provincia)
-          },
-          destination: {
-            // Gotcha #3: number separado de street
-            street: destino.ciudad,
-            number: '1', // placeholder, se reemplaza en generar-guia
-            state: provincia.code,
-            postalCode: destino.codigoPostal, // sin letra CPA
-            country: 'AR',
-          },
-          shipment: {
+        origin: {
+          name: origenNombre,
+          phone: origenTelefono,
+          email: origenEmail,
+          street: origenCalle,
+          number: origenNumero,
+          city: origenCiudad,
+          state: origenProvCode.code,
+          postalCode: origenCP,
+          country: 'AR',
+        },
+        destination: {
+          name: 'Destino', // placeholder
+          phone: '',
+          street: destino.ciudad, // placeholder - solo usamos city
+          number: '1',
+          city: destino.ciudad,
+          state: provincia.code,
+          postalCode: destino.codigoPostal,
+          country: 'AR',
+        },
+        packages: [
+          {
+            type: 'box',
             weight: paquete.peso,
             dimensions: {
               height: paquete.alto,
@@ -106,14 +169,16 @@ export async function cotizarEnvio(
               length: paquete.largo,
             },
           },
-        },
-        // Gotcha #5: settings siempre obligatorio
-        settings: {
-          currency: 'ARS',
+        ],
+        shipment: {
+          type: 1, // 1 = domiciliary
+          carrier: carrier.toLowerCase(),
         },
       }
 
-      const res = await fetch(baseUrl, {
+      console.log(`[COTIZAR-ENVIO:${carrier}] Request body:`, JSON.stringify(body, null, 2))
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,37 +187,44 @@ export async function cotizarEnvio(
         body: JSON.stringify(body),
       })
 
+      console.log(`[COTIZAR-ENVIO:${carrier}] Response status: ${res.status}`)
+
       if (!res.ok) {
-        console.warn(`Carrier ${carrier} failed: ${res.status}`)
-        continue
+        const errText = await res.text()
+        console.error(`[COTIZAR-ENVIO:${carrier}] Error (${res.status}):`, errText.substring(0, 500))
+        continue // Skip this carrier, try next one
       }
 
-      const { data } = (await res.json()) as {
-        data: Array<{
-          service: string
-          price: number
-          deliveryEstimate?: number
-          dropOffDescription?: string
-        }>
-      }
+      const responseBody = await res.json()
+      console.log(`[COTIZAR-ENVIO:${carrier}] Response:`, JSON.stringify(responseBody, null, 2))
 
-      // Agregar las opciones de este carrier a la lista
+      const data = responseBody.data || []
+      console.log(`[COTIZAR-ENVIO:${carrier}] Opciones recibidas: ${data.length}`)
+
       for (const option of data) {
-        opciones.push({
+        const opcion: OpcionEnvio = {
           carrier,
-          service: option.service,
-          precio: option.price,
-          dias: option.deliveryEstimate,
-          dropOffDescription: option.dropOffDescription,
-          isBranch: option.dropOffDescription?.includes('Branch') ?? false,
-        })
+          service: option.service || 'standard',
+          precio: parseFloat(option.totalPrice || option.price || '0'),
+          dias: option.deliveryEstimate ? parseInt(option.deliveryEstimate) : undefined,
+          dropOffDescription: option.serviceDescription,
+          isBranch: option.serviceDescription?.toLowerCase().includes('branch') ?? false,
+        }
+        console.log(`[COTIZAR-ENVIO:${carrier}] Agregando opción:`, opcion)
+        opciones.push(opcion)
       }
     } catch (err) {
-      console.error(`Error cotizando con ${carrier}:`, err)
+      console.error(`[COTIZAR-ENVIO:${carrier}] Exception:`, {
+        name: err instanceof Error ? err.name : 'Unknown',
+        message: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 
-  // Ordenar por precio (más barato primero)
+  console.log('[COTIZAR-ENVIO] ========== RESULTADOS FINALES ==========')
+  console.log('[COTIZAR-ENVIO] Total opciones encontradas:', opciones.length)
+  console.log('[COTIZAR-ENVIO] Opciones:', opciones)
+
   opciones.sort((a, b) => a.precio - b.precio)
   return opciones
 }
