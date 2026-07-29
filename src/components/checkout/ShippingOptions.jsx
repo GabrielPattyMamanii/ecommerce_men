@@ -112,7 +112,6 @@ export function ShippingOptions({ onSelect, selectedOption, opciones = [], loadi
                 </div>
               </button>
 
-              {/* Branch selector (if applicable) */}
               {selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service && opcion.dropOffType === 'Branch' && (
                 <div style={{ marginTop: '0.5rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
                   {loadingSucursales ? (
