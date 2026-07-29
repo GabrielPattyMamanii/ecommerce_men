@@ -102,6 +102,7 @@ export async function cotizarEnvio(
               length: paquete.largo,
             },
             content: 'Ropa Deportiva',
+            amount: 1000,
           },
         ],
         shipment: {
