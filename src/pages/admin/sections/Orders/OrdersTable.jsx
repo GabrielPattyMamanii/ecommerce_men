@@ -116,7 +116,6 @@ export default function OrdersTable() {
         setToggling(null)
     }
 
-<<<<<<< HEAD
     /* ─ Generar guía de envío (admin-only) ─ */
     async function generateGuide(id) {
         setGenerating(id)
@@ -137,24 +136,6 @@ export default function OrdersTable() {
         } finally {
             setGenerating(null)
         }
-=======
-    /* ─ Generar guía de envío (envia.com) ─ */
-    async function generateShippingLabel(id) {
-        setToggling(id)
-        setError(null)
-        try {
-            const { data, error: err } = await supabase.functions.invoke(
-                'envia-generar-guia',
-                { body: { orderId: id } }
-            )
-            if (err) throw err
-            // Recarga la tabla para mostrar el tracking actualizado
-            await load()
-        } catch (err) {
-            setError(err?.message ?? 'Error al generar guía')
-        }
-        setToggling(null)
->>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
     }
 
     /* ─ Totales rápidos para el sub-header ─ */
@@ -317,7 +298,6 @@ export default function OrdersTable() {
                                             })}
                                         </td>
 
-<<<<<<< HEAD
                                         {/* Acciones: generar guía (si envío) o marcar como shipped */}
                                         <td className="admin-orders__td admin-orders__td--right">
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -388,44 +368,6 @@ export default function OrdersTable() {
                                                     </button>
                                                 )}
                                             </div>
-=======
-                                        {/* Acciones según shipping_type y status */}
-                                        <td className="admin-orders__td admin-orders__td--right">
-                                            {order.status === 'paid' && order.shipping_type === 'shipping' && !order.tracking_number && (
-                                                <button
-                                                    onClick={() => generateShippingLabel(order.id)}
-                                                    disabled={toggling === order.id}
-                                                    style={{
-                                                        ...S.btnShip,
-                                                        opacity: toggling === order.id ? 0.6 : 1,
-                                                        cursor: toggling === order.id ? 'not-allowed' : 'pointer',
-                                                    }}
-                                                    title="Generar guía de envío con envia.com"
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
-                                                        {toggling === order.id ? 'progress_activity' : 'local_shipping'}
-                                                    </span>
-                                                    {toggling === order.id ? 'Generando…' : 'Generar guía'}
-                                                </button>
-                                            )}
-                                            {order.status === 'paid' && order.shipping_type === 'pickup' && (
-                                                <button
-                                                    onClick={() => markShipped(order.id)}
-                                                    disabled={toggling === order.id}
-                                                    style={{
-                                                        ...S.btnShip,
-                                                        opacity: toggling === order.id ? 0.6 : 1,
-                                                        cursor: toggling === order.id ? 'not-allowed' : 'pointer',
-                                                    }}
-                                                    aria-label="Mark order as shipped"
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>
-                                                        {toggling === order.id ? 'progress_activity' : 'local_shipping'}
-                                                    </span>
-                                                    {toggling === order.id ? 'Updating…' : 'Mark Shipped'}
-                                                </button>
-                                            )}
->>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
                                         </td>
 
                                     </tr>
