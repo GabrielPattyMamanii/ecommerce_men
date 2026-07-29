@@ -17,50 +17,86 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { items, destino, origen, carriers }: Request_ = await req.json()
+    console.log('[ENVIA-COTIZAR] ========== INICIO ==========')
 
-    console.log('[ENVIA-COTIZAR] Request recibido:', { itemCount: items?.length, carriers: carriers?.length })
+    const bodyRaw = await req.json()
+    console.log('[ENVIA-COTIZAR] Raw body recibido:', JSON.stringify(bodyRaw))
+
+    const { items, destino, origen, carriers }: Request_ = bodyRaw
+    console.log('[ENVIA-COTIZAR] Parsed - items:', items?.length, 'carriers:', carriers?.length)
+    console.log('[ENVIA-COTIZAR] origen:', origen)
+    console.log('[ENVIA-COTIZAR] destino:', destino)
+    console.log('[ENVIA-COTIZAR] carriers:', carriers)
 
     // Validar request
-    if (!items?.length) throw new Error('Items requeridos')
-    if (!destino?.city || !destino?.province || !destino?.postalCode) throw new Error('Destino incompleto')
-    if (!origen?.nombre || !origen?.calle) throw new Error('Origen incompleto')
-    if (!carriers?.length) throw new Error('Sin carriers')
+    console.log('[ENVIA-COTIZAR] Validando...')
+    if (!items?.length) {
+      console.error('[ENVIA-COTIZAR] ❌ Items vacío')
+      throw new Error('Items requeridos')
+    }
+    if (!destino?.city || !destino?.province || !destino?.postalCode) {
+      console.error('[ENVIA-COTIZAR] ❌ Destino incompleto:', destino)
+      throw new Error('Destino incompleto')
+    }
+    if (!origen?.nombre || !origen?.calle) {
+      console.error('[ENVIA-COTIZAR] ❌ Origen incompleto:', origen)
+      throw new Error('Origen incompleto')
+    }
+    if (!carriers?.length) {
+      console.error('[ENVIA-COTIZAR] ❌ Carriers vacío')
+      throw new Error('Sin carriers')
+    }
+    console.log('[ENVIA-COTIZAR] ✅ Validación OK')
 
     // Fetch productos
-    console.log('[ENVIA-COTIZAR] Leyendo productos...')
+    console.log('[ENVIA-COTIZAR] 1️⃣ Leyendo productos...')
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
     const productIds = [...new Set(items.map(i => i.productId))]
+    console.log('[ENVIA-COTIZAR] IDs a buscar:', productIds)
+
     const { data: products, error: prodErr } = await supabaseAdmin
       .from('products')
       .select('id, name, weight_kg, height_cm, width_cm, length_cm')
       .in('id', productIds)
 
-    if (prodErr) throw prodErr
-    console.log('[ENVIA-COTIZAR] Productos encontrados:', products?.length)
+    if (prodErr) {
+      console.error('[ENVIA-COTIZAR] ❌ Error Supabase:', prodErr)
+      throw prodErr
+    }
+
+    console.log('[ENVIA-COTIZAR] ✅ Productos encontrados:', products?.length)
+    console.log('[ENVIA-COTIZAR] Datos:', JSON.stringify(products))
 
     const productMap = Object.fromEntries(products?.map(p => [p.id, p]) || [])
 
     // Validar dimensiones
+    console.log('[ENVIA-COTIZAR] 2️⃣ Validando dimensiones...')
     const missingDims: string[] = []
     for (const item of items) {
       const p = productMap[item.productId]
-      if (!p) missingDims.push(`${item.productId}: no encontrado`)
-      else if (!p.weight_kg || !p.height_cm || !p.width_cm || !p.length_cm) {
-        missingDims.push(`${p.name}: faltan dimensiones`)
+      console.log(`[ENVIA-COTIZAR] Item ${item.productId}: qty=${item.qty}, found=${!!p}`)
+      if (!p) {
+        missingDims.push(`${item.productId}: no encontrado`)
+      } else {
+        console.log(`[ENVIA-COTIZAR]   - weight_kg=${p.weight_kg}, height=${p.height_cm}, width=${p.width_cm}, length=${p.length_cm}`)
+        if (!p.weight_kg || !p.height_cm || !p.width_cm || !p.length_cm) {
+          missingDims.push(`${p.name}: faltan dimensiones`)
+        }
       }
     }
 
     if (missingDims.length) {
+      console.error('[ENVIA-COTIZAR] ❌ Faltan dimensiones:', missingDims)
       throw new Error(`Dimensiones faltantes: ${missingDims.join('; ')}`)
     }
+    console.log('[ENVIA-COTIZAR] ✅ Dimensiones OK')
 
     // Calcular paquete
-    console.log('[ENVIA-COTIZAR] Calculando paquete...')
+    console.log('[ENVIA-COTIZAR] 3️⃣ Calculando paquete...')
     let totalWeight = 0
     let maxHeight = 0
     let maxWidth = 0
@@ -68,10 +104,12 @@ Deno.serve(async (req: Request) => {
 
     for (const item of items) {
       const p = productMap[item.productId]
-      totalWeight += (p.weight_kg || 0) * item.qty
+      const weight = (p.weight_kg || 0) * item.qty
+      totalWeight += weight
       maxHeight = Math.max(maxHeight, p.height_cm || 0)
       maxWidth = Math.max(maxWidth, p.width_cm || 0)
       totalLength += (p.length_cm || 0) * item.qty
+      console.log(`[ENVIA-COTIZAR]   Item: weight=${weight}kg, height=${p.height_cm}, width=${p.width_cm}, length=${p.length_cm * item.qty}`)
     }
 
     const paquete: Paquete = {
@@ -81,18 +119,34 @@ Deno.serve(async (req: Request) => {
       largo: Math.max(1, totalLength),
     }
 
-    console.log('[ENVIA-COTIZAR] Paquete:', paquete)
+    console.log('[ENVIA-COTIZAR] ✅ Paquete final:', JSON.stringify(paquete))
 
     // Cotizar
-    console.log('[ENVIA-COTIZAR] Cotizando con carriers:', carriers)
-    const opciones = await cotizarEnvio(
-      origen,
-      { ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode },
-      paquete,
-      carriers
-    )
+    console.log('[ENVIA-COTIZAR] 4️⃣ Enviando a cotizarEnvio()...')
+    console.log('[ENVIA-COTIZAR]   origen:', JSON.stringify(origen))
+    console.log('[ENVIA-COTIZAR]   destino:', JSON.stringify({ ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode }))
+    console.log('[ENVIA-COTIZAR]   paquete:', JSON.stringify(paquete))
+    console.log('[ENVIA-COTIZAR]   carriers:', carriers)
 
-    console.log('[ENVIA-COTIZAR] Opciones obtenidas:', opciones.length)
+    let opciones = []
+    try {
+      opciones = await cotizarEnvio(
+        origen,
+        { ciudad: destino.city, provincia: destino.province, codigoPostal: destino.postalCode },
+        paquete,
+        carriers
+      )
+    } catch (cotizarErr) {
+      console.error('[ENVIA-COTIZAR] ❌ Error en cotizarEnvio():', cotizarErr)
+      throw cotizarErr
+    }
+
+    console.log('[ENVIA-COTIZAR] ✅ Opciones obtenidas:', opciones.length)
+    if (opciones.length === 0) {
+      console.warn('[ENVIA-COTIZAR] ⚠️ SIN OPCIONES devueltas')
+    } else {
+      console.log('[ENVIA-COTIZAR] Opciones:', JSON.stringify(opciones))
+    }
 
     return new Response(
       JSON.stringify({ opciones }),
