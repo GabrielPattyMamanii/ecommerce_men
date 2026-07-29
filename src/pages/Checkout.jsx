@@ -99,7 +99,7 @@ export default function Checkout() {
     // Use actual shipping quote price from envia.com, or fallback to flat rate
     const displayShipping = shippingMethod === 'pickup'
       ? 0
-      : (selectedShippingOption?.price ?? (shipping || 0))
+      : (selectedShippingOption?.precio ?? (shipping || 0))
     const displayTax = +(displaySubtotal * 0.037).toFixed(2) // ~3.7% estimado
     const displayTotal = displaySubtotal + displayShipping + displayTax
 
