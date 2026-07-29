@@ -51,8 +51,23 @@ interface CheckoutPayload {
   items: CartItem[]
   payer: Payer
   shippingMethod: 'shipping' | 'pickup'
+<<<<<<< HEAD
   shippingAddress?: ShippingAddress | null
   shippingQuote?: ShippingQuote | null
+=======
+  shippingAddress?: {
+    address: string
+    number?: string
+    city: string
+    province: string
+    postalCode: string
+    branchCode?: string
+  } | null
+  shippingCost?: number
+  shippingCarrier?: string
+  shippingService?: string
+  shippingIsBranch?: boolean
+>>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
 }
 
 Deno.serve(async (req: Request) => {
@@ -71,8 +86,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { items, payer, shippingMethod, shippingAddress }: CheckoutPayload =
-      await req.json()
+    const {
+      items,
+      payer,
+      shippingMethod,
+      shippingAddress,
+      shippingCost: cotizedShippingCost,
+      shippingCarrier,
+      shippingService,
+      shippingIsBranch,
+    }: CheckoutPayload = await req.json()
 
     if (!items?.length) {
       return new Response(
@@ -84,6 +107,13 @@ Deno.serve(async (req: Request) => {
     if (!payer?.email) {
       return new Response(
         JSON.stringify({ error: 'El email del comprador es obligatorio.' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (shippingMethod === 'shipping' && !shippingAddress) {
+      return new Response(
+        JSON.stringify({ error: 'Dirección de envío requerida.' }),
         { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
       )
     }
@@ -105,9 +135,16 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Compute totals ──
+    // Para envío automático (shipping), usar el costo cotizado por envia.com
+    // Para retiro (pickup), siempre 0
+    // El costo cotizado ya viene validado del frontend (visto por el usuario)
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0)
+<<<<<<< HEAD
     // Use actual shipping quote price from envia.com, or 0 for pickup
     const shippingCost = shippingMethod === 'pickup' ? 0 : (shippingQuote?.price ?? 0)
+=======
+    const shippingCost = shippingMethod === 'pickup' ? 0 : (cotizedShippingCost ?? 0)
+>>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
     const total = subtotal + shippingCost
 
     // ── 1. Create order in DB (status: pending) ──
@@ -124,9 +161,16 @@ Deno.serve(async (req: Request) => {
         shipping_address: shippingMethod === 'shipping' && shippingAddress
           ? shippingAddress
           : null,
+<<<<<<< HEAD
         shipping_quote: shippingMethod === 'shipping' && shippingQuote
           ? shippingQuote
           : null,
+=======
+        shipping_cost: shippingCost,
+        shipping_carrier: shippingCarrier || null,
+        shipping_service: shippingService || null,
+        shipping_is_branch: shippingIsBranch || false,
+>>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
       })
       .select('id')
       .single()

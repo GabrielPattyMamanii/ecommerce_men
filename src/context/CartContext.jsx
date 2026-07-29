@@ -126,8 +126,10 @@ export function CartProvider({ children }) {
 
     const totalCount = items.reduce((sum, i) => sum + i.qty, 0)
     const subtotal   = items.reduce((sum, i) => sum + i.price * i.qty, 0)
-    const shipping   = subtotal >= 200 ? 0 : 12
-    const total      = subtotal + shipping
+    // Envío se calcula dinámicamente en checkout basado en cotización real
+    // En el carrito solo mostramos el subtotal (sin envío)
+    const shipping   = 0 // placeholder — el costo real viene del checkout
+    const total      = subtotal
 
     return (
         <CartCtx.Provider value={{

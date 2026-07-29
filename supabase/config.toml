@@ -1,2 +1,11 @@
 [functions.create-mp-preference]
 verify_jwt = false
+
+[functions.handle-mp-webhook]
+verify_jwt = false
+
+[functions.envia-cotizar]
+verify_jwt = false
+
+[functions.envia-webhook]
+verify_jwt = false

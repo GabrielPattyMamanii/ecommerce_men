@@ -4,7 +4,21 @@ import { useCheckoutPro } from '../../hooks/useCheckoutPro'
  * Botón de pago con Mercado Pago (Checkout PRO redirect).
  * Maneja estados de carga, error y disabled.
  */
+<<<<<<< HEAD
 export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress, shippingQuote, isShippingComplete }) {
+=======
+export function MercadoPagoBrick({
+  items,
+  payer,
+  shippingMethod,
+  shippingAddress,
+  shippingCost,
+  shippingCarrier,
+  shippingService,
+  shippingIsBranch,
+  disabled,
+}) {
+>>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
   const { checkout, isLoading, error } = useCheckoutPro()
 
   const missingPayer = !payer?.email || !payer?.firstName || !payer?.lastName
@@ -22,8 +36,22 @@ export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress
 
       <button
         type="button"
+<<<<<<< HEAD
         onClick={() => checkout({ items, payer, shippingMethod, shippingAddress, shippingQuote })}
         disabled={isLoading || !items?.length || missingPayer || shippingMissing}
+=======
+        onClick={() => checkout({
+          items,
+          payer,
+          shippingMethod,
+          shippingAddress,
+          shippingCost,
+          shippingCarrier,
+          shippingService,
+          shippingIsBranch,
+        })}
+        disabled={isLoading || !items?.length || missingPayer || disabled}
+>>>>>>> 2cc3d23ee0a8a80c9b3d3a6cd2fb909978d48e70
         className="group w-full relative overflow-hidden py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,157,227,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
         style={{ backgroundColor: '#009EE3' }}
       >

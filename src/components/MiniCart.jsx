@@ -134,9 +134,7 @@ export default function MiniCart() {
         navigate('/checkout')
     }
 
-    /* Progreso envío gratis */
-    const progressPct = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100)
-    const freeShipping = shipping === 0
+    // Envío se calcula dinámicamente en checkout
 
     return (
         <>
@@ -168,27 +166,11 @@ export default function MiniCart() {
                     </button>
                 </div>
 
-                {/* ── Barra de envío gratis ── */}
+                {/* ── Nota de envío ── */}
                 <div className="px-6 py-4 bg-[#232a35] border-b border-[#333b49] flex-shrink-0">
-                    <div className="flex items-center justify-between text-xs font-mono uppercase mb-2">
-                        {freeShipping ? (
-                            <span className="font-bold text-primary flex items-center gap-2">
-                                <span className="material-symbols-outlined text-sm">rocket_launch</span>
-                                Logistics cost: WAIVED
-                            </span>
-                        ) : (
-                            <span className="font-bold text-primary flex items-center gap-2">
-                                <span className="material-symbols-outlined text-sm">rocket_launch</span>
-                                ${(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(0)} away from free shipping
-                            </span>
-                        )}
-                        <span className="text-slate-500">Threshold: ${FREE_SHIPPING_THRESHOLD}</span>
-                    </div>
-                    <div className="h-1 w-full bg-[#333b49] relative overflow-hidden">
-                        <div
-                            className="absolute h-full bg-primary transition-all duration-700"
-                            style={{ width: `${progressPct}%`, boxShadow: '0 0 10px #00f0ff' }}
-                        />
+                    <div className="flex items-center gap-2 text-xs font-mono uppercase text-slate-400">
+                        <span className="material-symbols-outlined text-sm">local_shipping</span>
+                        Envío se calcula en checkout según tu dirección
                     </div>
                 </div>
 
@@ -260,14 +242,12 @@ export default function MiniCart() {
                         </div>
                         <div className="flex justify-between text-slate-400">
                             <span className="uppercase">Shipping</span>
-                            <span className={freeShipping ? 'text-primary uppercase' : ''}>
-                                {freeShipping ? 'Free' : `$${shipping.toFixed(2)}`}
-                            </span>
+                            <span className="text-slate-500 text-xs">Cálc. en checkout</span>
                         </div>
                         <div className="flex justify-between text-lg font-bold text-white mt-2 pt-2 border-t border-[#333b49]">
-                            <span className="uppercase tracking-wider">Total</span>
+                            <span className="uppercase tracking-wider">Subtotal</span>
                             <span style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}>
-                                ${(subtotal + shipping).toFixed(2)}
+                                ${subtotal.toFixed(2)}
                             </span>
                         </div>
                         <p className="text-[10px] text-slate-600 uppercase tracking-wide">
