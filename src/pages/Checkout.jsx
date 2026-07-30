@@ -133,23 +133,23 @@ export default function Checkout() {
                     <div>
                         {/* Breadcrumb */}
                         <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-3 uppercase tracking-widest">
-                            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+                            <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
                             <span className="text-primary">›</span>
-                            <Link to="/" onClick={() => window.history.back()} className="hover:text-primary transition-colors">Cart</Link>
+                            <Link to="/" onClick={() => window.history.back()} className="hover:text-primary transition-colors">Carrito</Link>
                             <span className="text-primary">›</span>
-                            <span className="text-white">Checkout</span>
+                            <span className="text-white">Pago</span>
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-white uppercase font-display">
-                            <span className="text-primary">01.</span> Checkout
+                            <span className="text-primary">01.</span> Pago
                         </h1>
                         <p className="text-slate-500 flex items-center gap-2 text-xs uppercase tracking-widest font-mono mt-2">
                             <span className="material-symbols-outlined text-primary text-sm">lock_person</span>
-                            Encrypted Connection // Protocol V.4
+                            Conexión Encriptada // Protocolo V.4
                         </p>
                     </div>
                     <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono">
-                        <span>STATUS:</span>
-                        <span className="text-green-500 animate-pulse">ONLINE</span>
+                        <span>ESTADO:</span>
+                        <span className="text-green-500 animate-pulse">EN LÍNEA</span>
                     </div>
                 </div>
 
@@ -166,18 +166,18 @@ export default function Checkout() {
                                 <div className="flex items-center justify-between mb-6 border-b border-[#333b49] pb-4">
                                     <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
                                         <span className="material-symbols-outlined text-primary text-sm">contact_mail</span>
-                                        Contact_Data
+                                        Datos de Contacto
                                     </h3>
                                     <Link
                                         to="/cuenta"
                                         className="text-xs font-medium text-primary hover:text-white font-mono uppercase transition-colors"
                                     >
-                                        &lt; Log_In /&gt;
+                                        &lt; Iniciar Sesión /&gt;
                                     </Link>
                                 </div>
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                    <FormField label="Email Address" type="email" placeholder="USER@DOMAIN.COM" required value={email} onChange={e => setEmail(e.target.value)} />
-                                    <FormField label="Phone Number" type="tel" placeholder="+54 9 11 0000-0000" required value={phone} onChange={e => setPhone(e.target.value)} />
+                                    <FormField label="Correo Electrónico" type="email" placeholder="USUARIO@DOMINIO.COM" required value={email} onChange={e => setEmail(e.target.value)} />
+                                    <FormField label="Número de Teléfono" type="tel" placeholder="+54 9 11 0000-0000" required value={phone} onChange={e => setPhone(e.target.value)} />
                                     <div className="flex items-center gap-3 group cursor-pointer col-span-1 sm:col-span-2">
                                         <input
                                             type="checkbox"
@@ -188,7 +188,7 @@ export default function Checkout() {
                                             htmlFor="newsletter"
                                             className="text-xs text-slate-400 font-mono uppercase group-hover:text-primary transition-colors cursor-pointer tracking-wide"
                                         >
-                                            Subscribe to tactical updates
+                                            Suscribirse a actualizaciones
                                         </label>
                                     </div>
                                 </div>
@@ -199,7 +199,7 @@ export default function Checkout() {
                                 <div className="absolute top-0 left-0 w-1 h-full bg-[#4a5568]" />
                                 <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">local_shipping</span>
-                                    Fulfillment_Method
+                                    Método de Entrega
                                 </h3>
 
                                 {/* ── Selector de Método ── */}
@@ -220,7 +220,7 @@ export default function Checkout() {
                                         )}
                                         <div className="flex items-center gap-3">
                                             <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'shipping' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>local_shipping</span>
-                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Delivery</span>
+                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Envío a Domicilio</span>
                                         </div>
                                         <span className="text-xs text-slate-400 font-mono leading-relaxed">
                                             Envío a domicilio. Costo cotizado en base a destino.
@@ -243,7 +243,7 @@ export default function Checkout() {
                                         )}
                                         <div className="flex items-center gap-3">
                                             <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'pickup' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>storefront</span>
-                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Store Pickup</span>
+                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Retiro en Tienda</span>
                                         </div>
                                         <span className="text-xs text-slate-400 font-mono leading-relaxed">
                                             Retira en local. Nos pondremos en contacto.
@@ -252,17 +252,17 @@ export default function Checkout() {
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mt-4">
-                                    <FormField label="First Name" type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} />
-                                    <FormField label="Last Name" type="text" required value={lastName} onChange={e => setLastName(e.target.value)} />
+                                    <FormField label="Nombre" type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} />
+                                    <FormField label="Apellido" type="text" required value={lastName} onChange={e => setLastName(e.target.value)} />
 
                                     {shippingMethod === 'shipping' ? (
                                         <>
-                                            <FormField label="Street" type="text" required value={street} onChange={e => setStreet(e.target.value)} />
-                                            <FormField label="Number" type="text" required value={number} onChange={e => setNumber(e.target.value)} />
-                                            <FormField label="City" type="text" required value={city} onChange={e => setCity(e.target.value)} />
+                                            <FormField label="Calle" type="text" required value={street} onChange={e => setStreet(e.target.value)} />
+                                            <FormField label="Número" type="text" required value={number} onChange={e => setNumber(e.target.value)} />
+                                            <FormField label="Ciudad" type="text" required value={city} onChange={e => setCity(e.target.value)} />
                                             <div className="col-span-1 sm:col-span-2">
                                                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
-                                                    Province
+                                                    Provincia
                                                 </label>
                                                 <select
                                                     value={province}
@@ -276,7 +276,7 @@ export default function Checkout() {
                                                     ))}
                                                 </select>
                                             </div>
-                                            <FormField label="Postal Code" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                                            <FormField label="Código Postal" type="text" required value={postalCode} onChange={e => setPostalCode(e.target.value)} />
 
                                             {/* Botón Cotizar Manual */}
                                             <div className="col-span-1 sm:col-span-2">
@@ -412,7 +412,7 @@ export default function Checkout() {
                                 />
                                 <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">credit_card</span>
-                                    Payment_Method
+                                    Método de Pago
                                 </h3>
 
                                 <div className="border border-[#333b49] bg-[#12161c]/50 overflow-hidden">
@@ -420,9 +420,9 @@ export default function Checkout() {
                                     <div className="border-b border-[#333b49] p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} ariaLabel="Credit Card" />
+                                                <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} ariaLabel="Tarjeta de Crédito" />
                                                 <label htmlFor="cc" className="font-bold text-white uppercase font-mono text-sm cursor-pointer">
-                                                    Credit Card
+                                                    Tarjeta de Crédito
                                                 </label>
                                             </div>
                                             <div className="flex gap-2 text-slate-500">
@@ -493,7 +493,7 @@ export default function Checkout() {
                                 >
                                     <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     <span className="relative text-black text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
-                                        Initiate Payment ${displayTotal.toFixed(2)}
+                                        Completar Pago ${displayTotal.toFixed(2)}
                                         <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
                                             arrow_forward
                                         </span>
@@ -504,7 +504,7 @@ export default function Checkout() {
                             {/* ── Garantía ── */}
                             <div className="flex items-center justify-center gap-3 text-xs text-primary font-mono border border-primary/20 bg-primary/5 py-3">
                                 <span className="material-symbols-outlined text-lg">verified_user</span>
-                                <span className="uppercase tracking-wide">30-Day Performance Guarantee</span>
+                                <span className="uppercase tracking-wide">Garantía de 30 Días</span>
                             </div>
                         </div>
 
@@ -514,8 +514,8 @@ export default function Checkout() {
 
                                 {/* Header */}
                                 <div className="flex justify-between items-center mb-6 border-b border-[#333b49] pb-4">
-                                    <h3 className="text-lg font-bold text-white uppercase font-mono">Order_Manifest</h3>
-                                    <span className="text-xs text-slate-500 font-mono">[{displayItems.length} ITEMS]</span>
+                                    <h3 className="text-lg font-bold text-white uppercase font-mono">Resumen de Orden</h3>
+                                    <span className="text-xs text-slate-500 font-mono">[{displayItems.length} ARTÍCULOS]</span>
                                 </div>
 
                                 {/* Resumen numérico */}
@@ -525,14 +525,14 @@ export default function Checkout() {
                                         <span className="font-medium text-white">${displaySubtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-slate-400 uppercase">Shipping</span>
+                                        <span className="text-slate-400 uppercase">Envío</span>
                                         <span className="font-bold text-primary uppercase">
-                                            {displayShipping === 0 ? 'Free' : `$${displayShipping.toFixed(2)}`}
+                                            {displayShipping === 0 ? 'Gratis' : `$${displayShipping.toFixed(2)}`}
                                         </span>
                                     </div>
                                     <div className="h-px bg-[#333b49] my-2" />
                                     <div className="flex justify-between text-base font-bold items-center">
-                                        <span className="text-white uppercase tracking-wider">Total Amount</span>
+                                        <span className="text-white uppercase tracking-wider">Monto Total</span>
                                         <span
                                             className="text-primary text-2xl"
                                             style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}
@@ -566,7 +566,7 @@ export default function Checkout() {
                                                                 {name}
                                                             </span>
                                                             <div className="flex justify-between items-center">
-                                                                <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
+                                                                <span className="text-[10px] text-slate-500 font-mono">CTD: {qty}</span>
                                                                 <span className="text-xs text-primary font-mono font-bold">${price}</span>
                                                             </div>
                                                         </div>
@@ -598,7 +598,7 @@ export default function Checkout() {
                                                                 {name}
                                                             </span>
                                                             <div className="flex justify-between items-center">
-                                                                <span className="text-[10px] text-slate-500 font-mono">QTY: {qty}</span>
+                                                                <span className="text-[10px] text-slate-500 font-mono">CTD: {qty}</span>
                                                                 <span className="text-xs text-amber-400 font-mono font-bold">${price}</span>
                                                             </div>
                                                         </div>
@@ -614,14 +614,14 @@ export default function Checkout() {
                                     <div className="flex">
                                         <input
                                             type="text"
-                                            placeholder="PROMO_CODE"
+                                            placeholder="CÓDIGO DE PROMOCIÓN"
                                             className="flex-1 bg-[#12161c] border border-[#333b49] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
                                         />
                                         <button
                                             type="button"
                                             className="px-4 py-2.5 bg-[#232a35] border border-l-0 border-[#333b49] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all"
                                         >
-                                            Apply
+                                            Aplicar
                                         </button>
                                     </div>
                                 </div>

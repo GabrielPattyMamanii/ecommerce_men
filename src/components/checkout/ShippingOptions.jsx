@@ -47,7 +47,7 @@ export function ShippingOptions({ onSelect, selectedOption, opciones = [], loadi
         <span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.5rem' }}>
           local_shipping
         </span>
-        Opciones de envío
+        Opciones de Envío
       </h4>
 
       {loading && (
