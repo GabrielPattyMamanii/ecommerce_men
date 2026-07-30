@@ -580,12 +580,69 @@ export default function Checkout() {
                                             {displayShipping === 0 ? 'Gratis' : `$${displayShipping.toFixed(2)}`}
                                         </span>
                                     </div>
+
+                                    {/* Desglose de descuento */}
+                                    {discountAmount > 0 && (
+                                        <div className="bg-[#232a35]/50 border border-green-500/20 p-3 rounded mt-4 mb-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="material-symbols-outlined text-xs text-green-400">local_offer</span>
+                                                <span className="text-green-400 font-bold uppercase tracking-wide">
+                                                    Cupón {appliedCoupon.code} ({appliedCoupon.discount_percentage}%)
+                                                </span>
+                                            </div>
+
+                                            {/* Productos elegibles */}
+                                            <div className="space-y-1 mb-2 border-b border-green-500/10 pb-2">
+                                                {couponEligibleItems.map(item => {
+                                                    const itemDiscount = +(item.price * item.qty * appliedCoupon.discount_percentage / 100).toFixed(2)
+                                                    const itemFinal = +(item.price * item.qty - itemDiscount).toFixed(2)
+                                                    return (
+                                                        <div key={item.id} className="flex items-center justify-between text-xs text-green-300">
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                                                                {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
+                                                            </span>
+                                                            <span>${itemFinal.toFixed(2)}</span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+
+                                            {/* Productos NO elegibles (si hay) */}
+                                            {discountAmount > 0 && appliedCoupon.applies_to !== 'ambos' && (
+                                                displayItems.some(i => !couponEligibleItems.find(e => e.id === i.id)) && (
+                                                    <div className="space-y-1 border-b border-slate-500/20 pb-2 mb-2">
+                                                        {displayItems
+                                                            .filter(i => !couponEligibleItems.find(e => e.id === i.id))
+                                                            .map(item => (
+                                                                <div key={item.id} className="flex items-center justify-between text-xs text-slate-500">
+                                                                    <span className="flex items-center gap-2">
+                                                                        <span className="material-symbols-outlined text-[10px]">cancel</span>
+                                                                        {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
+                                                                    </span>
+                                                                    <span className="text-slate-500">${(item.price * item.qty).toFixed(2)}</span>
+                                                                </div>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )
+                                            )}
+
+                                            {/* Descuento total */}
+                                            <div className="flex justify-between text-xs font-bold text-green-400 pt-1">
+                                                <span>Ahorro:</span>
+                                                <span>-${discountAmount.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {discountAmount > 0 && (
                                         <div className="flex justify-between">
                                             <span className="text-slate-400 uppercase">Descuento</span>
                                             <span className="font-bold text-green-500">-${discountAmount.toFixed(2)}</span>
                                         </div>
                                     )}
+
                                     <div className="h-px bg-[#333b49] my-2" />
                                     <div className="flex justify-between text-base font-bold items-center">
                                         <span className="text-white uppercase tracking-wider">Monto Total</span>
