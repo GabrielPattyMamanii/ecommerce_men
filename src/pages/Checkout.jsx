@@ -84,6 +84,12 @@ export default function Checkout() {
     const [selectedShipping, setSelectedShipping] = useState(null)
     const [selectedBranch, setSelectedBranch] = useState(null)
 
+    /* ── Estado de cupón ── */
+    const [couponCode, setCouponCode] = useState('')
+    const [appliedCoupon, setAppliedCoupon] = useState(null)
+    const [couponError, setCouponError] = useState(null)
+    const [couponLoading, setCouponLoading] = useState(false)
+
     /* Pre-llenar email si el usuario está logueado */
     useEffect(() => {
         if (user?.email) setEmail(user.email)
@@ -100,7 +106,6 @@ export default function Checkout() {
     const displayShipping = shippingMethod === 'pickup'
       ? 0
       : (selectedShippingOption?.precio ?? (shipping || 0))
-    const displayTotal = displaySubtotal + displayShipping
 
     // Build current direccion object for ShippingOptions component
     const currentDireccion = {
@@ -109,6 +114,50 @@ export default function Checkout() {
 
     // Validar que sea posible proceder al pago
     const addressComplete = shippingMethod === 'pickup' || (street && number && city && province && postalCode && selectedShippingOption)
+
+    /* ── Funciones de cupón ── */
+    async function handleApplyCoupon() {
+        setCouponError(null)
+        const code = couponCode.trim().toUpperCase()
+        if (!code) return
+        setCouponLoading(true)
+        const { data, error } = await supabase
+            .from('coupons')
+            .select('code, discount_percentage, applies_to, has_counter, counter_end_time, status')
+            .eq('code', code)
+            .eq('status', 'publicado')
+            .maybeSingle()
+        setCouponLoading(false)
+
+        if (error || !data) { setCouponError('Código de cupón inválido'); setAppliedCoupon(null); return }
+
+        const expired = data.has_counter && data.counter_end_time && new Date(data.counter_end_time) <= new Date()
+        if (expired) { setCouponError('Este cupón ha expirado'); setAppliedCoupon(null); return }
+
+        const matches = data.applies_to === 'ambos' || displayItems.some(i => (i.type ?? 'retail') === data.applies_to)
+        if (!matches) {
+            const label = data.applies_to === 'wholesale' ? 'productos por mayor' : 'productos por menor'
+            setCouponError(`Este cupón solo aplica a ${label}. Tu carrito no tiene ese tipo de productos.`)
+            setAppliedCoupon(null)
+            return
+        }
+        setAppliedCoupon(data)
+    }
+
+    function handleRemoveCoupon() {
+        setAppliedCoupon(null)
+        setCouponCode('')
+        setCouponError(null)
+    }
+
+    /* ── Cálculo de descuento ── */
+    const couponEligibleItems = appliedCoupon
+        ? (appliedCoupon.applies_to === 'ambos' ? displayItems : displayItems.filter(i => (i.type ?? 'retail') === appliedCoupon.applies_to))
+        : []
+    const discountAmount = appliedCoupon
+        ? +(couponEligibleItems.reduce((s, i) => s + i.price * i.qty, 0) * appliedCoupon.discount_percentage / 100).toFixed(2)
+        : 0
+    const displayTotalWithDiscount = displaySubtotal + displayShipping - discountAmount
 
     return (
         <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
@@ -484,6 +533,7 @@ export default function Checkout() {
                                     shippingAddress={shippingMethod === 'shipping' ? { street, number, city, province, postalCode, email } : null}
                                     shippingQuote={shippingMethod === 'shipping' ? selectedShippingOption : null}
                                     isShippingComplete={shippingMethod === 'shipping' && selectedShippingOption}
+                                    couponCode={appliedCoupon?.code ?? null}
                                 />
                             ) : (
                                 <button
@@ -493,7 +543,7 @@ export default function Checkout() {
                                 >
                                     <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     <span className="relative text-black text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
-                                        Completar Pago ${displayTotal.toFixed(2)}
+                                        Completar Pago ${displayTotalWithDiscount.toFixed(2)}
                                         <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
                                             arrow_forward
                                         </span>
@@ -530,6 +580,12 @@ export default function Checkout() {
                                             {displayShipping === 0 ? 'Gratis' : `$${displayShipping.toFixed(2)}`}
                                         </span>
                                     </div>
+                                    {discountAmount > 0 && (
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400 uppercase">Descuento</span>
+                                            <span className="font-bold text-green-500">-${discountAmount.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="h-px bg-[#333b49] my-2" />
                                     <div className="flex justify-between text-base font-bold items-center">
                                         <span className="text-white uppercase tracking-wider">Monto Total</span>
@@ -537,7 +593,7 @@ export default function Checkout() {
                                             className="text-primary text-2xl"
                                             style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}
                                         >
-                                            ${displayTotal.toFixed(2)}
+                                            ${displayTotalWithDiscount.toFixed(2)}
                                         </span>
                                     </div>
                                 </div>
@@ -611,19 +667,48 @@ export default function Checkout() {
 
                                 {/* Promo code */}
                                 <div className="mt-6">
-                                    <div className="flex">
-                                        <input
-                                            type="text"
-                                            placeholder="CÓDIGO DE PROMOCIÓN"
-                                            className="flex-1 bg-[#12161c] border border-[#333b49] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
-                                        />
-                                        <button
-                                            type="button"
-                                            className="px-4 py-2.5 bg-[#232a35] border border-l-0 border-[#333b49] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all"
-                                        >
-                                            Aplicar
-                                        </button>
-                                    </div>
+                                    {!appliedCoupon ? (
+                                        <>
+                                            <div className="flex mb-2">
+                                                <input
+                                                    type="text"
+                                                    value={couponCode}
+                                                    onChange={e => setCouponCode(e.target.value)}
+                                                    placeholder="CÓDIGO DE PROMOCIÓN"
+                                                    disabled={couponLoading}
+                                                    className="flex-1 bg-[#12161c] border border-[#333b49] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none disabled:opacity-50"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleApplyCoupon}
+                                                    disabled={couponLoading || !couponCode.trim()}
+                                                    className="px-4 py-2.5 bg-[#232a35] border border-l-0 border-[#333b49] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {couponLoading ? 'Validando...' : 'Aplicar'}
+                                                </button>
+                                            </div>
+                                            {couponError && (
+                                                <div className="text-red-400 text-xs font-mono uppercase tracking-wide border border-red-500/30 bg-red-500/10 px-3 py-2 flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-sm">error</span>
+                                                    {couponError}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="flex items-center justify-between bg-[#232a35] border border-green-500/30 p-3 rounded">
+                                            <span className="font-mono text-xs text-green-400 uppercase tracking-wide flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm">check_circle</span>
+                                                {appliedCoupon.code} · -{appliedCoupon.discount_percentage}%
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveCoupon}
+                                                className="text-xs font-mono text-slate-400 hover:text-red-400 uppercase tracking-wide transition-colors border-b border-transparent hover:border-red-400"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Seguridad */}

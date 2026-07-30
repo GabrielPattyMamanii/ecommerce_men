@@ -34,7 +34,7 @@ export default function PromoBanner() {
         async function loadActiveCoupon() {
             const { data } = await supabase
                 .from('coupons')
-                .select('id, code, discount_percentage, message, has_counter, counter_end_time')
+                .select('id, code, discount_percentage, message, has_counter, counter_end_time, applies_to')
                 .eq('show_in_banner', true)
                 .eq('status', 'publicado')
                 .maybeSingle()
@@ -79,6 +79,16 @@ export default function PromoBanner() {
                 >
                     {!coupon.message ? fallbackMessage : undefined}
                 </span>
+
+                {coupon.applies_to !== 'ambos' && (
+                    <span className={`font-mono text-xs sm:text-sm font-semibold tabular-nums shadow-neon-sm px-2 py-0.5 rounded-sm border ${
+                        coupon.applies_to === 'wholesale'
+                            ? 'text-amber-400 border-amber-400/40'
+                            : 'text-primary border-primary/40'
+                    }`}>
+                        {coupon.applies_to === 'wholesale' ? 'SOLO POR MAYOR' : 'SOLO POR MENOR'}
+                    </span>
+                )}
 
                 {countdownLabel && (
                     <span className="font-mono text-xs sm:text-sm font-semibold text-primary tabular-nums shadow-neon-sm px-2 py-0.5 rounded-sm border border-primary/40">

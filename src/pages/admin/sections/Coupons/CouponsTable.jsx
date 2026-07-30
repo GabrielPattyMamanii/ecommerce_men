@@ -189,7 +189,7 @@ function formatCountdown(ms) {
 
 const EMPTY_FORM = {
     name: '', code: '', discount_percentage: '', description: '', message: '',
-    has_counter: false, days: '0', hours: '0', minutes: '0', status: 'borrador',
+    has_counter: false, days: '0', hours: '0', minutes: '0', status: 'borrador', applies_to: 'ambos',
 }
 
 /* ── Timestamp ISO futuro a partir de una duración en segundos (fuera del
@@ -279,6 +279,7 @@ export default function CouponsTable() {
             has_counter: coupon.has_counter,
             days: String(parts.days), hours: String(parts.hours), minutes: String(parts.minutes),
             status: coupon.status,
+            applies_to: coupon.applies_to || 'ambos',
         })
         setFormError(null)
         setShowForm(true)
@@ -309,6 +310,7 @@ export default function CouponsTable() {
             message: form.message.trim() || null,
             has_counter: form.has_counter,
             counter_duration_seconds: form.has_counter ? durationSeconds : null,
+            applies_to: form.applies_to,
         }
 
         if (formMode === 'create') {
@@ -516,6 +518,15 @@ function CouponCard({ coupon, nowMs, onEdit, onDeleteRequest, onToggleStatus, on
                     </p>
                     <p style={{ margin: '0.25rem 0 0', fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--admin-primary)', letterSpacing: '0.05em' }}>
                         {coupon.code} · {coupon.discount_percentage}% OFF
+                        {coupon.applies_to !== 'ambos' && (
+                            <span style={{
+                                marginLeft: '0.5rem',
+                                color: coupon.applies_to === 'wholesale' ? '#f59e0b' : 'var(--admin-primary)',
+                                fontWeight: 600
+                            }}>
+                                · {coupon.applies_to === 'wholesale' ? 'Solo Por Mayor' : 'Solo Por Menor'}
+                            </span>
+                        )}
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
@@ -629,6 +640,18 @@ function CouponFormModal({ mode, form, setForm, error, saving, onSubmit, onCance
                             onChange={e => setForm(p => ({ ...p, discount_percentage: e.target.value }))}
                             placeholder="25" style={S.input}
                         />
+                    </div>
+                    <div>
+                        <label style={S.label}>Aplica a</label>
+                        <select
+                            value={form.applies_to}
+                            onChange={e => setForm(p => ({ ...p, applies_to: e.target.value }))}
+                            style={S.input}
+                        >
+                            <option value="ambos">Todos los productos</option>
+                            <option value="wholesale">Solo Por Mayor</option>
+                            <option value="retail">Solo Por Menor</option>
+                        </select>
                     </div>
                     {mode === 'create' && (
                         <div>

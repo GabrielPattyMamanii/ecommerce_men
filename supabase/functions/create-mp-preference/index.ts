@@ -17,6 +17,7 @@ interface CartItem {
   qty: number
   img?: string
   spec?: string
+  type?: 'retail' | 'wholesale'
 }
 
 interface Payer {
@@ -53,6 +54,7 @@ interface CheckoutPayload {
   shippingMethod: 'shipping' | 'pickup'
   shippingAddress?: ShippingAddress | null
   shippingQuote?: ShippingQuote | null
+  couponCode?: string | null
 }
 
 Deno.serve(async (req: Request) => {
@@ -80,6 +82,7 @@ Deno.serve(async (req: Request) => {
       shippingCarrier,
       shippingService,
       shippingIsBranch,
+      couponCode,
     }: CheckoutPayload = await req.json()
 
     if (!items?.length) {
@@ -119,6 +122,30 @@ Deno.serve(async (req: Request) => {
       userId = user?.id ?? null
     }
 
+    // ── Validar y aplicar cupón (server-side) ──
+    let discountAmount = 0
+    let appliedCouponCode: string | null = null
+    if (couponCode) {
+      const { data: coupon } = await supabaseAdmin
+        .from('coupons')
+        .select('code, discount_percentage, applies_to, status, has_counter, counter_end_time')
+        .eq('code', couponCode.trim().toUpperCase())
+        .eq('status', 'publicado')
+        .maybeSingle()
+
+      if (coupon) {
+        const expired = coupon.has_counter && coupon.counter_end_time && new Date(coupon.counter_end_time) <= new Date()
+        const eligibleItems = coupon.applies_to === 'ambos'
+          ? items
+          : items.filter((i) => (i.type ?? 'retail') === coupon.applies_to)
+        if (!expired && eligibleItems.length > 0) {
+          const eligibleSubtotal = eligibleItems.reduce((sum, i) => sum + i.price * i.qty, 0)
+          discountAmount = +(eligibleSubtotal * coupon.discount_percentage / 100).toFixed(2)
+          appliedCouponCode = coupon.code
+        }
+      }
+    }
+
     // ── Compute totals ──
     // Para envío automático (shipping), usar el costo cotizado por envia.com
     // Para retiro (pickup), siempre 0
@@ -126,7 +153,7 @@ Deno.serve(async (req: Request) => {
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0)
     // Use actual shipping quote price from envia.com, or 0 for pickup
     const shippingCost = shippingMethod === 'pickup' ? 0 : (shippingQuote?.price ?? 0)
-    const total = subtotal + shippingCost
+    const total = subtotal + shippingCost - discountAmount
 
     // ── 1. Create order in DB (status: pending) ──
     const { data: order, error: orderErr } = await supabaseAdmin
@@ -145,6 +172,8 @@ Deno.serve(async (req: Request) => {
         shipping_quote: shippingMethod === 'shipping' && shippingQuote
           ? shippingQuote
           : null,
+        coupon_code: appliedCouponCode,
+        discount_amount: discountAmount,
       })
       .select('id')
       .single()
@@ -181,16 +210,28 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const notificationUrl = `${supabaseUrl}/functions/v1/handle-mp-webhook`
 
+    const mpItems = items.map((item) => ({
+      id: item.productId,
+      title: item.name,
+      unit_price: item.price,
+      quantity: item.qty,
+      currency_id: 'ARS',
+      picture_url: item.img,
+    }))
+
+    if (discountAmount > 0) {
+      mpItems.push({
+        id: 'discount-coupon',
+        title: `Descuento cupón ${appliedCouponCode}`,
+        unit_price: -discountAmount,
+        quantity: 1,
+        currency_id: 'ARS',
+      })
+    }
+
     const response = await new Preference(client).create({
       body: {
-        items: items.map((item) => ({
-          id: item.productId,
-          title: item.name,
-          unit_price: item.price,
-          quantity: item.qty,
-          currency_id: 'ARS',
-          picture_url: item.img,
-        })),
+        items: mpItems,
         payer: {
           email: payer.email,
           phone: { number: payer.phone || '' },
