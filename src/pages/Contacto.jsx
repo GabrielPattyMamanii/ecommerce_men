@@ -1,37 +1,47 @@
 import { useState } from 'react'
+import { useContactSettings } from '../hooks/useContactSettings'
 
-const CHANNELS = [
+const CHANNEL_META = [
     {
         id: 'whatsapp',
         icon: 'chat',
         label: 'WHATSAPP',
         desc: 'Respuesta directa en tiempo real',
-        href: 'https://wa.me/5491100000000',
         color: '#25d366',
+        field: 'whatsapp_url',
     },
     {
         id: 'instagram',
         icon: 'photo_camera',
         label: 'INSTAGRAM',
         desc: 'Seguinos para novedades y drops',
-        href: 'https://instagram.com/',
         color: '#e1306c',
+        field: 'instagram_url',
+    },
+    {
+        id: 'facebook',
+        icon: 'thumb_up',
+        label: 'FACEBOOK',
+        desc: 'Sumate a la comunidad',
+        color: '#1877f2',
+        field: 'facebook_url',
     },
     {
         id: 'tiktok',
         icon: 'video_library',
         label: 'TIKTOK',
         desc: 'Contenido técnico y behind the scenes',
-        href: 'https://tiktok.com/',
         color: '#69c9d0',
+        field: 'tiktok_url',
     },
     {
         id: 'email',
         icon: 'mail',
         label: 'EMAIL_AUTH',
         desc: 'Para consultas detalladas y pedidos custom',
-        href: 'mailto:info@tekgear.com',
         color: '#00f0ff',
+        field: 'email',
+        hrefPrefix: 'mailto:',
     },
 ]
 
@@ -39,6 +49,13 @@ export default function Contacto() {
     const [form, setForm] = useState({ name: '', email: '', message: '' })
     const [sent, setSent] = useState(false)
     const [sending, setSending] = useState(false)
+    const settings = useContactSettings()
+
+    const channels = settings
+        ? CHANNEL_META
+            .filter(ch => settings[ch.field])
+            .map(ch => ({ ...ch, href: (ch.hrefPrefix ?? '') + settings[ch.field] }))
+        : []
 
     function handleChange(e) {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -91,33 +108,39 @@ export default function Contacto() {
                 // CANALES DE COMUNICACIÓN
                         </p>
                         <div className="space-y-3">
-                            {CHANNELS.map(ch => (
-                                <a
-                                    key={ch.id}
-                                    href={ch.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group flex items-center gap-5 p-5 border border-[#333b49] hover:border-[#00f0ff40] bg-[#1a1f27] hover:bg-[#232a35] transition-all duration-200"
-                                >
-                                    <div
-                                        className="flex-shrink-0 flex items-center justify-center w-10 h-10 border"
-                                        style={{ borderColor: ch.color + '40', color: ch.color }}
+                            {channels.length > 0 ? (
+                                channels.map(ch => (
+                                    <a
+                                        key={ch.id}
+                                        href={ch.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group flex items-center gap-5 p-5 border border-[#333b49] hover:border-[#00f0ff40] bg-[#1a1f27] hover:bg-[#232a35] transition-all duration-200"
                                     >
-                                        <span className="material-symbols-outlined text-lg">{ch.icon}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-mono text-xs font-bold uppercase tracking-widest text-white group-hover:text-[#00f0ff] transition-colors">
-                                            {ch.label}
-                                        </p>
-                                        <p className="font-mono text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide">
-                                            {ch.desc}
-                                        </p>
-                                    </div>
-                                    <span className="material-symbols-outlined text-slate-600 group-hover:text-[#00f0ff] group-hover:translate-x-1 transition-all text-sm">
-                                        arrow_forward
-                                    </span>
-                                </a>
-                            ))}
+                                        <div
+                                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 border"
+                                            style={{ borderColor: ch.color + '40', color: ch.color }}
+                                        >
+                                            <span className="material-symbols-outlined text-lg">{ch.icon}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-mono text-xs font-bold uppercase tracking-widest text-white group-hover:text-[#00f0ff] transition-colors">
+                                                {ch.label}
+                                            </p>
+                                            <p className="font-mono text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide">
+                                                {ch.desc}
+                                            </p>
+                                        </div>
+                                        <span className="material-symbols-outlined text-slate-600 group-hover:text-[#00f0ff] group-hover:translate-x-1 transition-all text-sm">
+                                            arrow_forward
+                                        </span>
+                                    </a>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase tracking-wide">
+                                    Cargando canales…
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -127,20 +150,9 @@ export default function Contacto() {
                             //HORARIOS DE ATENCIÓN AL PUBLICO
                         </p>
                         <div className="border border-[#333b49] p-5">
-                            <div className="space-y-2 font-mono text-[10px] text-slate-500 uppercase tracking-wide">
-                                <div className="flex justify-between">
-                                    <span>Lunes</span>
-                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Miercoles</span>
-                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Sabado</span>
-                                    <span className="text-slate-300 text-[15px]">7:00AM — 12:30AM</span>
-                                </div>
-                            </div>
+                            <p className="font-mono text-[11px] text-slate-300 whitespace-pre-line leading-relaxed">
+                                {settings?.hours_text || '—'}
+                            </p>
                         </div>
                     </div>
 
