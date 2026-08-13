@@ -84,7 +84,7 @@ export default function Footer() {
         {/* ── Barra inferior ── */}
         <div className="pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-5">
           <p className="text-[10px] font-mono uppercase text-outline tracking-widest">
-            © {new Date().getFullYear()} NEXO PERFORMANCE — Todos los derechos reservados
+            © {new Date().getFullYear()} AURA Store — Todos los derechos reservados
           </p>
 
           {/* Redes sociales */}
