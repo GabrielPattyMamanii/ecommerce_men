@@ -29,8 +29,6 @@ dist-ssr
 # Documentation and database files (keep project docs and migrations)
 # *.md - Permitir documentación del proyecto en raíz
 # *.sql - Permitir migraciones en supabase/
-!*.md
-!supabase/*.sql
 
 # Claude Code tooling (local config, skills, caches)
 .agents/

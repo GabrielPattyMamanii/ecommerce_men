@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "storeName": "Mi Tienda",
+  "supabaseUrl": "https://kmwhidsyxnwwzcwjdotc.supabase.co",
+  "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imttd2hpZHN5eG53d3pjd2pkb3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzYwNzIsImV4cCI6MjA5MDU1MjA3Mn0.N5KDNsM0OvF6inxfqkSX_5a-9GbzzPDaEjvjDJ9juww",
+  "features": {
+    "products": true,
+    "coupons": true,
+    "categories": true,
+    "staffUsers": true,
+    "orders": true,
+    "inventory": false
+  }
+}
