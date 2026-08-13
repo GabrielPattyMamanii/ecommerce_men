@@ -4,6 +4,7 @@ import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../../../../services/supabaseClient'
 import { S } from '../../../../components/admin/AdminKit'
 import { buildScanUrl, getEffectiveDocenas, groupKeyForMarca, ownerBorderStyle } from '../../../../lib/inventarioUtils'
+import { formatCurrency } from '../../../../lib/productPricing'
 
 export default function ControlInventarioTanda() {
     const { tanda } = useParams()
@@ -118,11 +119,11 @@ export default function ControlInventarioTanda() {
                         </div>
                         <div style={{ textAlign: 'center' }}>
                             <p style={{ margin: 0, fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748b' }}>Gastos totales</p>
-                            <p style={{ margin: 0, fontFamily: 'monospace', color: 'white', fontWeight: 700 }}>${Number(tandaInfo.gastos || 0).toLocaleString()}</p>
+                            <p style={{ margin: 0, fontFamily: 'monospace', color: 'white', fontWeight: 700 }}>{formatCurrency(tandaInfo.gastos || 0)}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Valor control estimado</p>
-                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#6366f1' }}>${totalMoney.toLocaleString('es-AR')}</p>
+                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#6366f1' }}>{formatCurrency(totalMoney)}</p>
                             <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b' }}>{totalDocenasCopy} docenas (control)</p>
                         </div>
                     </div>
@@ -233,7 +234,7 @@ function ControlBrandSection({ brandGroup, ownerColor, ownerTotals, isMultiOwner
                         {!isExpanded && <span style={{ fontSize: '0.7rem', color: '#64748b', background: '#0f172a', border: '1px solid #334155', padding: '0.1rem 0.5rem', borderRadius: '999px' }}>{brandGroup.items.length}</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ fontWeight: 700, color: '#6366f1', fontFamily: 'monospace' }}>${totalMoney.toLocaleString('es-AR')}</span>
+                        <span style={{ fontWeight: 700, color: '#6366f1', fontFamily: 'monospace' }}>{formatCurrency(totalMoney)}</span>
                         <span className="material-symbols-outlined" style={{ color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                     </div>
                 </div>
@@ -302,8 +303,8 @@ function ControlBrandSection({ brandGroup, ownerColor, ownerTotals, isMultiOwner
                                         <td className="admin-orders__td" style={{ textAlign: 'center' }}>
                                             <span style={{ fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.15)', padding: '0.15rem 0.5rem', borderRadius: '2px' }}>{docenasCopy}</span>
                                         </td>
-                                        <td className="admin-orders__td admin-orders__td--right">${Number(prod.precio_docena || 0).toLocaleString('es-AR')}</td>
-                                        <td className="admin-orders__td admin-orders__td--right" style={{ color: '#818cf8', fontWeight: 700 }}>${total.toLocaleString('es-AR')}</td>
+                                        <td className="admin-orders__td admin-orders__td--right">{formatCurrency(prod.precio_docena || 0)}</td>
+                                        <td className="admin-orders__td admin-orders__td--right" style={{ color: '#818cf8', fontWeight: 700 }}>{formatCurrency(total)}</td>
                                         <td className="admin-orders__td" style={{ textAlign: 'center' }}>
                                             {!isGenerated ? (
                                                 <button onClick={() => onGenerate(prod)} style={{ ...S.btnGhost, padding: '0.3rem 0.6rem', fontSize: '0.7rem' }}>

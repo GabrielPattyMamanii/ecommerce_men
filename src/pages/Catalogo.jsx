@@ -1,17 +1,21 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../services/supabaseClient'
-import { formatPrice, isPurchasable } from '../lib/productPricing'
+import { useContactSettings } from '../hooks/useContactSettings'
+import ProductCard from '../components/ProductCard'
 
 export default function Catalogo() {
     const [products, setProducts] = useState([])
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [visibleCount, setVisibleCount] = useState(9) // Paginación: mostrar 9 productos por vez
     const { addItem } = useCart()
+    const contactSettings = useContactSettings()
     const [searchParams, setSearchParams] = useSearchParams()
     const activeSlug = searchParams.get('categoria') || ''
+    const query = (searchParams.get('q') || '').trim()
 
     /* ─ Expand/collapse de categorías padre en el sidebar ─ */
     const [expandedIds, setExpandedIds] = useState(new Set())
@@ -21,7 +25,7 @@ export default function Catalogo() {
             setLoading(true)
             const { data, error: err } = await supabase
                 .from('products')
-                .select('id, name, description, retail_price, price_on_request, stock, images, category_id, categories(name, slug)')
+                .select('id, name, description, retail_price, price_on_request, stock, unlimited_stock, images, category_id, categories(name, slug)')
                 .eq('visible', true)
                 .order('created_at', { ascending: false })
             if (err) setError(err.message)
@@ -55,6 +59,11 @@ export default function Catalogo() {
         }
     }, [activeCategory])
 
+    /* Resetea la paginación cuando cambia categoría o búsqueda */
+    useEffect(() => {
+        setVisibleCount(9)
+    }, [activeSlug, query])
+
     function toggleExpanded(id) {
         setExpandedIds(prev => {
             const next = new Set(prev)
@@ -65,14 +74,22 @@ export default function Catalogo() {
     }
 
     function selectCategory(slug) {
-        if (!slug) setSearchParams({})
-        else setSearchParams({ categoria: slug })
+        const next = {}
+        if (slug) next.categoria = slug
+        if (query) next.q = query
+        setSearchParams(next)
+    }
+
+    function clearSearch() {
+        const next = {}
+        if (activeSlug) next.categoria = activeSlug
+        setSearchParams(next)
     }
 
     // Elegir una categoría padre incluye los productos de sus subcategorías;
     // un slug en la URL que no matchea ninguna categoría real no cae a "ALL" (evita
     // mostrar todo el catálogo silenciosamente ante un link roto/desactualizado).
-    const filtered = activeSlug
+    const byCategory = activeSlug
         ? products.filter(p => {
             if (!activeCategory) return false
             const cat = categoriesById[p.category_id]
@@ -81,121 +98,160 @@ export default function Catalogo() {
         })
         : products
 
+    // Búsqueda por texto (desde la barra del Navbar, ?q=...) combinada con el
+    // filtro de categoría — antes solo existía el input visualmente, sin lógica.
+    const normalizedQuery = query.toLowerCase()
+    const filtered = normalizedQuery
+        ? byCategory.filter(p =>
+            p.name?.toLowerCase().includes(normalizedQuery) ||
+            p.description?.toLowerCase().includes(normalizedQuery)
+        )
+        : byCategory
+
+    /* ── Contenido de la lista de categorías — se arma una sola vez y se
+       reusa tanto en el <details> colapsable de mobile/tablet como en el
+       sidebar fijo de desktop, para no duplicar la lógica de expand/select. ── */
+    const categoryListContent = (
+        <>
+            <button
+                onClick={() => selectCategory('')}
+                className={`w-full text-left px-4 py-3 border font-mono text-xs uppercase tracking-wider flex items-center gap-3 transition-colors ${
+                    activeSlug === ''
+                        ? 'border-primary bg-black/5 text-primary'
+                        : 'border-border text-muted hover:border-primary/40 hover:text-primary'
+                }`}
+            >
+                <span className="material-symbols-outlined text-sm">apps</span>
+                ALL
+            </button>
+
+            {roots.map(root => {
+                const kids = childrenOf(root.id)
+                const isExpanded = expandedIds.has(root.id)
+                const isActiveRoot = activeSlug === root.slug
+                return (
+                    <div key={root.id} className="space-y-1">
+                        {/* ── Categoría padre: nombre (filtra + expande) + chevron (solo expande) ── */}
+                        <div
+                            className={`flex items-stretch border font-mono text-xs uppercase tracking-wider transition-colors ${
+                                isActiveRoot
+                                    ? 'border-primary bg-black/5'
+                                    : 'border-border hover:border-primary/40'
+                            }`}
+                        >
+                            <button
+                                onClick={() => {
+                                    selectCategory(root.slug)
+                                    if (kids.length) setExpandedIds(prev => new Set(prev).add(root.id))
+                                }}
+                                className={`flex-1 min-w-0 text-left px-4 py-3 flex items-center gap-3 transition-colors ${
+                                    isActiveRoot ? 'text-primary' : 'text-muted hover:text-primary'
+                                }`}
+                            >
+                                <span className="material-symbols-outlined text-sm">category</span>
+                                <span className="truncate">{root.name}</span>
+                            </button>
+                            {kids.length > 0 && (
+                                <button
+                                    onClick={() => toggleExpanded(root.id)}
+                                    aria-label={isExpanded ? `Colapsar ${root.name}` : `Expandir ${root.name}`}
+                                    aria-expanded={isExpanded}
+                                    className={`px-3 flex items-center justify-center border-l transition-colors ${
+                                        isActiveRoot
+                                            ? 'border-primary/40 text-primary'
+                                            : 'border-border text-muted hover:text-primary'
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined text-sm">
+                                        {isExpanded ? 'expand_more' : 'chevron_right'}
+                                    </span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* ── Subcategorías: indentadas, borde lateral en vez de recuadro completo ── */}
+                        {isExpanded && kids.map(child => {
+                            const isActiveChild = activeSlug === child.slug
+                            return (
+                                <button
+                                    key={child.id}
+                                    onClick={() => selectCategory(child.slug)}
+                                    className={`w-full text-left pl-8 pr-4 py-2 border-l-2 font-mono text-[11px] uppercase tracking-wider flex items-center gap-2 transition-colors ${
+                                        isActiveChild
+                                            ? 'border-primary bg-black/5 text-primary'
+                                            : 'border-border text-muted hover:border-primary/40 hover:text-primary'
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined text-xs">subdirectory_arrow_right</span>
+                                    <span className="truncate">{child.name}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                )
+            })}
+        </>
+    )
+
     return (
-        <div className="min-h-screen bg-transparent text-slate-200">
+        <div className="min-h-screen bg-transparent text-primary">
             <main className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 py-10">
 
                 {/* ── Encabezado ── */}
-                <div className="mb-8 border-b border-[#333b49] pb-6">
-                    <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.3em] mb-2">
-                        // KINETIC_ARCHIVE
+                <div className="mb-8 border-b border-border pb-6">
+                    <p className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] mb-2">
+                        // CATÁLOGO
                     </p>
-                    <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-white">
-                        PRODUCT_<span className="text-[#00f0ff]">ARCHIVE</span>
+                    <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-primary">
+                        CATÁLOGO DE <span className="text-primary">PRODUCTOS</span>
                     </h1>
-                    <div className="flex gap-6 mt-3 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-                        <span>TOTAL_UNITS // {filtered.length}</span>
-                        <span>SORT_ORDER // CHRONO</span>
+                    <div className="flex flex-wrap items-center gap-6 mt-3 text-[10px] font-mono text-muted uppercase tracking-widest">
+                        <span>{filtered.length} PRODUCTOS</span>
+                        {query && (
+                            <span className="flex items-center gap-2 text-primary">
+                                Resultados para "{query}"
+                                <button
+                                    type="button"
+                                    onClick={clearSearch}
+                                    className="flex items-center gap-1 text-muted hover:text-primary transition-colors normal-case tracking-normal"
+                                    aria-label="Limpiar búsqueda"
+                                >
+                                    <span className="material-symbols-outlined text-sm">close</span>
+                                </button>
+                            </span>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
 
-                    {/* ── Sidebar Filtros ── */}
+                    {/* ── Sidebar Filtros ──
+                        En mobile/tablet (<lg) una lista larga de categorías empujaba
+                        toda la grilla de productos fuera de la pantalla inicial. Ahora
+                        se muestra colapsada dentro de un <details>, y solo a partir de
+                        lg queda como sidebar fijo siempre expandido. ── */}
                     <aside className="lg:w-56 flex-shrink-0">
-                        <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-4">
-                            // FILTERS - SEC_01
-                        </p>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => selectCategory('')}
-                                className={`w-full text-left px-4 py-3 border font-mono text-xs uppercase tracking-wider flex items-center gap-3 transition-colors ${
-                                    activeSlug === ''
-                                        ? 'border-[#00f0ff] bg-[#00f0ff08] text-[#00f0ff]'
-                                        : 'border-[#333b49] text-slate-400 hover:border-[#00f0ff40] hover:text-slate-200'
-                                }`}
-                            >
-                                <span className="material-symbols-outlined text-sm">apps</span>
-                                ALL
-                            </button>
-
-                            {roots.map(root => {
-                                const kids = childrenOf(root.id)
-                                const isExpanded = expandedIds.has(root.id)
-                                const isActiveRoot = activeSlug === root.slug
-                                return (
-                                    <div key={root.id} className="space-y-1">
-                                        {/* ── Categoría padre: nombre (filtra + expande) + chevron (solo expande) ── */}
-                                        <div
-                                            className={`flex items-stretch border font-mono text-xs uppercase tracking-wider transition-colors ${
-                                                isActiveRoot
-                                                    ? 'border-[#00f0ff] bg-[#00f0ff08]'
-                                                    : 'border-[#333b49] hover:border-[#00f0ff40]'
-                                            }`}
-                                        >
-                                            <button
-                                                onClick={() => {
-                                                    selectCategory(root.slug)
-                                                    if (kids.length) setExpandedIds(prev => new Set(prev).add(root.id))
-                                                }}
-                                                className={`flex-1 min-w-0 text-left px-4 py-3 flex items-center gap-3 transition-colors ${
-                                                    isActiveRoot ? 'text-[#00f0ff]' : 'text-slate-400 hover:text-slate-200'
-                                                }`}
-                                            >
-                                                <span className="material-symbols-outlined text-sm">category</span>
-                                                <span className="truncate">{root.name}</span>
-                                            </button>
-                                            {kids.length > 0 && (
-                                                <button
-                                                    onClick={() => toggleExpanded(root.id)}
-                                                    aria-label={isExpanded ? `Colapsar ${root.name}` : `Expandir ${root.name}`}
-                                                    aria-expanded={isExpanded}
-                                                    className={`px-3 flex items-center justify-center border-l transition-colors ${
-                                                        isActiveRoot
-                                                            ? 'border-[#00f0ff40] text-[#00f0ff]'
-                                                            : 'border-[#333b49] text-slate-500 hover:text-slate-300'
-                                                    }`}
-                                                >
-                                                    <span className="material-symbols-outlined text-sm">
-                                                        {isExpanded ? 'expand_more' : 'chevron_right'}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* ── Subcategorías: indentadas, borde lateral en vez de recuadro completo ── */}
-                                        {isExpanded && kids.map(child => {
-                                            const isActiveChild = activeSlug === child.slug
-                                            return (
-                                                <button
-                                                    key={child.id}
-                                                    onClick={() => selectCategory(child.slug)}
-                                                    className={`w-full text-left pl-8 pr-4 py-2 border-l-2 font-mono text-[11px] uppercase tracking-wider flex items-center gap-2 transition-colors ${
-                                                        isActiveChild
-                                                            ? 'border-[#00f0ff] bg-[#00f0ff05] text-[#00f0ff]'
-                                                            : 'border-[#333b49] text-slate-500 hover:border-[#00f0ff40] hover:text-slate-300'
-                                                    }`}
-                                                >
-                                                    <span className="material-symbols-outlined text-xs">subdirectory_arrow_right</span>
-                                                    <span className="truncate">{child.name}</span>
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                )
-                            })}
-                        </div>
-
-                        {/* Status ── */}
-                        <div className="mt-6 border border-[#333b49] p-4">
-                            <p className="font-mono text-[9px] text-[#00f0ff] uppercase tracking-widest mb-3">SYSTEM_STATUS</p>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-                                <span className="font-mono text-[9px] text-green-400 uppercase tracking-widest">ONLINE</span>
+                        <details className="lg:hidden group border border-border bg-surface mb-2" open={!!activeSlug}>
+                            <summary className="cursor-pointer select-none list-none flex items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                                <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-primary">
+                                    <span className="material-symbols-outlined text-sm">filter_list</span>
+                                    {activeCategory ? activeCategory.name : 'Categorías'}
+                                </span>
+                                <span className="material-symbols-outlined text-sm text-muted transition-transform group-open:rotate-180">
+                                    expand_more
+                                </span>
+                            </summary>
+                            <div className="px-4 pb-4 pt-1 space-y-2 border-t border-border">
+                                {categoryListContent}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#00f0ff]" />
-                                <span className="font-mono text-[9px] text-slate-500 uppercase tracking-widest">DB_CONNECTED</span>
+                        </details>
+
+                        <div className="hidden lg:block">
+                            <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-4">
+                                // CATEGORÍAS
+                            </p>
+                            <div className="space-y-2">
+                                {categoryListContent}
                             </div>
                         </div>
                     </aside>
@@ -204,77 +260,41 @@ export default function Catalogo() {
                     <div className="flex-1">
                         {loading ? (
                             <div className="flex justify-center items-center py-32">
-                                <span className="material-symbols-outlined animate-spin text-[#00f0ff] text-4xl">progress_activity</span>
+                                <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
                             </div>
                         ) : error ? (
-                            <div className="border border-red-500/30 bg-red-500/10 p-6 text-red-400 font-mono text-sm">
+                            <div className="border border-red-500/30 bg-red-500/10 p-6 text-red-600 font-mono text-sm">
                                 Error: {error}
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-32 gap-4 border border-dashed border-[#333b49]">
-                                <span className="material-symbols-outlined text-4xl text-slate-600">inventory_2</span>
-                                <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">Sin productos disponibles</p>
+                            <div className="flex flex-col items-center justify-center py-32 gap-4 border border-dashed border-border">
+                                <span className="material-symbols-outlined text-4xl text-outline">inventory_2</span>
+                                <p className="font-mono text-xs text-muted uppercase tracking-widest">Sin productos disponibles</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5">
-                                {filtered.map(product => {
-                                    const imgUrl = product.images?.[0] || null
-                                    return (
-                                        <div
-                                            key={product.id}
-                                            className="group bg-[#1a1f27] border border-[#333b49] hover:border-[#00f0ff40] transition-all duration-300 flex flex-col"
-                                        >
-                                            {/* Imagen */}
-                                            <div className="relative overflow-hidden aspect-[4/3] bg-[#12161c]">
-                                                {imgUrl ? (
-                                                    <img
-                                                        src={imgUrl}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <span className="material-symbols-outlined text-slate-700 text-5xl">image_not_supported</span>
-                                                    </div>
-                                                )}
-                                            </div>
+                            <div className="flex flex-col gap-8">
+                                {/* Grid de productos */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filtered.slice(0, visibleCount).map(product => (
+                                        <ProductCard key={product.id} product={product} onAdd={addItem} contactSettings={contactSettings} />
+                                    ))}
+                                </div>
 
-                                            {/* Info */}
-                                            <div className="p-5 flex flex-col gap-3 flex-1">
-                                                <h2 className="text-sm font-black uppercase tracking-wider text-white group-hover:text-[#00f0ff] transition-colors">
-                                                    {product.name}
-                                                </h2>
-                                                <p className="text-xs text-slate-500 font-mono leading-relaxed flex-1">
-                                                    {product.description || '—'}
-                                                </p>
-                                                <div className="flex items-center justify-between pt-3 border-t border-[#333b49]">
-                                                    <span className="font-mono text-lg font-bold text-[#00f0ff]">
-                                                        {formatPrice(product)}
-                                                    </span>
-                                                    <div className="flex gap-2">
-                                                        <Link
-                                                            to={`/producto/${product.id}`}
-                                                            className="px-3 py-2 border border-[#333b49] hover:border-[#00f0ff] text-slate-400 hover:text-[#00f0ff] font-mono text-[10px] uppercase tracking-widest transition-all"
-                                                        >
-                                                            DETAIL
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => addItem(product, 'default', 'M')}
-                                                            disabled={!isPurchasable(product)}
-                                                            className={`px-4 py-2 font-black font-mono text-[10px] uppercase tracking-widest transition-all ${
-                                                                isPurchasable(product)
-                                                                    ? 'bg-[#00f0ff] text-black hover:bg-[#00d4e0]'
-                                                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                                            }`}
-                                                        >
-                                                            {isPurchasable(product) ? 'ADD +' : 'N/A'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
+                                {/* Botón "Ver más" — se muestra solo si hay productos adicionales */}
+                                {visibleCount < filtered.length && (
+                                    <div className="flex justify-center pt-4">
+                                        <button
+                                            onClick={() => setVisibleCount(prev => prev + 9)}
+                                            className="px-8 py-3 border border-primary text-primary font-mono text-xs uppercase tracking-widest transition-all hover:bg-primary hover:text-white active:scale-95"
+                                            aria-label={`Ver más productos (mostrando ${visibleCount} de ${filtered.length})`}
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                <span>Ver más</span>
+                                                <span className="material-symbols-outlined text-base">arrow_downward</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

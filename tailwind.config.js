@@ -8,16 +8,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        // TEKGEAR public store (Navbar / Home / ProductDetail)
-        "primary": "#00f0ff",
-        "primary-dark": "#00a3cc",
-        "accent": "#2d3446",
-        "background-dark": "#12161c",
-        "surface": "#1a1f27",
-        "surface-light": "#232a35",
-        "border-soft": "#333b49",
-        "neon-blue": "#00f0ff",
-        "tech-grey": "#8b9bb4",
+        // NEXO Performance public store (Navbar / Home / ProductDetail)
+        "primary": "#000000",
+        "primary-strong": "#1a1c1f",
+        "on-primary": "#ffffff",
+        "background": "#f9f9fb",
+        "surface": "#ffffff",
+        "surface-container": "#eeeef0",
+        "border": "#e2e2e4",
+        "muted": "#45474a",
+        "outline": "#76777b",
 
         // Admin dashboard tokens (Space Grotesk theme)
         "admin-primary": "#0d46f2",
@@ -26,14 +26,10 @@ export default {
         "admin-card": "#161b2e",
       },
       fontFamily: {
-        "display": ["Chakra Petch", "Rajdhani", "sans-serif"],
+        "display": ["Hanken Grotesk", "sans-serif"],
         "body": ["Inter", "sans-serif"],
         "grotesk": ["Space Grotesk", "sans-serif"],
         "mono": ["ui-monospace", "Cascadia Code", "monospace"],
-      },
-      boxShadow: {
-        "neon": '0 0 5px #00f0ff, 0 0 20px #00f0ff',
-        "neon-sm": '0 0 2px #00f0ff, 0 0 10px #00f0ff',
       },
       borderRadius: {
         DEFAULT: "0px",

@@ -70,20 +70,20 @@ export default function PromoBanner() {
         <div
             role="region"
             aria-label="Promoción activa"
-            className="relative w-full bg-background-dark border-b border-primary/30 text-tech-grey"
+            className="relative w-full bg-background border-b border-border text-muted"
         >
             <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
                 <span
-                    className="font-body text-xs sm:text-sm text-slate-200 [&_strong]:text-primary [&_strong]:font-bold [&_a]:text-primary [&_a]:underline"
+                    className="font-body text-xs sm:text-sm text-primary [&_strong]:text-primary [&_strong]:font-bold [&_a]:text-primary [&_a]:underline"
                     dangerouslySetInnerHTML={coupon.message ? { __html: coupon.message } : undefined}
                 >
                     {!coupon.message ? fallbackMessage : undefined}
                 </span>
 
                 {coupon.applies_to !== 'ambos' && (
-                    <span className={`font-mono text-xs sm:text-sm font-semibold tabular-nums shadow-neon-sm px-2 py-0.5 rounded-sm border ${
+                    <span className={`font-mono text-xs sm:text-sm font-semibold tabular-nums px-2 py-0.5 rounded-sm border ${
                         coupon.applies_to === 'wholesale'
-                            ? 'text-amber-400 border-amber-400/40'
+                            ? 'text-amber-600 border-amber-600/40'
                             : 'text-primary border-primary/40'
                     }`}>
                         {coupon.applies_to === 'wholesale' ? 'SOLO POR MAYOR' : 'SOLO POR MENOR'}
@@ -91,7 +91,7 @@ export default function PromoBanner() {
                 )}
 
                 {countdownLabel && (
-                    <span className="font-mono text-xs sm:text-sm font-semibold text-primary tabular-nums shadow-neon-sm px-2 py-0.5 rounded-sm border border-primary/40">
+                    <span className="font-mono text-xs sm:text-sm font-semibold text-primary tabular-nums px-2 py-0.5 rounded-sm border border-primary/40">
                         {countdownLabel}
                     </span>
                 )}

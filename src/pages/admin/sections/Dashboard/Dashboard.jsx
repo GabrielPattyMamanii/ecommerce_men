@@ -1,324 +1,110 @@
 /**
- * Dashboard.jsx — Admin Dashboard overview page (Task 5.1)
+ * Dashboard.jsx — Panel Admin - Introducción
  *
- * Renders inside AdminLayout's <Outlet /> at /admin.
- * Contains: KPI cards, Traffic Sources, Recent Activity table.
- * Charts are intentionally omitted per design scope.
+ * Página de bienvenida con diseño coherente al tema oscuro del admin.
+ * Paleta: fondo oscuro (#161b2e), textos claros (#f1f5f9), accents azul (#0d46f2)
+ * Mantiene la identidad visual del admin TEKGEAR.
  */
 
-/* ── Mock data ─────────────────────────────── */
-const KPI_DATA = [
+/* ── Secciones del Panel Admin ─────────────────── */
+const ADMIN_SECTIONS = [
     {
-        id: 'live-visitors',
-        label: 'Live Visitors',
-        value: '1,245',
-        change: '+12%',
-        trend: 'up',
-        barWidth: '75%',
-        barColor: '#0d46f2',
-        icon: 'person',
+        id: 'productos',
+        title: 'Gestión de Productos',
+        description: 'Crea, edita y elimina productos del catálogo. Maneja precios, colores y tamaños.',
+        icon: 'shopping_bag',
+        accentColor: '#0d46f2', // Azul principal
     },
     {
-        id: 'revenue',
-        label: "Today's Revenue",
-        value: '$14,320',
-        change: '+8%',
-        trend: 'up',
-        barWidth: '60%',
-        barColor: '#ffffff',
-        icon: 'payments',
+        id: 'ordenes',
+        title: 'Órdenes',
+        description: 'Visualiza y gestiona todas las órdenes de compra de tus clientes.',
+        icon: 'shopping_cart',
+        accentColor: '#10b981', // Verde
     },
     {
-        id: 'shipments',
-        label: 'Pending Shipments',
-        value: '42',
-        change: '-2%',
-        trend: 'down',
-        barWidth: '20%',
-        barColor: '#ef4444',
-        icon: 'local_shipping',
+        id: 'usuarios',
+        title: 'Usuarios de Staff',
+        description: 'Administra usuarios con acceso al panel admin con permisos específicos.',
+        icon: 'group',
+        accentColor: '#8b5cf6', // Púrpura
     },
     {
-        id: 'returns',
-        label: 'Active Returns',
-        value: '8',
-        change: '0%',
-        trend: 'neutral',
-        barWidth: '10%',
-        barColor: '#94a3b8',
-        icon: 'assignment_return',
-    },
-]
-
-const TRAFFIC_SOURCES = [
-    { label: 'Direct', pct: 45, color: '#ffffff' },
-    { label: 'Social Media', pct: 32, color: '#0d46f2' },
-    { label: 'Organic Search', pct: 18, color: '#6366f1' },
-    { label: 'Referral', pct: 5, color: '#64748b' },
-]
-
-const RECENT_ORDERS = [
-    {
-        id: '#ORD-7329',
-        product: 'Tech-Shell Jacket v2',
-        customer: 'Alex M.',
-        status: 'Completed',
-        statusColor: 'emerald',
-        amount: '$245.00',
+        id: 'inventario',
+        title: 'Inventario',
+        description: 'Controla tandas, marcas y stock de productos en tiempo real.',
+        icon: 'inventory_2',
+        accentColor: '#f59e0b', // Ámbar
     },
     {
-        id: '#ORD-7328',
-        product: 'Compression Run Tights',
-        customer: 'Sarah K.',
-        status: 'Processing',
-        statusColor: 'yellow',
-        amount: '$89.00',
+        id: 'cupones',
+        title: 'Cupones',
+        description: 'Crea y gestiona códigos de descuento con restricciones por tipo de cliente.',
+        icon: 'redeem',
+        accentColor: '#ef4444', // Rojo
     },
     {
-        id: '#ORD-7327',
-        product: 'Velocity Knit Runner',
-        customer: 'James R.',
-        status: 'Shipped',
-        statusColor: 'blue',
-        amount: '$165.00',
-    },
-    {
-        id: '#ORD-7326',
-        product: 'Spectre Shell Jacket',
-        customer: 'Maria G.',
-        status: 'Completed',
-        statusColor: 'emerald',
-        amount: '$450.00',
-    },
-    {
-        id: '#ORD-7325',
-        product: 'Urban Street Sneakers',
-        customer: 'Lucas P.',
-        status: 'Cancelled',
-        statusColor: 'red',
-        amount: '$299.00',
+        id: 'configuracion',
+        title: 'Configuración',
+        description: 'Personaliza banners, logo, navegación y datos de contacto del sitio.',
+        icon: 'settings',
+        accentColor: '#94a3b8', // Gris
     },
 ]
 
-const STATUS_STYLES = {
-    emerald: { bg: 'rgba(16,185,129,0.1)', text: '#10b981', ring: 'rgba(16,185,129,0.25)' },
-    yellow: { bg: 'rgba(234,179,8,0.1)', text: '#eab308', ring: 'rgba(234,179,8,0.25)' },
-    blue: { bg: 'rgba(59,130,246,0.1)', text: '#3b82f6', ring: 'rgba(59,130,246,0.25)' },
-    red: { bg: 'rgba(239,68,68,0.1)', text: '#ef4444', ring: 'rgba(239,68,68,0.25)' },
-}
-
-/* ── KPI Card ───────────────────────────────────── */
-function KpiCard({ label, value, change, trend, barWidth, barColor, icon }) {
-    const isUp = trend === 'up'
-    const isDown = trend === 'down'
-
-    return (
-        <div className="admin-kpi group">
-            {/* Decorative glow blob (top-right) */}
-            <div className="admin-kpi__glow" aria-hidden="true" />
-
-            <div className="admin-kpi__top">
-                <div className="flex items-start gap-3">
-                    {/* Icon */}
-                    <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded"
-                        style={{ background: 'rgba(13,70,242,0.12)' }}
-                    >
-                        <span
-                            className="material-symbols-outlined text-[20px]"
-                            style={{ color: '#0d46f2' }}
-                            aria-hidden="true"
-                        >
-                            {icon}
-                        </span>
-                    </div>
-
-                    <div>
-                        <p className="admin-kpi__label">{label}</p>
-                        <h3 className="admin-kpi__value">{value}</h3>
-                    </div>
-                </div>
-
-                {/* Trend badge */}
-                <span
-                    className={`admin-kpi__badge admin-kpi__badge--${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}
-                >
-                    <span className="material-symbols-outlined" aria-hidden="true">
-                        {isUp ? 'trending_up' : isDown ? 'trending_down' : 'remove'}
-                    </span>
-                    {change}
-                </span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="admin-kpi__bar-bg" role="meter" aria-label={`${label} progress`}>
-                <div
-                    className="admin-kpi__bar"
-                    style={{ width: barWidth, background: barColor }}
-                />
-            </div>
-        </div>
-    )
-}
-
-/* ── Traffic Sources ────────────────────────── */
-function TrafficSources() {
-    return (
-        <div className="admin-traffic">
-            <div className="admin-traffic__header">
-                <h2 className="admin-traffic__title">Traffic Source</h2>
-                <p className="admin-traffic__sub">Real-time user acquisition</p>
-            </div>
-
-            <div className="admin-traffic__bars">
-                {TRAFFIC_SOURCES.map(({ label, pct, color }) => (
-                    <div key={label} className="admin-traffic__row">
-                        <div className="admin-traffic__row-label">
-                            <span>{label}</span>
-                            <span className="admin-traffic__pct">{pct}%</span>
-                        </div>
-                        <div
-                            className="admin-traffic__bar-bg"
-                            role="meter"
-                            aria-valuenow={pct}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-label={`${label}: ${pct}%`}
-                        >
-                            <div
-                                className="admin-traffic__bar"
-                                style={{ width: `${pct}%`, background: color }}
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* System status bubble */}
-            <div className="admin-traffic__status">
-                <div className="admin-traffic__status-icon" aria-hidden="true">
-                    <span className="material-symbols-outlined">bolt</span>
-                </div>
-                <div>
-                    <p className="admin-traffic__status-label">SYSTEM STATUS</p>
-                    <p className="admin-traffic__status-value">OPTIMAL PERFORMANCE</p>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-/* ── Quick Stats row (new) ──────────────────────── */
-function QuickStats() {
-    const stats = [
-        { label: 'Conversion Rate', value: '3.24%', sub: '+0.4% vs. last week', icon: 'percent' },
-        { label: 'Avg. Order Value', value: '$187', sub: '+$12 vs. last week', icon: 'shopping_bag' },
-        { label: 'Return Rate', value: '1.8%', sub: '-0.2% vs. last week', icon: 'assignment_return' },
-        { label: 'Stock Alerts', value: '5 SKUs', sub: 'Low inventory', icon: 'warning' },
-    ]
-
+/* ── Tarjeta de Sección ────────────────────────── */
+function SectionCard({ title, description, icon, accentColor }) {
     return (
         <div
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8"
-            role="region"
-            aria-label="Quick statistics"
+            className="group relative rounded border border-slate-800 bg-slate-900/50 p-6 transition-all hover:border-slate-700 hover:bg-slate-800/50 cursor-pointer"
+            style={{
+                borderLeftColor: accentColor,
+                borderLeftWidth: '3px',
+            }}
         >
-            {stats.map(({ label, value, sub, icon }) => (
+            <div className="flex items-start gap-4">
                 <div
-                    key={label}
-                    className="flex items-center gap-4 rounded border border-slate-800 bg-[#161b2e] px-5 py-4 hover:border-[#0d46f2]/40 transition-colors"
+                    className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded"
+                    style={{ background: `${accentColor}15` }}
                 >
-                    <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded"
-                        style={{ background: 'rgba(13,70,242,0.1)' }}
+                    <span
+                        className="material-symbols-outlined text-2xl"
+                        style={{ color: accentColor }}
+                        aria-hidden="true"
                     >
-                        <span
-                            className="material-symbols-outlined text-[20px]"
-                            style={{ color: '#0d46f2' }}
-                            aria-hidden="true"
-                        >
-                            {icon}
-                        </span>
-                    </div>
-                    <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">
-                            {label}
-                        </p>
-                        <p className="text-lg font-bold text-white tracking-tight">{value}</p>
-                        <p className="text-[10px] text-slate-600 font-mono mt-0.5">{sub}</p>
-                    </div>
+                        {icon}
+                    </span>
                 </div>
-            ))}
+                <div className="flex-1">
+                    <h3 className="text-base font-bold text-slate-100 mb-1">{title}</h3>
+                    <p className="text-sm text-slate-400">{description}</p>
+                </div>
+            </div>
+            <div className="absolute top-3 right-3 text-slate-600 group-hover:text-slate-400 transition-colors">
+                <span className="material-symbols-outlined">arrow_outward</span>
+            </div>
         </div>
     )
 }
 
-/* ── Recent Activity Table ──────────────────────── */
-function RecentOrders() {
+/* ── Card de Característica ────────────────── */
+function FeatureCard({ icon, title, description, accentColor }) {
     return (
-        <div className="admin-orders" role="region" aria-label="Recent orders">
-            <div className="admin-orders__header">
-                <h2 className="admin-orders__title">Recent Activity</h2>
-                <button
-                    className="admin-orders__view-all"
-                    aria-label="View all orders"
+        <div className="rounded border border-slate-800 bg-slate-900/30 p-5 flex flex-col items-center text-center">
+            <div
+                className="flex h-10 w-10 items-center justify-center rounded mb-3"
+                style={{ background: `${accentColor}15` }}
+            >
+                <span
+                    className="material-symbols-outlined"
+                    style={{ color: accentColor }}
+                    aria-hidden="true"
                 >
-                    View All →
-                </button>
+                    {icon}
+                </span>
             </div>
-
-            <div className="admin-orders__table-wrap">
-                <table className="admin-orders__table" aria-label="Recent orders table">
-                    <thead>
-                        <tr>
-                            {['Order ID', 'Product', 'Customer', 'Status', 'Amount'].map((h, i) => (
-                                <th
-                                    key={h}
-                                    scope="col"
-                                    className={`admin-orders__th${i === 4 ? ' admin-orders__th--right' : ''}`}
-                                >
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {RECENT_ORDERS.map(({ id, product, customer, status, statusColor, amount }) => {
-                            const sc = STATUS_STYLES[statusColor] || STATUS_STYLES.blue
-                            return (
-                                <tr key={id} className="admin-orders__row">
-                                    <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
-                                        {id}
-                                    </td>
-                                    <td className="admin-orders__td">
-                                        <div className="admin-orders__product">
-                                            {/* Product thumbnail placeholder */}
-                                            <div className="admin-orders__product-img" aria-hidden="true" />
-                                            <span className="admin-orders__product-name">{product}</span>
-                                        </div>
-                                    </td>
-                                    <td className="admin-orders__td">{customer}</td>
-                                    <td className="admin-orders__td">
-                                        <span
-                                            className="admin-orders__status"
-                                            style={{
-                                                background: sc.bg,
-                                                color: sc.text,
-                                                boxShadow: `0 0 0 1px ${sc.ring}`,
-                                            }}
-                                        >
-                                            {status}
-                                        </span>
-                                    </td>
-                                    <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white admin-orders__td--right">
-                                        {amount}
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
-            </div>
+            <h4 className="font-bold text-slate-100 mb-2 text-sm">{title}</h4>
+            <p className="text-xs text-slate-500">{description}</p>
         </div>
     )
 }
@@ -326,72 +112,192 @@ function RecentOrders() {
 /* ── DASHBOARD PAGE ─────────────────────────────── */
 export default function Dashboard() {
     return (
-        <section aria-label="Dashboard overview" className="space-y-8">
+        <section aria-label="Dashboard del Panel Admin" className="space-y-8">
 
-            {/* ─ Section header ─ */}
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-800 pb-6">
-                <div>
-                    <p className="text-xs font-mono text-[#0d46f2] uppercase tracking-widest mb-1">
-                        // Real-time overview
+            {/* ─ Encabezado Principal ─ */}
+            <div className="border-b border-slate-800 pb-8">
+                <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
+                    // Admin Dashboard
+                </p>
+                <div className="flex items-end justify-between gap-4 flex-wrap">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-100 mb-2 uppercase tracking-tight">
+                            Panel de Control
+                        </h1>
+                        <p className="text-sm text-slate-400 max-w-2xl">
+                            Gestiona todos los aspectos de tu tienda online desde este panel centralizado.
+                            Accede a productos, órdenes, usuarios, inventario, promociones y configuración.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded border border-slate-800 bg-slate-900/50 px-4 py-2">
+                        <span
+                            className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+                            aria-hidden="true"
+                        />
+                        <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">System Active</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* ─ Características Principales ─ */}
+            <div className="grid gap-4 sm:grid-cols-3">
+                <FeatureCard
+                    icon="dashboard"
+                    title="Acceso Centralizado"
+                    description="Todas tus herramientas en un único lugar"
+                    accentColor="#0d46f2"
+                />
+                <FeatureCard
+                    icon="lock"
+                    title="Seguridad Garantizada"
+                    description="Solo usuarios autorizados pueden acceder"
+                    accentColor="#10b981"
+                />
+                <FeatureCard
+                    icon="speed"
+                    title="Interfaz Rápida"
+                    description="Diseño optimizado para máxima eficiencia"
+                    accentColor="#8b5cf6"
+                />
+            </div>
+
+            {/* ─ Secciones Disponibles ─ */}
+            <div>
+                <div className="mb-6">
+                    <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
+                        // Secciones
                     </p>
-                    <h2 className="text-2xl font-bold text-white uppercase tracking-tighter">
-                        Performance Overview
+                    <h2 className="text-xl font-bold text-slate-100 uppercase tracking-tight">
+                        Herramientas Disponibles
                     </h2>
                 </div>
-
-                {/* Live indicator */}
-                <div className="flex items-center gap-2 rounded border border-slate-800 bg-[#161b2e] px-4 py-2 text-xs font-mono">
-                    <span
-                        className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
-                        aria-hidden="true"
-                    />
-                    <span className="text-slate-400 uppercase tracking-widest">Live Data</span>
-                    <span className="text-emerald-500 font-bold">ONLINE</span>
+                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                    {ADMIN_SECTIONS.map(section => (
+                        <SectionCard
+                            key={section.id}
+                            title={section.title}
+                            description={section.description}
+                            icon={section.icon}
+                            accentColor={section.accentColor}
+                        />
+                    ))}
                 </div>
             </div>
 
-            {/* ─ KPI Grid ─ */}
-            <div
-                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-                role="region"
-                aria-label="Key performance indicators"
-            >
-                {KPI_DATA.map(kpi => (
-                    <KpiCard key={kpi.id} {...kpi} />
-                ))}
-            </div>
-
-            {/* ─ Quick Stats ─ */}
-            <QuickStats />
-
-            {/* ─ Traffic + (Chart placeholder spot) ─ */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Traffic Sources fills 1 col */}
-                <TrafficSources />
-
-                {/* Chart placeholder — 2 cols wide */}
-                <div
-                    className="lg:col-span-2 flex flex-col items-center justify-center rounded border border-slate-800 border-dashed bg-[#161b2e] p-10 text-center gap-3"
-                    role="region"
-                    aria-label="Sales chart placeholder"
-                >
-                    <span
-                        className="material-symbols-outlined text-5xl text-slate-700"
-                        aria-hidden="true"
-                    >
-                        bar_chart
-                    </span>
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest font-mono">
-                        Sales Performance Chart
+            {/* ─ Información de Funcionalidades ─ */}
+            <div className="rounded border border-slate-800 bg-slate-900/30 p-8 mt-12">
+                <div className="mb-6">
+                    <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
+                        // Guía rápida
                     </p>
-                    <p className="text-xs text-slate-600 font-mono">
-                        // Connect to Supabase in Task 4 to populate
-                    </p>
+                    <h3 className="text-lg font-bold text-slate-100 uppercase tracking-tight">¿Qué puedes hacer aquí?</h3>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#0d46f215' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#0d46f2' }}>
+                                    shopping_bag
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Productos</p>
+                            <p className="text-xs text-slate-500">Crea nuevos artículos, edita precios, colores, tamaños e imágenes del catálogo.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#10b98115' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#10b981' }}>
+                                    shopping_cart
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Órdenes</p>
+                            <p className="text-xs text-slate-500">Revisa las compras de tus clientes y actualiza estados de entrega.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#8b5cf615' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#8b5cf6' }}>
+                                    group
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Usuarios Staff</p>
+                            <p className="text-xs text-slate-500">Crea y gestiona cuentas de personal con permisos específicos por sección.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#f59e0b15' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#f59e0b' }}>
+                                    inventory_2
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Inventario</p>
+                            <p className="text-xs text-slate-500">Organiza tandas de productos, marcas y control de stock en tiempo real.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#ef444415' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#ef4444' }}>
+                                    redeem
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Cupones</p>
+                            <p className="text-xs text-slate-500">Crea códigos de descuento con restricciones por tipo de cliente (mayorista/minorista).</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-shrink-0">
+                            <span
+                                className="flex h-8 w-8 items-center justify-center rounded"
+                                style={{ background: '#94a3b815' }}
+                            >
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#94a3b8' }}>
+                                    settings
+                                </span>
+                            </span>
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-200 text-sm mb-1">Configuración</p>
+                            <p className="text-xs text-slate-500">Personaliza el banner principal, logo, navegación y datos de contacto.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* ─ Recent Activity Table ─ */}
-            <RecentOrders />
         </section>
     )
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../../../services/supabaseClient'
 import { S } from '../../../../components/admin/AdminKit'
+import { formatCurrency } from '../../../../lib/productPricing'
 
 export default function InventarioPropietariosTanda() {
     const { tanda } = useParams()
@@ -126,7 +127,7 @@ function OwnerSection({ owner, boletas }) {
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>${totalValue.toLocaleString('es-AR')}</span>
+                    <span style={{ fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>{formatCurrency(totalValue)}</span>
                     <span className="material-symbols-outlined" style={{ color: '#64748b', transform: expanded ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                 </div>
             </button>
@@ -138,7 +139,7 @@ function OwnerSection({ owner, boletas }) {
                             <div key={marca} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#0f172a', border: '1px solid #334155', borderRadius: '2px', padding: '0.3rem 0.6rem' }}>
                                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#f97316', textTransform: 'uppercase' }}>{marca}</span>
                                 <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{docenas} doc.</span>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981' }}>${valor.toLocaleString('es-AR')}</span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981' }}>{formatCurrency(valor)}</span>
                             </div>
                         ))}
                     </div>
@@ -184,7 +185,7 @@ function BoletaSection({ boleta, products }) {
                                             <td className="admin-orders__td admin-orders__td--mono">{prod.codigo || '—'}</td>
                                             <td className="admin-orders__td admin-orders__td--white">{prod.producto_titulo || 'Sin nombre'}</td>
                                             <td className="admin-orders__td" style={{ textAlign: 'center', fontWeight: 700 }}>{prod.cantidad_docenas || 0}</td>
-                                            <td className="admin-orders__td admin-orders__td--right">${Number(prod.precio_docena || 0).toLocaleString('es-AR')}</td>
+                                            <td className="admin-orders__td admin-orders__td--right">{formatCurrency(prod.precio_docena || 0)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

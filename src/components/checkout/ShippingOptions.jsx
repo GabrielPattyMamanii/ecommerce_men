@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../services/supabaseClient'
+import { formatCurrency } from '../../lib/productPricing'
 
 export function ShippingOptions({ onSelect, selectedOption, opciones = [], loading = false, error = null, direccion }) {
   const [sucursales, setSucursales] = useState([])
@@ -107,7 +108,7 @@ export function ShippingOptions({ onSelect, selectedOption, opciones = [], loadi
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: selectedOption?.carrier === opcion.carrier && selectedOption?.service === opcion.service ? '#10b981' : '#3b82f6' }}>
-                    ${opcion.precio?.toFixed(2) || '0.00'}
+                    {opcion.precio != null ? formatCurrency(opcion.precio) : formatCurrency(0)}
                   </div>
                 </div>
               </button>

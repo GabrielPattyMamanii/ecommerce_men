@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
 
 const EMPTY_SETTINGS = {
-    whatsapp_url: '', instagram_url: '', facebook_url: '', tiktok_url: '', email: '', hours_text: '',
+    whatsapp_url: '', instagram_url: '', facebook_url: '', tiktok_url: '', email: '', hours_text: '', consult_message: '',
 }
 
 export function useContactSettings() {
@@ -13,7 +13,7 @@ export function useContactSettings() {
         async function fetchSettings() {
             const { data } = await supabase
                 .from('contact_settings')
-                .select('whatsapp_url, instagram_url, facebook_url, tiktok_url, email, hours_text')
+                .select('whatsapp_url, instagram_url, facebook_url, tiktok_url, email, hours_text, consult_message')
                 .eq('id', 1)
                 .maybeSingle()
             if (active) setSettings(data ?? EMPTY_SETTINGS)

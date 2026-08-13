@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { S, ActionBtn, ConfirmModal } from '../../../../../components/admin/AdminKit'
 import { useMobile } from '../../../../../hooks/useMobile'
 import BrandPhotoUploader from './BrandPhotoUploader'
+import { formatCurrency } from '../../../../../lib/productPricing'
 
 const EMPTY_PRODUCT_FORM = { nombre: '', docenas: '', precioPorDocena: '', bultos: '', codigo: '', observaciones: '', propietario: '' }
 
@@ -163,7 +164,7 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                                 </span>
                                 {totalMarca > 0 && (
                                     <span style={{ fontSize: '0.85rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '999px', background: 'rgba(16,185,129,0.15)', color: '#10b981', fontFamily: 'monospace' }}>
-                                        ${totalMarca.toLocaleString('es-AR')}
+                                        {formatCurrency(totalMarca)}
                                     </span>
                                 )}
                             </div>
@@ -209,7 +210,7 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                         />
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderTop: '1px solid #1e293b' }}>
                             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
-                                {calculateSubtotal() > 0 ? `Subtotal: $${calculateSubtotal().toLocaleString('es-AR')}` : ''}
+                                {calculateSubtotal() > 0 ? `Subtotal: ${formatCurrency(calculateSubtotal())}` : ''}
                             </span>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button onClick={handleCancelEdit} style={S.btnGhost}>Cancelar</button>
@@ -253,9 +254,9 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                                             </div>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.375rem' }}>
                                                 <MiniStat label="Doc." value={prod.cantidad_docenas} />
-                                                <MiniStat label="$/Doc." value={`$${parseFloat(prod.precio_docena || 0).toLocaleString('es-AR')}`} />
+                                                <MiniStat label="$/Doc." value={formatCurrency(prod.precio_docena || 0)} />
                                                 <MiniStat label="Bultos" value={prod.bultos || 0} />
-                                                <MiniStat label="Total" value={`$${subtotal.toLocaleString('es-AR')}`} highlight />
+                                                <MiniStat label="Total" value={formatCurrency(subtotal)} highlight />
                                             </div>
                                         </div>
                                     )
@@ -285,10 +286,10 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                                                     <td className="admin-orders__td admin-orders__td--white">{prod.producto_titulo}</td>
                                                     <td className="admin-orders__td admin-orders__td--mono">{prod.codigo}</td>
                                                     <td className="admin-orders__td" style={{ textAlign: 'center', color: 'white', fontWeight: 700 }}>{prod.cantidad_docenas}</td>
-                                                    <td className="admin-orders__td admin-orders__td--right admin-orders__td--mono">${parseFloat(prod.precio_docena).toLocaleString('es-AR')}</td>
+                                                    <td className="admin-orders__td admin-orders__td--right admin-orders__td--mono">{formatCurrency(prod.precio_docena)}</td>
                                                     <td className="admin-orders__td" style={{ textAlign: 'center' }}>{prod.bultos || 0}</td>
                                                     <td className="admin-orders__td admin-orders__td--right" style={{ color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>
-                                                        ${(prod.cantidad_docenas * prod.precio_docena).toLocaleString('es-AR')}
+                                                        {formatCurrency(prod.cantidad_docenas * prod.precio_docena)}
                                                     </td>
                                                     <td className="admin-orders__td">
                                                         {ownerName ? (
@@ -327,7 +328,7 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                             />
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #1e293b' }}>
                                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
-                                    {calculateSubtotal() > 0 ? `Subtotal: $${calculateSubtotal().toLocaleString('es-AR')}` : ''}
+                                    {calculateSubtotal() > 0 ? `Subtotal: ${formatCurrency(calculateSubtotal())}` : ''}
                                 </span>
                                 <button onClick={handleAddProduct} style={S.btnPrimary}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>add</span> Agregar producto
@@ -349,7 +350,7 @@ export default function MarcaForm({ marca, index, onUpdate, onDelete, isEditingI
                                             <span style={{ width: '0.55rem', height: '0.55rem', borderRadius: '999px', background: color || '#9ca3af' }} />
                                             <span style={{ fontWeight: 700, color: 'white' }}>{name}</span>
                                             <span style={{ color: '#64748b' }}>· {data.items} prod · {data.docenas} doc</span>
-                                            <span style={{ color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>${data.total.toLocaleString('es-AR')}</span>
+                                            <span style={{ color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>{formatCurrency(data.total)}</span>
                                             <span style={{ color: '#64748b', fontSize: '0.65rem' }}>({pct}%)</span>
                                         </div>
                                     )

@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabaseClient'
+import { formatCurrency } from '../../../../lib/productPricing'
 
 /* ── Mapa visual de estados ── */
 const STATUS_META = {
@@ -255,7 +256,7 @@ export default function OrdersTable() {
 
                                         {/* Total */}
                                         <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
-                                            ${Number(order.total).toFixed(2)}
+                                            {formatCurrency(order.total)}
                                         </td>
 
                                         {/* Shipping type */}

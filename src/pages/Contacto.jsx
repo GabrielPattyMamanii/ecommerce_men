@@ -39,7 +39,7 @@ const CHANNEL_META = [
         icon: 'mail',
         label: 'EMAIL_AUTH',
         desc: 'Para consultas detalladas y pedidos custom',
-        color: '#00f0ff',
+        color: '#1a1c1d',
         field: 'email',
         hrefPrefix: 'mailto:',
     },
@@ -73,13 +73,13 @@ export default function Contacto() {
     }
 
     return (
-        <div className="min-h-screen bg-transparent text-slate-200">
+        <div className="min-h-screen bg-transparent text-primary">
 
             {/* Grid bg ── */}
             <div
-                className="fixed inset-0 pointer-events-none z-0 opacity-[0.04]"
+                className="fixed inset-0 pointer-events-none z-0 opacity-0"
                 style={{
-                    backgroundImage: 'linear-gradient(rgba(0,240,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,0.08) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)',
                     backgroundSize: '30px 30px',
                 }}
                 aria-hidden="true"
@@ -88,23 +88,20 @@ export default function Contacto() {
             <main className="relative z-10 max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-10">
 
                 {/* Encabezado ── */}
-                <div className="mb-10 border-b border-[#333b49] pb-6">
-                    <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.3em] mb-2">
-            // COMM_PROTOCOL
+                <div className="mb-10 border-b border-border pb-6">
+                    <p className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] mb-2">
+            // CONTACTO
                     </p>
-                    <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-white">
-                        CONTACT_<span className="text-[#00f0ff]">NODE</span>
+                    <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-primary">
+                        CONTACTO<span className="text-primary"></span>
                     </h1>
-                    <p className="mt-3 text-xs text-slate-500 font-mono max-w-xl leading-relaxed uppercase tracking-wide">
-                        Direct terminal access to the Kinetic Archive support unit. All inquiries are processed via encrypted uplink. Establish communication through the channels below.
-                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
                     {/* ── Canales (IZQUIERDA) ── */}
                     <div>
-                        <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
+                        <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-5">
                 // CANALES DE COMUNICACIÓN
                         </p>
                         <div className="space-y-3">
@@ -115,7 +112,7 @@ export default function Contacto() {
                                         href={ch.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="group flex items-center gap-5 p-5 border border-[#333b49] hover:border-[#00f0ff40] bg-[#1a1f27] hover:bg-[#232a35] transition-all duration-200"
+                                        className="group flex items-center gap-5 p-5 border border-border hover:border-primary/40 bg-surface hover:bg-surface-container transition-all duration-200"
                                     >
                                         <div
                                             className="flex-shrink-0 flex items-center justify-center w-10 h-10 border"
@@ -124,20 +121,20 @@ export default function Contacto() {
                                             <span className="material-symbols-outlined text-lg">{ch.icon}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-mono text-xs font-bold uppercase tracking-widest text-white group-hover:text-[#00f0ff] transition-colors">
+                                            <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary group-hover:text-primary transition-colors">
                                                 {ch.label}
                                             </p>
-                                            <p className="font-mono text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide">
+                                            <p className="font-mono text-[10px] text-muted mt-0.5 uppercase tracking-wide">
                                                 {ch.desc}
                                             </p>
                                         </div>
-                                        <span className="material-symbols-outlined text-slate-600 group-hover:text-[#00f0ff] group-hover:translate-x-1 transition-all text-sm">
+                                        <span className="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all text-sm">
                                             arrow_forward
                                         </span>
                                     </a>
                                 ))
                             ) : (
-                                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase tracking-wide">
+                                <div className="text-center py-8 text-muted font-mono text-xs uppercase tracking-wide">
                                     Cargando canales…
                                 </div>
                             )}
@@ -146,13 +143,39 @@ export default function Contacto() {
 
                     {/* ── Horarios (DERECHA) ── */}
                     <div>
-                        <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-5">
+                        <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-5">
                             //HORARIOS DE ATENCIÓN AL PUBLICO
                         </p>
-                        <div className="border border-[#333b49] p-5">
-                            <p className="font-mono text-[11px] text-slate-300 whitespace-pre-line leading-relaxed">
-                                {settings?.hours_text || '—'}
-                            </p>
+                        <div className="border border-border overflow-hidden rounded-sm">
+                            {settings?.hours_text ? (() => {
+                                try {
+                                    const horarios = JSON.parse(settings.hours_text)
+                                    const horariosActivos = Object.entries(horarios).filter(([_, h]) => h.abierto)
+
+                                    if (horariosActivos.length === 0) {
+                                        return <div className="p-5 text-center text-muted font-mono text-xs">Horarios no configurados</div>
+                                    }
+
+                                    return (
+                                        <table className="w-full">
+                                            <tbody>
+                                                {horariosActivos.map(([dia, horario], idx) => (
+                                                    <tr key={dia} className="border-b border-border last:border-b-0" style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)' }}>
+                                                        <td className="p-3 text-primary font-mono text-[11px] font-semibold">{dia}</td>
+                                                        <td className="p-3 text-right text-primary font-mono text-[11px]">
+                                                            {horario.inicio} — {horario.fin}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )
+                                } catch (e) {
+                                    return <div className="p-5 text-muted font-mono text-xs">{settings.hours_text}</div>
+                                }
+                            })() : (
+                                <div className="p-5 text-center text-muted font-mono text-xs">—</div>
+                            )}
                         </div>
                     </div>
 
@@ -161,8 +184,8 @@ export default function Contacto() {
 
             {/* ── UBICACIÓN ── */}
             <section className="relative z-10 mt-10 px-4 sm:px-6 lg:px-10 max-w-[1100px] mx-auto pb-16">
-                <p className="font-mono text-[10px] text-[#00f0ff] uppercase tracking-[0.2em] mb-4">
-                    // GEO_LOCATION
+                <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-4">
+                    // UBICACIÓN
                 </p>
                 {/* ── Google Maps Embed ──
                     Cuando tengas el iframe de Google Maps, reemplazá el div de abajo
@@ -179,9 +202,9 @@ export default function Contacto() {
                         title="Ubicación NEXO Performance"
                     />
                 */}
-                <div className="w-full h-80 border border-[#333b49] bg-[#1a1f27] flex flex-col items-center justify-center gap-3 text-slate-600">
+                <div className="w-full h-80 border border-border bg-surface-container flex flex-col items-center justify-center gap-3 text-outline">
                     <span className="material-symbols-outlined text-4xl">location_on</span>
-                    <p className="font-mono text-[10px] uppercase tracking-widest">GOOGLE_MAPS // PENDIENTE</p>
+                    <p className="font-mono text-[10px] uppercase tracking-widest">Mapa próximamente</p>
                 </div>
             </section>
 

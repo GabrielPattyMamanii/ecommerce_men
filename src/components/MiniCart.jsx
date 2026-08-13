@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatDimensions } from '../lib/cartDimensions'
+import { formatCurrency } from '../lib/productPricing'
 
 const FREE_SHIPPING_THRESHOLD = 200
 
@@ -31,7 +32,7 @@ function CartLineItem({ id, name, spec, price, qty, img, type, dimensions, chang
             <div className="absolute -left-2 top-0 bottom-0 w-[2px] bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
 
             {/* Imagen */}
-            <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#4a5568] bg-[#12161c] relative">
+            <div className="h-28 w-24 flex-shrink-0 overflow-hidden border border-[#e2e2e4] bg-[#f3f3f5] relative">
                 <div className="absolute inset-0 bg-primary/10 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <img
                     src={img}
@@ -44,18 +45,18 @@ function CartLineItem({ id, name, spec, price, qty, img, type, dimensions, chang
             <div className="flex flex-1 flex-col justify-between py-1">
                 <div>
                     <div className="flex justify-between items-start">
-                        <h3 className="text-sm font-bold text-white leading-tight uppercase font-display tracking-tight">
+                        <h3 className="text-sm font-bold text-primary leading-tight uppercase font-display tracking-tight">
                             {name}
                         </h3>
                         <p className="text-sm font-bold text-primary font-mono ml-2 flex-shrink-0">
-                            ${price}
+                            {formatCurrency(price)}
                         </p>
                     </div>
-                    <p className="mt-1 text-[10px] text-slate-500 uppercase tracking-wider font-mono">
+                    <p className="mt-1 text-[10px] text-muted uppercase tracking-wider font-mono">
                         {spec}
                     </p>
                     {dimensionLabel !== '—' && (
-                        <p className="mt-1 text-[9px] text-slate-600 uppercase tracking-wider font-mono">
+                        <p className="mt-1 text-[9px] text-outline uppercase tracking-wider font-mono">
                             <span className="material-symbols-outlined" style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '2px' }}>straighten</span>
                             {dimensionLabel}
                         </p>
@@ -64,19 +65,19 @@ function CartLineItem({ id, name, spec, price, qty, img, type, dimensions, chang
 
                 <div className="flex items-center justify-between mt-2">
                     {/* Qty ± */}
-                    <div className="flex items-center border border-[#4a5568] bg-[#12161c]">
+                    <div className="flex items-center border border-[#e2e2e4] bg-[#f3f3f5]">
                         <button
                             onClick={() => changeQty(id, -1)}
                             aria-label="Reducir cantidad"
-                            className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
+                            className="px-2 py-1 text-muted hover:text-primary hover:bg-[#e2e2e4] transition-colors text-sm font-mono"
                         >
                             −
                         </button>
-                        <span className="px-3 py-1 text-xs font-bold text-white font-mono">{qty}</span>
+                        <span className="px-3 py-1 text-xs font-bold text-primary font-mono">{qty}</span>
                         <button
                             onClick={() => changeQty(id, +1)}
                             aria-label="Aumentar cantidad"
-                            className="px-2 py-1 text-slate-400 hover:text-white hover:bg-[#232a35] transition-colors text-sm font-mono"
+                            className="px-2 py-1 text-muted hover:text-primary hover:bg-[#e2e2e4] transition-colors text-sm font-mono"
                         >
                             +
                         </button>
@@ -85,9 +86,9 @@ function CartLineItem({ id, name, spec, price, qty, img, type, dimensions, chang
                     {/* Remove */}
                     <button
                         onClick={() => removeItem(id)}
-                        className="text-[10px] font-bold text-slate-500 uppercase hover:text-red-500 transition-colors tracking-wider border-b border-transparent hover:border-red-500 font-mono"
+                        className="text-[10px] font-bold text-muted uppercase hover:text-red-500 transition-colors tracking-wider border-b border-transparent hover:border-red-500 font-mono"
                     >
-                        Remove_Item
+                        Eliminar
                     </button>
                 </div>
             </div>
@@ -142,45 +143,45 @@ export default function MiniCart() {
                 Escape handling, and ::backdrop (replaces custom overlay div). ── */}
             <dialog
                 ref={dialogRef}
-                aria-label="Equipment Bag"
-                className="cart-drawer bg-[#1a1f27] border-l border-[#333b49]/50 shadow-[0_0_50px_rgba(0,0,0,0.8)]"
+                aria-label="Carrito"
+                className="cart-drawer bg-white border-l border-[#e2e2e4] shadow-[0_0_50px_rgba(0,0,0,0.15)]"
                 onClick={(e) => { if (e.target === dialogRef.current) closeCart() }}
             >
                 {/* ── Header ── */}
-                <div className="flex items-center justify-between border-b border-[#333b49] px-6 py-5 bg-[#1a1f27]/95 backdrop-blur flex-shrink-0">
+                <div className="flex items-center justify-between border-b border-[#e2e2e4] px-6 py-5 bg-white/95 backdrop-blur flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-primary">shopping_cart</span>
-                        <h2 className="text-lg font-bold text-white uppercase tracking-widest font-display">
-                            Equipment Bag
+                        <h2 className="text-lg font-bold text-primary uppercase tracking-widest font-display">
+                            Carrito
                         </h2>
-                        <span className="flex h-5 w-5 items-center justify-center bg-primary text-xs font-bold text-black font-mono">
+                        <span className="flex h-5 w-5 items-center justify-center bg-primary text-xs font-bold text-white font-mono">
                             {totalCount}
                         </span>
                     </div>
                     <button
                         onClick={closeCart}
                         aria-label="Cerrar carrito"
-                        className="flex h-8 w-8 items-center justify-center border border-[#4a5568] bg-[#12161c] hover:border-primary hover:text-primary text-slate-400 transition-all"
+                        className="flex h-8 w-8 items-center justify-center border border-[#e2e2e4] bg-[#f3f3f5] hover:border-primary hover:text-primary text-muted transition-all"
                     >
                         <span className="material-symbols-outlined text-sm">close</span>
                     </button>
                 </div>
 
                 {/* ── Nota de envío ── */}
-                <div className="px-6 py-4 bg-[#232a35] border-b border-[#333b49] flex-shrink-0">
-                    <div className="flex items-center gap-2 text-xs font-mono uppercase text-slate-400">
+                <div className="px-6 py-4 bg-[#f3f3f5] border-b border-[#e2e2e4] flex-shrink-0">
+                    <div className="flex items-center gap-2 text-xs font-mono uppercase text-muted">
                         <span className="material-symbols-outlined text-sm">local_shipping</span>
                         Envío se calcula en checkout según tu dirección
                     </div>
                 </div>
 
                 {/* ── Lista de ítems ── */}
-                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 bg-[#1a1f27]">
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 bg-white">
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                            <span className="material-symbols-outlined text-5xl text-slate-600">shopping_bag</span>
-                            <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">
-                                Equipment Bag Empty
+                            <span className="material-symbols-outlined text-5xl text-outline">shopping_bag</span>
+                            <p className="text-muted font-mono text-xs uppercase tracking-widest">
+                                Tu carrito está vacío
                             </p>
                         </div>
                     ) : (
@@ -213,7 +214,7 @@ export default function MiniCart() {
                                         icon="inventory_2"
                                         label="Por Mayor"
                                         count={wholesaleItems.length}
-                                        accent={{ text: 'text-amber-400', badge: 'border-amber-400/40 text-amber-400 bg-amber-400/10', line: 'bg-amber-400/20' }}
+                                        accent={{ text: 'text-amber-600', badge: 'border-amber-600/40 text-amber-600 bg-amber-600/10', line: 'bg-amber-600/20' }}
                                     />
                                     <div className="space-y-6">
                                         {wholesaleItems.map(item => (
@@ -233,24 +234,24 @@ export default function MiniCart() {
                 </div>
 
                 {/* ── Footer con totales y CTA ── */}
-                <div className="border-t border-[#333b49] bg-[#232a35] p-6 flex-shrink-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.5)]">
+                <div className="border-t border-[#e2e2e4] bg-[#f3f3f5] p-6 flex-shrink-0 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.08)]">
                     {/* Totales */}
                     <div className="mb-5 space-y-2 font-mono text-sm">
-                        <div className="flex justify-between text-slate-400">
+                        <div className="flex justify-between text-muted">
                             <span className="uppercase">Subtotal</span>
-                            <span>${subtotal.toFixed(2)}</span>
+                            <span>{formatCurrency(subtotal)}</span>
                         </div>
-                        <div className="flex justify-between text-slate-400">
+                        <div className="flex justify-between text-muted">
                             <span className="uppercase">Shipping</span>
-                            <span className="text-slate-500 text-xs">Cálc. en checkout</span>
+                            <span className="text-muted text-xs">Cálc. en checkout</span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold text-white mt-2 pt-2 border-t border-[#333b49]">
+                        <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t border-[#e2e2e4]">
                             <span className="uppercase tracking-wider">Subtotal</span>
-                            <span style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}>
-                                ${subtotal.toFixed(2)}
+                            <span>
+                                {formatCurrency(subtotal)}
                             </span>
                         </div>
-                        <p className="text-[10px] text-slate-600 uppercase tracking-wide">
+                        <p className="text-[10px] text-outline uppercase tracking-wide">
                             Taxes calculated at next step.
                         </p>
                     </div>
@@ -260,21 +261,21 @@ export default function MiniCart() {
                         onClick={handleCheckout}
                         id="minicart-checkout-btn"
                         disabled={items.length === 0}
-                        className="w-full group relative flex items-center justify-center gap-2 bg-white hover:bg-primary py-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full group relative flex items-center justify-center gap-2 bg-white border border-[#e2e2e4] hover:bg-primary py-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                        <span className="text-black text-sm font-black uppercase tracking-widest group-hover:pr-4 transition-all">
-                            Proceed to Checkout
+                        <span className="text-primary text-sm font-black uppercase tracking-widest group-hover:pr-4 group-hover:text-white transition-all">
+                            Finalizar compra
                         </span>
-                        <span className="material-symbols-outlined text-black text-sm absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <span className="material-symbols-outlined text-white text-sm absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
                             arrow_forward
                         </span>
                     </button>
 
                     {/* Trust icons */}
-                    <div className="mt-4 flex justify-center gap-2 opacity-30">
-                        <span className="material-symbols-outlined text-2xl text-white">lock</span>
-                        <span className="material-symbols-outlined text-2xl text-white">verified_user</span>
-                        <span className="material-symbols-outlined text-2xl text-white">shield</span>
+                    <div className="mt-4 flex justify-center gap-2 opacity-40">
+                        <span className="material-symbols-outlined text-2xl text-primary">lock</span>
+                        <span className="material-symbols-outlined text-2xl text-primary">verified_user</span>
+                        <span className="material-symbols-outlined text-2xl text-primary">shield</span>
                     </div>
                 </div>
             </dialog>

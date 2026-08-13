@@ -21,18 +21,28 @@ function getStitch() {
 }
 
 /**
- * List all projects from Stitch account
+ * List all projects from Stitch account, optionally filtered by name
+ * @param {string} filterName - Optional: filter projects by name (case-insensitive)
  */
-export async function listAllProjects() {
+export async function listAllProjects(filterName = null) {
   try {
     const stitch = getStitch();
     const projects = await stitch.projects() || [];
 
-    return projects.map(p => ({
+    let filtered = projects.map(p => ({
       id: p.id || p.projectId,
       name: p.data?.title || p.data?.name || 'Untitled Project',
       data: p.data,
     }));
+
+    // Filter by name if provided
+    if (filterName) {
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(filterName.toLowerCase())
+      );
+    }
+
+    return filtered;
   } catch (error) {
     console.error('Error listing Stitch projects:', error);
     throw error;
@@ -40,9 +50,10 @@ export async function listAllProjects() {
 }
 
 /**
- * List all designs/screens across all projects
+ * List all designs/screens across all projects, optionally filtered by project name
+ * @param {string} filterProjectName - Optional: filter designs by project name (case-insensitive)
  */
-export async function listAllDesigns() {
+export async function listAllDesigns(filterProjectName = null) {
   try {
     const stitch = getStitch();
     const projects = await stitch.projects() || [];
@@ -50,9 +61,15 @@ export async function listAllDesigns() {
     const allScreens = [];
 
     for (const project of projects) {
+      const projectName = project.data?.title || 'Untitled';
+
+      // Skip project if filter is provided and project name doesn't match
+      if (filterProjectName && !projectName.toLowerCase().includes(filterProjectName.toLowerCase())) {
+        continue;
+      }
+
       try {
         const screens = await project.screens();
-        const projectName = project.data?.title || 'Untitled';
 
         allScreens.push(...screens.map(screen => ({
           id: screen.id || screen.screenId,

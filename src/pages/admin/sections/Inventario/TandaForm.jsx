@@ -4,6 +4,7 @@ import { supabase } from '../../../../services/supabaseClient'
 import { S, ConfirmModal, ToastStack, useToasts } from '../../../../components/admin/AdminKit'
 import { convertToWebP } from '../../../../lib/imageUtils'
 import { diffEntradasByCodigo, hydrateTandaForm } from '../../../../lib/inventarioUtils'
+import { formatCurrency } from '../../../../lib/productPricing'
 import MarcaForm from './components/MarcaForm'
 import ShippingConfigModal from './components/ShippingConfigModal'
 
@@ -260,7 +261,7 @@ export default function TandaForm() {
                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>
                             <span style={{ fontWeight: 700, color: 'white' }}>{resumen.totalProductos} prod.</span>
                             <span>{resumen.totalDocenas} doc.</span>
-                            <span style={{ fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>${resumen.valorEstimado.toLocaleString('es-AR')}</span>
+                            <span style={{ fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>{formatCurrency(resumen.valorEstimado)}</span>
                         </div>
                     )}
                     <button onClick={handlePreSave} disabled={loading || !formData.nombre.trim()} style={{ ...S.btnPrimary, opacity: !formData.nombre.trim() ? 0.5 : 1, cursor: !formData.nombre.trim() ? 'not-allowed' : 'pointer' }}>
@@ -396,7 +397,7 @@ export default function TandaForm() {
                             </div>
                             <div style={{ textAlign: 'center', background: 'rgba(16,185,129,0.1)', borderRadius: '2px', padding: '0.75rem' }}>
                                 <p style={{ margin: 0, fontSize: '0.7rem', color: '#94a3b8' }}>Valor estimado</p>
-                                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>${resumen.valorEstimado.toLocaleString('es-AR')}</p>
+                                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>{formatCurrency(resumen.valorEstimado)}</p>
                             </div>
                         </div>
                     </div>
@@ -406,7 +407,7 @@ export default function TandaForm() {
             {showConfirmModal && (
                 <ConfirmModal
                     title="Confirmar guardado de tanda"
-                    message={`Nombre: ${formData.nombre} · Fecha: ${formData.fechaIngreso} · Marcas: ${formData.marcas.length} · Productos: ${resumen.totalProductos} · Gastos: $${parseFloat(formData.gastos || 0).toLocaleString()}`}
+                    message={`Nombre: ${formData.nombre} · Fecha: ${formData.fechaIngreso} · Marcas: ${formData.marcas.length} · Productos: ${resumen.totalProductos} · Gastos: ${formatCurrency(formData.gastos || 0)}`}
                     confirmLabel="Confirmar y guardar" busyLabel="Guardando…"
                     onConfirm={handleConfirmSave} onCancel={() => setShowConfirmModal(false)}
                 />

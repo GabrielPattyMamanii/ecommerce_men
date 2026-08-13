@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Operating Hours | Minimalist Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#131b2e",
+                    "surface": "#f8f9ff",
+                    "on-surface-variant": "#45464d",
+                    "on-primary-fixed": "#131b2e",
+                    "on-tertiary-container": "#818486",
+                    "on-tertiary-fixed": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-secondary-fixed": "#00201d",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "background": "#f8f9ff",
+                    "primary-fixed-dim": "#bec6e0",
+                    "tertiary-fixed": "#e0e3e5",
+                    "outline-variant": "#c6c6cd",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-container": "#86f2e4",
+                    "surface-container-high": "#dce9ff",
+                    "surface-variant": "#d3e4fe",
+                    "secondary": "#006a61",
+                    "primary-fixed": "#dae2fd",
+                    "on-surface": "#0b1c30",
+                    "on-background": "#0b1c30",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "tertiary": "#000000",
+                    "primary": "#000000",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "inverse-surface": "#213145",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "surface-container-low": "#eff4ff",
+                    "surface-container": "#e5eeff",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#565e74",
+                    "inverse-primary": "#bec6e0",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#89f5e7",
+                    "outline": "#76777d",
+                    "on-primary-container": "#7c839b",
+                    "tertiary-container": "#191c1e",
+                    "surface-dim": "#cbdbf5",
+                    "on-secondary-container": "#006f66",
+                    "on-secondary-fixed-variant": "#005049"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "20px",
+                    "md": "16px",
+                    "xl": "48px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "base": "4px",
+                    "container-max": "1440px"
+            },
+            "fontFamily": {
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-xl": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; background-color: #f8f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .switch-input:checked + .switch-slider { background-color: #006a61; }
+        .switch-input:checked + .switch-slider:before { transform: translateX(1.25rem); }
+        .custom-time-input::-webkit-calendar-picker-indicator { display: none; }
+        .active-row { border-left: 4px solid #006a61; }
+    </style>
+</head>
+<body class="text-on-surface overflow-x-hidden">
+<!-- SideNavBar -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 bg-primary-container flex flex-col py-xl border-r border-outline-variant z-50">
+<div class="px-lg mb-xl">
+<h1 class="font-headline-xl text-headline-xl font-bold text-secondary-fixed">Retail Manager</h1>
+<p class="font-body-sm text-on-primary-container mt-xs">Flagship Store #102</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm text-on-tertiary-container hover:bg-on-primary-fixed-variant/50 transition-colors group" href="#">
+<span class="material-symbols-outlined text-secondary-fixed/70 group-hover:text-secondary-fixed">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-tertiary-container hover:bg-on-primary-fixed-variant/50 transition-colors group" href="#">
+<span class="material-symbols-outlined text-secondary-fixed/70 group-hover:text-secondary-fixed">settings</span>
+<span class="font-label-md text-label-md">Store Settings</span>
+</a>
+<!-- Active State: Operating Hours -->
+<a class="flex items-center gap-md px-md py-sm bg-on-primary-fixed-variant text-secondary-fixed border-l-4 border-secondary-fixed transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-label-md text-label-md">Operating Hours</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-tertiary-container hover:bg-on-primary-fixed-variant/50 transition-colors group" href="#">
+<span class="material-symbols-outlined text-secondary-fixed/70 group-hover:text-secondary-fixed">group</span>
+<span class="font-label-md text-label-md">Staff Management</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-tertiary-container hover:bg-on-primary-fixed-variant/50 transition-colors group" href="#">
+<span class="material-symbols-outlined text-secondary-fixed/70 group-hover:text-secondary-fixed">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-lg space-y-md">
+<button class="w-full py-sm px-md bg-secondary-fixed text-on-secondary-fixed rounded-lg font-label-md text-label-md hover:bg-secondary-fixed-dim transition-all">
+                View Analytics
+            </button>
+<div class="space-y-xs pt-md border-t border-on-primary-fixed-variant">
+<a class="flex items-center gap-md px-md py-xs text-on-tertiary-container hover:text-secondary-fixed transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<a class="flex items-center gap-md px-md py-xs text-on-tertiary-container hover:text-error transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[280px] min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="h-16 flex justify-between items-center px-lg w-full max-w-[calc(1440px-280px)] bg-surface-container-lowest border-b border-outline-variant shadow-sm sticky top-0 z-40">
+<div class="flex items-center gap-lg">
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">Store Operations</h2>
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-body-md">search</span>
+<input class="pl-10 pr-md py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all w-64" placeholder="Search settings..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant font-label-md text-label-md hover:text-secondary transition-colors">Preview Site</button>
+<button class="bg-secondary text-on-secondary px-lg py-1.5 rounded font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">Save Changes</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-xs"></div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary">help_outline</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-xs">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a store manager in a minimalist office setting, with soft natural light and a clean corporate background. The person is looking directly at the camera with a helpful and confident expression. The overall style is modern and high-contrast, matching the soft corporate aesthetic of the dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmg9_G2_eWh-HiOknR0F9YwloVz3FiYzPu_E6QLweLL7wsTDKHN3ttVJVe0V9Kp1YF8Ey5wzwTvmfD6_O-FFP2t2mO-StecqY9cRyrodPozwWLENa1zRSn_ginAVJKTC-WXBfPyRBlM2Z4IQkhaZkUv0ormCsf7ivbwzIx2YOIhsMFHCiwoxlI3Ov9hi3jMFxWytxRLKwucFKiE4D6sHleAKHZrsKaNdIAnl6zLnH__hK6ibwtBVOW"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 p-lg max-w-[1200px] mx-auto w-full">
+<!-- Header Section -->
+<div class="mb-xl flex justify-between items-end">
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Operating Hours</h3>
+<p class="font-body-md text-on-surface-variant max-w-2xl">Configure your weekly schedule and holiday closures. Ensure your staff and customers are aware of the current storefront availability.</p>
+</div>
+<div class="flex gap-md">
+<button class="flex items-center gap-xs px-md py-2 border border-outline text-on-surface-variant font-label-md text-label-md rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-base">calendar_today</span>
+                        Manage Holidays
+                    </button>
+</div>
+</div>
+<!-- Bento Layout Grid -->
+<div class="grid grid-cols-12 gap-lg">
+<!-- Main Schedule List: Minimalist -->
+<section class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-bright">
+<h4 class="font-headline-md text-headline-md text-on-surface">Weekly Availability</h4>
+<span class="px-md py-1 bg-secondary-container text-on-secondary-container font-label-sm text-label-sm rounded-full">Automated Mode</span>
+</div>
+<div class="divide-y divide-outline-variant/20">
+<!-- Monday -->
+<div class="flex items-center py-lg px-lg hover:bg-surface-container-low transition-colors group">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-on-surface group-hover:text-secondary transition-colors">Monday</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase">Weekday</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="09:00"/>
+</div>
+<span class="material-symbols-outlined text-outline-variant">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="18:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-on-surface hidden md:block">Open</span>
+</label>
+</div>
+</div>
+<!-- Tuesday -->
+<div class="flex items-center py-lg px-lg hover:bg-surface-container-low transition-colors group">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-on-surface">Tuesday</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase">Weekday</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="09:00"/>
+</div>
+<span class="material-symbols-outlined text-outline-variant">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="18:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-on-surface hidden md:block">Open</span>
+</label>
+</div>
+</div>
+<!-- Wednesday -->
+<div class="flex items-center py-lg px-lg hover:bg-surface-container-low transition-colors group">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-on-surface">Wednesday</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase">Weekday</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="09:00"/>
+</div>
+<span class="material-symbols-outlined text-outline-variant">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="18:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-on-surface hidden md:block">Open</span>
+</label>
+</div>
+</div>
+<!-- Thursday -->
+<div class="flex items-center py-lg px-lg hover:bg-surface-container-low transition-colors group">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-on-surface">Thursday</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase">Weekday</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="09:00"/>
+</div>
+<span class="material-symbols-outlined text-outline-variant">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="18:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-on-surface hidden md:block">Open</span>
+</label>
+</div>
+</div>
+<!-- Friday -->
+<div class="flex items-center py-lg px-lg hover:bg-surface-container-low transition-colors group">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-on-surface">Friday</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase">Weekday</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="09:00"/>
+</div>
+<span class="material-symbols-outlined text-outline-variant">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant focus:border-secondary outline-none font-headline-md text-headline-md text-on-surface px-xs py-xs transition-all" type="time" value="20:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-on-surface hidden md:block">Open</span>
+</label>
+</div>
+</div>
+<!-- Saturday -->
+<div class="flex items-center py-lg px-lg bg-surface-container-low/50 group border-l-4 border-error/40">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-error">Saturday</span>
+<p class="font-label-sm text-label-sm text-error/60 uppercase">Weekend</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl opacity-40 grayscale pointer-events-none">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant font-headline-md text-headline-md text-on-surface px-xs py-xs" disabled="" type="time" value="10:00"/>
+</div>
+<span class="material-symbols-outlined">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant font-headline-md text-headline-md text-on-surface px-xs py-xs" disabled="" type="time" value="14:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-error hidden md:block">Closed</span>
+</label>
+</div>
+</div>
+<!-- Sunday -->
+<div class="flex items-center py-lg px-lg bg-surface-container-low/50 group border-l-4 border-error/40">
+<div class="w-32">
+<span class="font-headline-md text-headline-md text-error">Sunday</span>
+<p class="font-label-sm text-label-sm text-error/60 uppercase">Weekend</p>
+</div>
+<div class="flex-1 flex items-center justify-center gap-xl opacity-40 grayscale pointer-events-none">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">OPEN</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant font-headline-md text-headline-md text-on-surface px-xs py-xs" disabled="" type="time" value="00:00"/>
+</div>
+<span class="material-symbols-outlined">trending_flat</span>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">CLOSE</label>
+<input class="custom-time-input bg-transparent border-b-2 border-outline-variant font-headline-md text-headline-md text-on-surface px-xs py-xs" disabled="" type="time" value="00:00"/>
+</div>
+</div>
+<div class="w-32 flex justify-end">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer switch-input" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+<span class="ml-3 font-label-md text-label-md text-error hidden md:block">Closed</span>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Contextual Cards -->
+<aside class="col-span-12 lg:col-span-4 flex flex-col gap-lg">
+<!-- Quick Stats -->
+<div class="bg-primary-container text-on-tertiary p-lg rounded-xl shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<h5 class="font-label-sm text-label-sm opacity-70 uppercase mb-md tracking-widest">Total Weekly Hours</h5>
+<div class="flex items-baseline gap-xs">
+<span class="font-headline-xl text-headline-xl text-secondary-fixed">48.5</span>
+<span class="font-body-md text-body-md opacity-60">Hours Active</span>
+</div>
+<div class="mt-lg pt-lg border-t border-white/10 space-y-md">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm opacity-80">Shift Efficiency</span>
+<span class="font-label-md text-label-md text-secondary-fixed">94%</span>
+</div>
+<div class="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+<div class="bg-secondary-fixed h-full w-[94%]"></div>
+</div>
+</div>
+</div>
+<div class="absolute -right-8 -bottom-8 opacity-10">
+<span class="material-symbols-outlined text-[120px]">schedule</span>
+</div>
+</div>
+<!-- Upcoming Holiday Alert -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 p-lg rounded-xl flex flex-col gap-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">info</span>
+<h5 class="font-headline-md text-headline-md text-on-surface">Upcoming Closure</h5>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Labor Day weekend is approaching. The store is currently set to follow standard weekend hours.</p>
+<button class="text-secondary font-label-md text-label-md border border-secondary/20 py-2 rounded hover:bg-secondary/5 transition-all text-center">Update Holiday Hours</button>
+</div>
+<!-- Staff Coverage Card -->
+<div class="bg-white p-lg rounded-xl shadow-sm border border-outline-variant/30">
+<h5 class="font-label-md text-label-md text-on-surface mb-lg">Staff Coverage</h5>
+<div class="space-y-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male retail staff member, smiling professionally, wearing a modern corporate uniform. High contrast lighting, clean background, sharp focus, professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxd53SQkRhf5-Fyut0uwi5HLxGjqptz0D0NsqC4SjVsl6Ct_GWYgRzjAdbT-2Q_P5XbtGZJWlaHouMRoiWYJ92q6W9ZG55nP385g1QSUitlYfXLT-lzXGClnM0q9kqYlNhTpMaRb07Vua0zbuwCjGnkPjHOPS6DQBUo4imC3CeowjaxaKnStyyrfz6Zm2TJDqLYAOIVo768ICvzxYVJuF9BMMq5gS4HuMLchzFcFc7_zo0qrKaSk_N"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<span class="font-label-md text-label-md">Alex Rivera</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">M, W, F</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/70">Floor Supervisor</p>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A portrait of a female retail staff member, looking organized and ready for work, wearing a neat corporate shirt. The lighting is soft and flattering, with a modern store interior softly blurred in the background. High professional quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkxsz_AgGa7RmP8rYlfmFVLCsIIQxUiDSXkOBW6mKZXK3rUcT6SFl9yrt8ActEhWtquPcyD4Xg30BPOrWgmBqk4hZtTMK1KSHSi6a0crHsdqXAUpC1sGhjJyRklgEcBu5KMXH2Ghx3C6pWaG0bKkxpeGY0NG6S_wNFvTxcIJUrS63tbN5tY8oOhOaU7zRVcGqbcONVC_dDVWRhkM-8UeVb2zHRpN0MFxKiOiFnzQv-3ie6KQUetvvc"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<span class="font-label-md text-label-md">Sarah Chen</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">T, Th</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/70">Inventory Lead</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-lg text-on-surface-variant font-label-sm text-label-sm py-2 border-t border-outline-variant/20 hover:text-secondary">View Full Team Schedule</button>
+</div>
+</aside>
+</div>
+<!-- Footer Meta -->
+<div class="mt-xl flex justify-between items-center text-on-surface-variant/50">
+<p class="font-label-sm text-label-sm italic">Last modified by admin 4 hours ago</p>
+<div class="flex gap-md">
+<span class="font-label-sm text-label-sm">Timezone: America/New_York (EST)</span>
+<span class="font-label-sm text-label-sm">•</span>
+<span class="font-label-sm text-label-sm">24-hour format enabled</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Success Toast (Hidden by default) -->
+<div class="fixed bottom-lg right-lg bg-inverse-surface text-inverse-on-surface px-lg py-md rounded-lg shadow-xl flex items-center gap-md transform translate-y-32 transition-transform duration-300 z-50" id="save-toast">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+<span class="font-body-md text-body-md">Store hours updated successfully.</span>
+</div>
+<script>
+        // Micro-interactions
+        const saveBtn = document.querySelector('button.bg-secondary');
+        const toast = document.getElementById('save-toast');
+
+        saveBtn.addEventListener('click', () => {
+            saveBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Saving...';
+            saveBtn.disabled = true;
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = 'Save Changes';
+                saveBtn.disabled = false;
+                
+                // Show toast
+                toast.classList.remove('translate-y-32');
+                toast.classList.add('translate-y-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-32');
+                    toast.classList.remove('translate-y-0');
+                }, 3000);
+            }, 800);
+        });
+
+        // Time Input Highlight Effect
+        const timeInputs = document.querySelectorAll('.custom-time-input');
+        timeInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.closest('.flex-col').querySelector('label').classList.add('text-secondary');
+            });
+            input.addEventListener('blur', () => {
+                input.closest('.flex-col').querySelector('label').classList.remove('text-secondary');
+            });
+        });
+
+        // Sidebar active state logic for the current screen
+        // "Operating Hours" is already active in the HTML structure above
+    </script>
+</body></html>

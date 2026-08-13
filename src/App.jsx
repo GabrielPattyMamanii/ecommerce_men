@@ -36,6 +36,9 @@ const ControlInventarioTandas     = lazy(() => import('./pages/admin/sections/Co
 const ControlInventarioTanda      = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTanda'))
 const UsersTable      = lazy(() => import('./pages/admin/sections/Users/UsersTable'))
 const ConfiguracionContacto = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionContacto'))
+const ConfiguracionWhatsapp = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionWhatsapp'))
+const ConfiguracionBanner   = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionBanner'))
+const ConfiguracionLogo     = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionLogo'))
 
 // Placeholder pages — serán reemplazadas en Tareas posteriores
 function ComingSoon({ title }) {
@@ -121,6 +124,9 @@ export default function App() {
                 <Route path="cupones" element={<RequirePermission section="cupones"><Suspense fallback={null}><CouponsTable /></Suspense></RequirePermission>} />
                 <Route path="usuarios" element={<RequirePermission section="usuarios"><Suspense fallback={null}><UsersTable /></Suspense></RequirePermission>} />
                 <Route path="configuracion" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionContacto /></Suspense></RequirePermission>} />
+                <Route path="configuracion/whatsapp" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionWhatsapp /></Suspense></RequirePermission>} />
+                <Route path="configuracion/banner" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionBanner /></Suspense></RequirePermission>} />
+                <Route path="configuracion/logo" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionLogo /></Suspense></RequirePermission>} />
                 <Route path="compras" element={<RequirePermission section="compras"><ComingSoon title="Compras" /></RequirePermission>} />
                 <Route path="analytics" element={<ComingSoon title="Analytics" />} />
               </Route>

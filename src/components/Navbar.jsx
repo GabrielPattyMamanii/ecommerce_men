@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useSiteLogo } from '../hooks/useSiteLogo'
 import './Navbar.css'
 
 import NexoLogo from '../assets/nexo-logo.svg'
-
-import NexoLogoImg from '../assets/logo-nexo.jpg'
 
 const NAV_LINKS = [
     { label: 'Inicio', to: '/' },
@@ -15,7 +14,17 @@ const NAV_LINKS = [
 
 export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false)
+    const [searchValue, setSearchValue] = useState('')
     const { totalCount, toggleCart } = useCart()
+    const logoUrl = useSiteLogo()
+    const navigate = useNavigate()
+
+    function submitSearch(e) {
+        e.preventDefault()
+        const q = searchValue.trim()
+        setMenuOpen(false)
+        navigate(q ? `/catalogo?q=${encodeURIComponent(q)}` : '/catalogo')
+    }
 
     return (
         <header className="navbar">
@@ -24,20 +33,14 @@ export default function Navbar() {
 
             <div className="navbar__inner">
                 <div className="navbar__left">
-                    <Link to="/" className="navbar__logo flex items-center gap-3 sm:gap-4 group">
-                        <img 
-                            src={NexoLogoImg} 
-                            alt="NEXO Logo" 
-                            className="h-[40px] sm:h-[48px] w-auto mix-blend-lighten opacity-95 transition-transform duration-300 group-hover:scale-105" 
-                        />
-                        <div className="flex flex-col justify-center">
-                            <span className="font-['Inter',sans-serif] font-black text-2xl sm:text-3xl tracking-[0.1em] text-slate-200 leading-none">
-                                NEXO
-                            </span>
-                            <span className="font-['Inter',sans-serif] font-extrabold text-[9px] sm:text-[11px] tracking-[0.45em] sm:tracking-[0.5em] text-[#4a90e2] mt-1">
-                                PERFORMANCE
-                            </span>
-                        </div>
+                    <Link to="/" className="navbar__logo group">
+                        {logoUrl && (
+                            <img
+                                src={logoUrl}
+                                alt="NEXO Logo"
+                                className="w-full h-full object-contain opacity-95 transition-all duration-300 group-hover:scale-105"
+                            />
+                        )}
                     </Link>
 
                     <nav className="navbar__nav" aria-label="Navegación principal">
@@ -56,18 +59,20 @@ export default function Navbar() {
                     </nav>
                 </div>
 
-                {/* ── Centro: Búsqueda ── */}
-                <label className="navbar__search" aria-label="Buscar productos">
+                {/* ── Centro: Búsqueda (desktop, ≥1024px) ── */}
+                <form className="navbar__search" role="search" onSubmit={submitSearch} aria-label="Buscar productos">
                     <div className="navbar__search-box">
                         <span className="material-symbols-outlined navbar__search-icon">search</span>
                         <input
                             type="text"
                             className="navbar__search-input"
-                            placeholder="Search gear //"
+                            placeholder="Buscar productos"
                             aria-label="Buscar"
+                            value={searchValue}
+                            onChange={e => setSearchValue(e.target.value)}
                         />
                     </div>
-                </label>
+                </form>
 
                 {/* ── Derecha: Iconos ── */}
                 <div className="navbar__right">
@@ -106,6 +111,20 @@ export default function Navbar() {
                 className={`navbar__mobile-menu${menuOpen ? ' navbar__mobile-menu--open' : ''}`}
                 aria-label="Menú móvil"
             >
+                {/* Buscador — antes solo existía en desktop (≥1024px); mobile/tablet
+                    no tenían forma de buscar productos */}
+                <form className="navbar__mobile-search" role="search" onSubmit={submitSearch} aria-label="Buscar productos">
+                    <span className="material-symbols-outlined navbar__search-icon">search</span>
+                    <input
+                        type="text"
+                        className="navbar__mobile-search-input"
+                        placeholder="Buscar productos"
+                        aria-label="Buscar"
+                        value={searchValue}
+                        onChange={e => setSearchValue(e.target.value)}
+                    />
+                </form>
+
                 {NAV_LINKS.map(({ label, to }) => (
                     <NavLink
                         key={to}

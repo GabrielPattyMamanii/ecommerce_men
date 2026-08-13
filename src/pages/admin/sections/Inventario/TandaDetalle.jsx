@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../../../services/supabaseClient'
 import { S } from '../../../../components/admin/AdminKit'
 import { groupKeyForMarca, ownerBorderStyle } from '../../../../lib/inventarioUtils'
+import { formatCurrency } from '../../../../lib/productPricing'
 
 export default function TandaDetalle() {
     const { tanda } = useParams()
@@ -127,11 +128,11 @@ export default function TandaDetalle() {
                         </div>
                         <div style={{ textAlign: 'center' }}>
                             <p style={{ margin: 0, fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748b' }}>Gastos totales</p>
-                            <p style={{ margin: 0, fontFamily: 'monospace', color: 'white', fontWeight: 700 }}>${Number(tandaInfo.gastos || 0).toLocaleString()}</p>
+                            <p style={{ margin: 0, fontFamily: 'monospace', color: 'white', fontWeight: 700 }}>{formatCurrency(tandaInfo.gastos || 0)}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Valor total estimado</p>
-                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>${totalMoney.toLocaleString('es-AR')}</p>
+                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>{formatCurrency(totalMoney)}</p>
                             <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b' }}>{totalDocenas} docenas en total</p>
                         </div>
                     </div>
@@ -260,7 +261,7 @@ function BrandSection({ brandGroup, ownerColor, ownerTotals, isMultiOwner, getCo
                         <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>Sin bultos agregados</span>
                     )}
 
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981', padding: '0.2rem 0.6rem', borderRadius: '2px', background: 'rgba(16,185,129,0.1)' }}>${brandTotal.toLocaleString('es-AR')}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981', padding: '0.2rem 0.6rem', borderRadius: '2px', background: 'rgba(16,185,129,0.1)' }}>{formatCurrency(brandTotal)}</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -305,9 +306,9 @@ function BrandSection({ brandGroup, ownerColor, ownerTotals, isMultiOwner, getCo
                                             <td className="admin-orders__td admin-orders__td--white">{prod.producto_titulo}</td>
                                             <td className="admin-orders__td admin-orders__td--mono">{prod.codigo}</td>
                                             <td className="admin-orders__td" style={{ textAlign: 'center', fontWeight: 700 }}>{prod.cantidad_docenas}</td>
-                                            <td className="admin-orders__td admin-orders__td--right">${Number(prod.precio_docena || 0).toLocaleString('es-AR')}</td>
+                                            <td className="admin-orders__td admin-orders__td--right">{formatCurrency(prod.precio_docena || 0)}</td>
                                             <td className="admin-orders__td admin-orders__td--right" style={{ color: '#10b981', fontWeight: 700 }}>
-                                                ${(prod.cantidad_docenas * (Number(prod.precio_docena) || 0)).toLocaleString('es-AR')}
+                                                {formatCurrency(prod.cantidad_docenas * (Number(prod.precio_docena) || 0))}
                                             </td>
                                             <td className="admin-orders__td" style={{ fontStyle: 'italic' }}>{prod.observaciones || '-'}</td>
                                             {isMultiOwner && (

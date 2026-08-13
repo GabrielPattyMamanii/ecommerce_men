@@ -14,7 +14,7 @@ export function MercadoPagoBrick({ items, payer, shippingMethod, shippingAddress
   return (
     <div className="space-y-4">
       {error && (
-        <p className="text-red-400 text-xs font-mono uppercase tracking-wide border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-center gap-2">
+        <p className="text-red-600 text-xs font-mono uppercase tracking-wide border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-center gap-2">
           <span className="material-symbols-outlined text-sm">error</span>
           {error}
         </p>

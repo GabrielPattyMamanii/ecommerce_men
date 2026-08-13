@@ -13,6 +13,7 @@ import { supabase } from '../../../../services/supabaseClient'
 import { convertToWebP } from '../../../../lib/imageUtils'
 import { S, ActionBtn, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ProductFormModal from './components/ProductFormModal'
+import { formatCurrency } from '../../../../lib/productPricing'
 
 /* ── Miniatura de producto (o placeholder si no tiene imágenes) ── */
 function ProductThumb({ src, name }) {
@@ -56,15 +57,28 @@ function ColorSwatches({ colors }) {
     )
 }
 
-/* ── Badge de stock con color según nivel ── */
-function StockBadge({ value }) {
+/* ── Badge de stock con color según nivel. Si unlimited_stock está activo, el
+   número real queda oculto al público (ver ProductDetail/ProductCard), pero
+   acá en admin se muestra igual junto a un indicador "∞ Disponible". ── */
+function StockBadge({ value, unlimited }) {
     const color = value === 0 ? '#ef4444' : value < 5 ? '#eab308' : '#10b981'
     return (
-        <span style={{
-            fontFamily: 'monospace', fontWeight: 600, color,
-            fontSize: '0.875rem',
-        }}>
-            {value}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontFamily: 'monospace', fontWeight: 600, color, fontSize: '0.875rem' }}>
+                {value}
+            </span>
+            {unlimited && (
+                <span
+                    title="Disponible sin control de stock — se muestra como 'Disponible' al público sin importar este número"
+                    style={{
+                        fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700,
+                        padding: '0.1rem 0.4rem', borderRadius: '999px',
+                        background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                    }}
+                >
+                    ∞ Disponible
+                </span>
+            )}
         </span>
     )
 }
@@ -92,7 +106,7 @@ export default function ProductsTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('products')
-            .select('id, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, images, sizes, colors, visible, created_at, category_id, categories(name)')
+            .select('id, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, visible, created_at, category_id, categories(name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setProducts(data ?? [])
@@ -138,7 +152,8 @@ export default function ProductsTable() {
                 dozen_length:      values.price_on_request ? null : (values.dozen_length !== '' ? parseFloat(values.dozen_length) : null),
                 dozen_weight:      values.price_on_request ? null : (values.dozen_weight !== '' ? parseFloat(values.dozen_weight) : null),
                 price_on_request:  values.price_on_request,
-                stock:             parseInt(values.stock, 10),
+                stock:             values.stock !== '' ? parseInt(values.stock, 10) : 0,
+                unlimited_stock:   Boolean(values.unlimited_stock),
                 category_id:       values.category_id || null,
                 images:            [...existingUrls, ...uploadedUrls],
                 sizes:             Array.isArray(values.sizes) ? values.sizes : [],
@@ -334,10 +349,10 @@ export default function ProductsTable() {
                                                 <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 600 }}>Consultar</span>
                                             ) : (
                                                 <div>
-                                                    <div>${Number(product.retail_price).toFixed(2)}</div>
+                                                    <div>{formatCurrency(product.retail_price)}</div>
                                                     {product.wholesale_price && (
                                                         <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                                                            ${Number(product.wholesale_price).toFixed(2)} mayorista
+                                                            {formatCurrency(product.wholesale_price)} mayorista
                                                         </div>
                                                     )}
                                                 </div>
@@ -346,7 +361,7 @@ export default function ProductsTable() {
 
                                         {/* Stock */}
                                         <td className="admin-orders__td admin-orders__td--mono">
-                                            <StockBadge value={product.stock} />
+                                            <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
                                         </td>
 
                                         {/* Visible */}

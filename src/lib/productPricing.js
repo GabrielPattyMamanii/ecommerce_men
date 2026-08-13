@@ -1,9 +1,29 @@
+/** Formatea un número como moneda argentina (ARS), ej: "ARS $1.234,50" */
+export function formatCurrency(amount) {
+  const num = Number(amount) || 0
+  const formatted = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num)
+  return `ARS $${formatted}`
+}
+
 export function formatPrice(product) {
-  return product.price_on_request ? 'Consultar precio' : `$${Number(product.retail_price).toFixed(2)}`
+  return product.price_on_request ? 'Consultar precio' : formatCurrency(product.retail_price)
+}
+
+/** Producto "Disponible sin control de stock" — se ignora el número de stock. */
+export function hasUnlimitedStock(product) {
+  return Boolean(product.unlimited_stock)
+}
+
+/** Disponibilidad real de cara al cliente: unlimited_stock o stock > 0. */
+export function isAvailable(product) {
+  return hasUnlimitedStock(product) || product.stock > 0
 }
 
 export function isPurchasable(product) {
-  return !product.price_on_request && product.stock > 0
+  return !product.price_on_request && isAvailable(product)
 }
 
 export function hasWholesale(product) {
@@ -11,11 +31,11 @@ export function hasWholesale(product) {
 }
 
 export function formatWholesalePrice(product) {
-  return `$${Number(product.wholesale_price).toFixed(2)}`
+  return formatCurrency(product.wholesale_price)
 }
 
 export function isWholesalePurchasable(product) {
-  return hasWholesale(product) && product.stock > 0
+  return hasWholesale(product) && isAvailable(product)
 }
 
 const UNIT_DIMENSION_META = [

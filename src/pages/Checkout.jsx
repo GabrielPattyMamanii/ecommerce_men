@@ -6,6 +6,7 @@ import { MercadoPagoBrick } from '../components/payment/MercadoPagoBrick'
 import { ShippingOptions } from '../components/checkout/ShippingOptions'
 import { PROVINCIAS } from '../constants/provincias'
 import { supabase } from '../services/supabaseClient'
+import { formatCurrency } from '../lib/productPricing'
 
 /* ── Datos mock del resumen de orden (Tarea 4 lo reemplazará) ── */
 const ORDER_ITEMS = [
@@ -44,7 +45,7 @@ function ManifestSectionHeader({ label, count, accent }) {
 function FormField({ label, type = 'text', placeholder = '', colSpan = 1, required = false, value, onChange }) {
     return (
         <div className={colSpan === 2 ? 'col-span-2' : ''}>
-            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
+            <label className="block text-xs font-bold text-muted mb-2 uppercase font-mono tracking-wide">
                 {label}
             </label>
             <input
@@ -53,7 +54,7 @@ function FormField({ label, type = 'text', placeholder = '', colSpan = 1, requir
                 required={required}
                 value={value}
                 onChange={onChange}
-                className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
+                className="w-full bg-surface-container border border-border text-primary px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-outline font-mono outline-none"
             />
         </div>
     )
@@ -159,16 +160,233 @@ export default function Checkout() {
         : 0
     const displayTotalWithDiscount = displaySubtotal + displayShipping - discountAmount
 
+    /* ── Contenido del resumen de orden — se reutiliza en la versión
+       colapsable de mobile (arriba del form) y en el sidebar sticky
+       de desktop, para no duplicar la lógica de cupón/desglose ── */
+    const orderSummaryBody = (
+        <>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 border-b border-border pb-4">
+                <h3 className="text-lg font-bold text-primary uppercase font-mono">Resumen de Orden</h3>
+                <span className="text-xs text-muted font-mono">[{displayItems.length} ARTÍCULOS]</span>
+            </div>
+
+            {/* Resumen numérico */}
+            <div className="space-y-3 font-mono text-sm mb-8">
+                <div className="flex justify-between">
+                    <span className="text-muted uppercase">Subtotal</span>
+                    <span className="font-medium text-primary">{formatCurrency(displaySubtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted uppercase">Envío</span>
+                    <span className="font-bold text-primary uppercase">
+                        {displayShipping === 0 ? 'Gratis' : formatCurrency(displayShipping)}
+                    </span>
+                </div>
+
+                {/* Desglose de descuento */}
+                {discountAmount > 0 && (
+                    <div className="bg-surface-container/50 border border-green-500/20 p-3 rounded mt-4 mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-xs text-green-600">local_offer</span>
+                            <span className="text-green-600 font-bold uppercase tracking-wide">
+                                Cupón {appliedCoupon.code} ({appliedCoupon.discount_percentage}%)
+                            </span>
+                        </div>
+
+                        {/* Productos elegibles */}
+                        <div className="space-y-1 mb-2 border-b border-green-500/10 pb-2">
+                            {couponEligibleItems.map(item => {
+                                const itemDiscount = +(item.price * item.qty * appliedCoupon.discount_percentage / 100).toFixed(2)
+                                const itemFinal = +(item.price * item.qty - itemDiscount).toFixed(2)
+                                return (
+                                    <div key={item.id} className="flex items-center justify-between text-xs text-green-700">
+                                        <span className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                                            {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
+                                        </span>
+                                        <span>{formatCurrency(itemFinal)}</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        {/* Productos NO elegibles (si hay) */}
+                        {discountAmount > 0 && appliedCoupon.applies_to !== 'ambos' && (
+                            displayItems.some(i => !couponEligibleItems.find(e => e.id === i.id)) && (
+                                <div className="space-y-1 border-b border-border pb-2 mb-2">
+                                    {displayItems
+                                        .filter(i => !couponEligibleItems.find(e => e.id === i.id))
+                                        .map(item => (
+                                            <div key={item.id} className="flex items-center justify-between text-xs text-muted">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-[10px]">cancel</span>
+                                                    {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
+                                                </span>
+                                                <span className="text-muted">{formatCurrency(item.price * item.qty)}</span>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        )}
+
+                        {/* Descuento total */}
+                        <div className="flex justify-between text-xs font-bold text-green-600 pt-1">
+                            <span>Ahorro:</span>
+                            <span>-{formatCurrency(discountAmount)}</span>
+                        </div>
+                    </div>
+                )}
+
+                {discountAmount > 0 && (
+                    <div className="flex justify-between">
+                        <span className="text-muted uppercase">Descuento</span>
+                        <span className="font-bold text-green-600">-{formatCurrency(discountAmount)}</span>
+                    </div>
+                )}
+
+                <div className="h-px bg-border my-2" />
+                <div className="flex justify-between text-base font-bold items-center">
+                    <span className="text-primary uppercase tracking-wider">Monto Total</span>
+                    <span className="text-primary text-2xl">
+                        {formatCurrency(displayTotalWithDiscount)}
+                    </span>
+                </div>
+            </div>
+
+            {/* Items de la orden — agrupados por menor / mayor */}
+            <div>
+                {retailItems.length > 0 && (
+                    <>
+                        <ManifestSectionHeader
+                            label="Por Menor"
+                            count={retailItems.length}
+                            accent={{ text: 'text-primary', badge: 'border-primary/40 text-primary bg-primary/10', line: 'bg-primary/20' }}
+                        />
+                        <div className="space-y-3">
+                            {retailItems.map(({ id, name, qty, price, img }) => (
+                                <div key={id} className="flex gap-4 p-3 bg-surface-container/50 border border-border/50">
+                                    <div className="h-16 w-12 bg-surface-container border border-border overflow-hidden flex-shrink-0">
+                                        <img
+                                            src={img}
+                                            alt={name}
+                                            className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col justify-center gap-1 flex-1">
+                                        <span className="text-xs font-bold text-primary uppercase font-mono leading-tight">
+                                            {name}
+                                        </span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] text-muted font-mono">CTD: {qty}</span>
+                                            <span className="text-xs text-primary font-mono font-bold">{formatCurrency(price)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {wholesaleItems.length > 0 && (
+                    <>
+                        <ManifestSectionHeader
+                            label="Por Mayor"
+                            count={wholesaleItems.length}
+                            accent={{ text: 'text-amber-600', badge: 'border-amber-600/40 text-amber-600 bg-amber-600/10', line: 'bg-amber-600/20' }}
+                        />
+                        <div className="space-y-3">
+                            {wholesaleItems.map(({ id, name, qty, price, img }) => (
+                                <div key={id} className="flex gap-4 p-3 bg-surface-container/50 border border-amber-600/20">
+                                    <div className="h-16 w-12 bg-surface-container border border-border overflow-hidden flex-shrink-0">
+                                        <img
+                                            src={img}
+                                            alt={name}
+                                            className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col justify-center gap-1 flex-1">
+                                        <span className="text-xs font-bold text-primary uppercase font-mono leading-tight">
+                                            {name}
+                                        </span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] text-muted font-mono">CTD: {qty}</span>
+                                            <span className="text-xs text-amber-600 font-mono font-bold">{formatCurrency(price)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Promo code */}
+            <div className="mt-6">
+                {!appliedCoupon ? (
+                    <>
+                        <div className="flex mb-2">
+                            <input
+                                type="text"
+                                value={couponCode}
+                                onChange={e => setCouponCode(e.target.value)}
+                                placeholder="CÓDIGO DE PROMOCIÓN"
+                                disabled={couponLoading}
+                                className="flex-1 bg-surface-container border border-border text-primary px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-outline outline-none disabled:opacity-50"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleApplyCoupon}
+                                disabled={couponLoading || !couponCode.trim()}
+                                className="px-4 py-2.5 bg-surface-container border border-l-0 border-border hover:border-primary hover:text-primary text-muted text-xs font-mono uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {couponLoading ? 'Validando...' : 'Aplicar'}
+                            </button>
+                        </div>
+                        {couponError && (
+                            <div className="text-red-600 text-xs font-mono uppercase tracking-wide border border-red-500/30 bg-red-500/10 px-3 py-2 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">error</span>
+                                {couponError}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="flex items-center justify-between bg-surface-container border border-green-500/30 p-3 rounded">
+                        <span className="font-mono text-xs text-green-600 uppercase tracking-wide flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                            {appliedCoupon.code} · -{appliedCoupon.discount_percentage}%
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleRemoveCoupon}
+                            className="text-xs font-mono text-muted hover:text-red-600 uppercase tracking-wide transition-colors border-b border-transparent hover:border-red-600"
+                        >
+                            Quitar
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Seguridad */}
+            <div className="mt-6 flex items-center justify-center gap-4 opacity-30">
+                <span className="material-symbols-outlined text-2xl text-primary">lock</span>
+                <span className="material-symbols-outlined text-2xl text-primary">verified_user</span>
+                <span className="material-symbols-outlined text-2xl text-primary">shield</span>
+            </div>
+        </>
+    )
+
     return (
-        <div className="bg-[#12161c] min-h-screen text-slate-200 font-body antialiased">
+        <div className="bg-background min-h-screen text-primary font-body antialiased">
 
             {/* ── Grid bg decorativa ── */}
             <div
-                className="fixed inset-0 pointer-events-none z-0 opacity-[0.03]"
+                className="fixed inset-0 pointer-events-none z-0 opacity-0"
                 style={{
                     backgroundImage: `
-            linear-gradient(rgba(0,240,255,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,240,255,0.05) 1px, transparent 1px)
+            linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)
           `,
                     backgroundSize: '20px 20px',
                 }}
@@ -178,75 +396,79 @@ export default function Checkout() {
             <main className="relative z-10 flex-1 px-6 py-10 lg:px-20 lg:py-12 max-w-[1200px] mx-auto w-full">
 
                 {/* ── Encabezado de página ── */}
-                <div className="mb-10 border-b border-[#333b49] pb-6 flex flex-wrap justify-between items-end gap-4">
+                <div className="mb-10 border-b border-border pb-6 flex flex-wrap justify-between items-end gap-4">
                     <div>
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-3 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-xs font-mono text-muted mb-3 uppercase tracking-widest">
                             <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
                             <span className="text-primary">›</span>
                             <Link to="/" onClick={() => window.history.back()} className="hover:text-primary transition-colors">Carrito</Link>
                             <span className="text-primary">›</span>
-                            <span className="text-white">Pago</span>
+                            <span className="text-primary">Pago</span>
                         </div>
-                        <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-white uppercase font-display">
-                            <span className="text-primary">01.</span> Pago
+                        <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-primary uppercase font-display">
+                            Pago
                         </h1>
-                        <p className="text-slate-500 flex items-center gap-2 text-xs uppercase tracking-widest font-mono mt-2">
+                        <p className="text-muted flex items-center gap-2 text-xs uppercase tracking-widest font-mono mt-2">
                             <span className="material-symbols-outlined text-primary text-sm">lock_person</span>
-                            Conexión Encriptada // Protocolo V.4
+                            Pago 100% seguro
                         </p>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono">
-                        <span>ESTADO:</span>
-                        <span className="text-green-500 animate-pulse">EN LÍNEA</span>
                     </div>
                 </div>
 
                 {/* ── Grid principal 12 cols ── */}
                 <form onSubmit={(e) => e.preventDefault()}>
-                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+                    <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-12">
+
+                        {/* ══════ Resumen del pedido — mobile/tablet, colapsable ══════
+                            Antes vivía solo en la columna sticky (hidden lg:block), lo
+                            que dejaba a los usuarios mobile sin ver el desglose ni poder
+                            aplicar cupón. Se abre solo (open) automáticamente si ya hay
+                            un cupón aplicado, para que el ahorro quede a la vista. ══ */}
+                        <div className="lg:hidden">
+                            <details className="group border border-border bg-surface shadow-lg" open={!!appliedCoupon}>
+                                <summary className="cursor-pointer select-none list-none flex items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+                                    <span className="flex items-center gap-2 text-sm font-bold text-primary uppercase font-mono tracking-wide">
+                                        <span className="material-symbols-outlined text-lg">receipt_long</span>
+                                        Resumen del pedido
+                                    </span>
+                                    <span className="flex items-center gap-2">
+                                        <span className="text-base font-bold text-primary font-mono">
+                                            {formatCurrency(displayTotalWithDiscount)}
+                                        </span>
+                                        <span className="material-symbols-outlined text-muted text-lg transition-transform group-open:rotate-180">
+                                            expand_more
+                                        </span>
+                                    </span>
+                                </summary>
+                                <div className="px-5 pb-6 pt-2 border-t border-border">
+                                    {orderSummaryBody}
+                                </div>
+                            </details>
+                        </div>
 
                         {/* ══════ Columna formulario (7 cols) ══════ */}
                         <div className="lg:col-span-7 space-y-8">
 
                             {/* ── Sección 1: Contact_Data ── */}
-                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#4a5568]" />
-                                <div className="flex items-center justify-between mb-6 border-b border-[#333b49] pb-4">
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                            <section className="bg-surface border border-border p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-outline" />
+                                <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
+                                    <h3 className="text-sm font-bold text-primary uppercase tracking-wider font-mono flex items-center gap-2">
                                         <span className="material-symbols-outlined text-primary text-sm">contact_mail</span>
                                         Datos de Contacto
                                     </h3>
-                                    <Link
-                                        to="/cuenta"
-                                        className="text-xs font-medium text-primary hover:text-white font-mono uppercase transition-colors"
-                                    >
-                                        &lt; Iniciar Sesión /&gt;
-                                    </Link>
                                 </div>
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                     <FormField label="Correo Electrónico" type="email" placeholder="USUARIO@DOMINIO.COM" required value={email} onChange={e => setEmail(e.target.value)} />
                                     <FormField label="Número de Teléfono" type="tel" placeholder="+54 9 11 0000-0000" required value={phone} onChange={e => setPhone(e.target.value)} />
-                                    <div className="flex items-center gap-3 group cursor-pointer col-span-1 sm:col-span-2">
-                                        <input
-                                            type="checkbox"
-                                            id="newsletter"
-                                            className="h-4 w-4 appearance-none border border-[#4a5568] bg-[#12161c] checked:border-primary checked:bg-primary transition-all cursor-pointer"
-                                        />
-                                        <label
-                                            htmlFor="newsletter"
-                                            className="text-xs text-slate-400 font-mono uppercase group-hover:text-primary transition-colors cursor-pointer tracking-wide"
-                                        >
-                                            Suscribirse a actualizaciones
-                                        </label>
-                                    </div>
                                 </div>
                             </section>
 
                             {/* ── Sección 2: Fulfillment_Method ── */}
-                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#4a5568]" />
-                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                            <section className="bg-surface border border-border p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-outline" />
+                                <h3 className="text-sm font-bold text-primary mb-6 border-b border-border pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">local_shipping</span>
                                     Método de Entrega
                                 </h3>
@@ -259,19 +481,19 @@ export default function Checkout() {
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
                                             shippingMethod === 'shipping'
                                             ? 'border-primary bg-primary/10'
-                                            : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
+                                            : 'border-border bg-surface-container hover:border-border'
                                         }`}
                                     >
                                         {shippingMethod === 'shipping' && (
-                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
+                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-white">
                                                 <span className="material-symbols-outlined text-sm font-bold">check</span>
                                             </div>
                                         )}
                                         <div className="flex items-center gap-3">
-                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'shipping' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>local_shipping</span>
-                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Envío a Domicilio</span>
+                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'shipping' ? 'text-primary' : 'text-muted group-hover:text-primary'}`}>local_shipping</span>
+                                            <span className="font-bold text-primary uppercase font-mono text-sm tracking-wide">Envío a Domicilio</span>
                                         </div>
-                                        <span className="text-xs text-slate-400 font-mono leading-relaxed">
+                                        <span className="text-xs text-muted font-mono leading-relaxed">
                                             Envío a domicilio. Costo cotizado en base a destino.
                                         </span>
                                     </button>
@@ -282,19 +504,19 @@ export default function Checkout() {
                                         className={`p-4 border transition-all text-left flex flex-col gap-2 relative overflow-hidden group ${
                                             shippingMethod === 'pickup'
                                             ? 'border-primary bg-primary/10'
-                                            : 'border-[#333b49] bg-[#12161c] hover:border-[#4a5568]'
+                                            : 'border-border bg-surface-container hover:border-border'
                                         }`}
                                     >
                                         {shippingMethod === 'pickup' && (
-                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-black">
+                                            <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-primary text-white">
                                                 <span className="material-symbols-outlined text-sm font-bold">check</span>
                                             </div>
                                         )}
                                         <div className="flex items-center gap-3">
-                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'pickup' ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>storefront</span>
-                                            <span className="font-bold text-white uppercase font-mono text-sm tracking-wide">Retiro en Tienda</span>
+                                            <span className={`material-symbols-outlined text-2xl transition-colors ${shippingMethod === 'pickup' ? 'text-primary' : 'text-muted group-hover:text-primary'}`}>storefront</span>
+                                            <span className="font-bold text-primary uppercase font-mono text-sm tracking-wide">Retiro en Tienda</span>
                                         </div>
-                                        <span className="text-xs text-slate-400 font-mono leading-relaxed">
+                                        <span className="text-xs text-muted font-mono leading-relaxed">
                                             Retira en local. Nos pondremos en contacto.
                                         </span>
                                     </button>
@@ -310,13 +532,13 @@ export default function Checkout() {
                                             <FormField label="Número" type="text" required value={number} onChange={e => setNumber(e.target.value)} />
                                             <FormField label="Ciudad" type="text" required value={city} onChange={e => setCity(e.target.value)} />
                                             <div className="col-span-1 sm:col-span-2">
-                                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase font-mono tracking-wide">
+                                                <label className="block text-xs font-bold text-muted mb-2 uppercase font-mono tracking-wide">
                                                     Provincia
                                                 </label>
                                                 <select
                                                     value={province}
                                                     onChange={e => setProvince(e.target.value)}
-                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-[#5a6478] font-mono outline-none"
+                                                    className="w-full bg-surface-container border border-border text-primary px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-outline font-mono outline-none"
                                                 >
                                                     {PROVINCIAS.map(prov => (
                                                         <option key={prov.codigo} value={prov.nombre}>
@@ -403,7 +625,7 @@ export default function Checkout() {
                                                         cotizarManual()
                                                     }}
                                                     disabled={shippingLoading || !street || !number || !city || !province || !postalCode}
-                                                    className="w-full py-3 px-4 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold uppercase text-sm transition-colors flex items-center justify-center gap-2"
+                                                    className="w-full py-3 px-4 bg-primary hover:bg-primary-strong disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold uppercase text-sm transition-colors flex items-center justify-center gap-2"
                                                 >
                                                     <span className="material-symbols-outlined text-lg">
                                                         {shippingLoading ? 'progress_activity' : 'local_shipping'}
@@ -416,12 +638,12 @@ export default function Checkout() {
                                             {shippingOptions.length > 0 || shippingError ? (
                                                 <div className="col-span-1 sm:col-span-2">
                                                     {shippingError && (
-                                                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded text-sm font-mono mb-3">
+                                                        <div className="bg-red-500/10 border border-red-500/30 text-red-600 p-3 rounded text-sm font-mono mb-3">
                                                             {shippingError}
                                                         </div>
                                                     )}
                                                     {shippingOptions.length > 0 && (
-                                                        <div className="bg-green-500/10 border border-green-500/30 text-green-400 p-3 rounded text-sm font-mono">
+                                                        <div className="bg-green-500/10 border border-green-500/30 text-green-600 p-3 rounded text-sm font-mono">
                                                             ✓ {shippingOptions.length} opciones disponibles
                                                         </div>
                                                     )}
@@ -438,12 +660,12 @@ export default function Checkout() {
                                             />
                                         </>
                                     ) : (
-                                        <div className="col-span-1 sm:col-span-2 bg-[#232a35]/50 border border-[#333b49] p-4 mt-2 mb-2 relative">
+                                        <div className="col-span-1 sm:col-span-2 bg-surface-container/50 border border-border p-4 mt-2 mb-2 relative">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                                            <p className="text-sm text-slate-300 font-mono mb-2">
+                                            <p className="text-sm text-primary font-mono mb-2">
                                                 <span className="text-primary font-bold">Dirección de Retiro:</span> Microcentro, Buenos Aires
                                             </p>
-                                            <p className="text-xs text-slate-500 font-mono leading-relaxed">
+                                            <p className="text-xs text-muted font-mono leading-relaxed">
                                                 <span className="material-symbols-outlined text-[14px] mr-1 align-text-bottom text-primary/70">check_circle</span>
                                                 Una vez confirmada la compra recibiŕas un email para coordinar el horario de retiro en nuestro showroom.
                                             </p>
@@ -453,69 +675,66 @@ export default function Checkout() {
                             </section>
 
                             {/* ── Sección 3: Payment_Method ── */}
-                            <section className="bg-[#1a1f27] border border-[#333b49] p-6 relative overflow-hidden">
+                            <section className="bg-surface border border-border p-6 relative overflow-hidden">
                                 {/* Neon left border */}
-                                <div
-                                    className="absolute top-0 left-0 w-1 h-full bg-primary"
-                                    style={{ boxShadow: '0 0 10px #00f0ff' }}
-                                />
-                                <h3 className="text-sm font-bold text-white mb-6 border-b border-[#333b49] pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                                <h3 className="text-sm font-bold text-primary mb-6 border-b border-border pb-4 uppercase tracking-wider font-mono flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">credit_card</span>
                                     Método de Pago
                                 </h3>
 
-                                <div className="border border-[#333b49] bg-[#12161c]/50 overflow-hidden">
+                                <div className="border border-border bg-surface-container/50 overflow-hidden">
                                     {/* ─ Credit Card ─ */}
-                                    <div className="border-b border-[#333b49] p-4">
+                                    <div className="border-b border-border p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <RadioBtn id="cc" name="payment" checked={paymentMethod === 'cc'} onChange={() => setPaymentMethod('cc')} ariaLabel="Tarjeta de Crédito" />
-                                                <label htmlFor="cc" className="font-bold text-white uppercase font-mono text-sm cursor-pointer">
+                                                <label htmlFor="cc" className="font-bold text-primary uppercase font-mono text-sm cursor-pointer">
                                                     Tarjeta de Crédito
                                                 </label>
                                             </div>
-                                            <div className="flex gap-2 text-slate-500">
+                                            <div className="flex gap-2 text-muted">
                                                 <span className="material-symbols-outlined">credit_card</span>
                                                 <span className="material-symbols-outlined">lock</span>
                                             </div>
                                         </div>
 
                                         {paymentMethod === 'cc' && (
-                                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 bg-[#232a35]/50 p-4 border border-[#333b49]">
+                                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 bg-surface-container/50 p-4 border border-border">
                                                 <div className="col-span-2">
                                                     <input
                                                         type="text"
                                                         placeholder="0000 0000 0000 0000"
-                                                        className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
+                                                        className="w-full bg-surface-container border border-border text-primary px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-outline outline-none"
                                                     />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     placeholder="MM / YY"
-                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
+                                                    className="w-full bg-surface-container border border-border text-primary px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-outline outline-none"
                                                 />
                                                 <input
                                                     type="text"
                                                     placeholder="CVC"
-                                                    className="w-full bg-[#12161c] border border-[#333b49] text-white px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none"
+                                                    className="w-full bg-surface-container border border-border text-primary px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-outline outline-none"
                                                 />
                                             </div>
                                         )}
                                     </div>
 
                                     {/* ─ Mercado Pago ─ */}
-                                    <div className={`p-4 transition-colors ${paymentMethod === 'mp' ? 'bg-[#232a35]' : 'bg-[#232a35]/20 hover:bg-[#232a35]/40'}`}>
+                                    <div className={`p-4 transition-colors ${paymentMethod === 'mp' ? 'bg-surface-container' : 'bg-surface-container/20 hover:bg-surface-container/40'}`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <RadioBtn id="mp" name="payment" checked={paymentMethod === 'mp'} onChange={() => setPaymentMethod('mp')} ariaLabel="Mercado Pago" />
-                                                <label htmlFor="mp" className="font-bold text-slate-300 uppercase font-mono text-sm cursor-pointer">
+                                                <label htmlFor="mp" className="font-bold text-primary uppercase font-mono text-sm cursor-pointer">
                                                     Mercado Pago
                                                 </label>
                                             </div>
                                             <span className="text-primary font-bold text-sm font-mono opacity-80">MP</span>
                                         </div>
                                         {paymentMethod === 'mp' && (
-                                            <p className="mt-3 text-xs text-slate-500 font-mono uppercase tracking-wide pl-7">
+                                            <p className="mt-3 text-xs text-muted font-mono uppercase tracking-wide pl-7">
                                                 <span className="material-symbols-outlined text-primary text-xs mr-1">info</span>
                                                 Serás redirigido a Mercado Pago para completar el pago de forma segura.
                                             </p>
@@ -539,11 +758,11 @@ export default function Checkout() {
                                 <button
                                     type="submit"
                                     disabled={!addressComplete}
-                                    className="group w-full relative overflow-hidden bg-primary py-4 text-center transition-all hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="group w-full relative overflow-hidden bg-primary py-4 text-center transition-all hover:bg-primary-strong disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                    <span className="relative text-black text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
-                                        Completar Pago ${displayTotalWithDiscount.toFixed(2)}
+                                    <span className="relative text-white text-lg font-black uppercase tracking-widest flex items-center justify-center gap-3">
+                                        Completar Pago {formatCurrency(displayTotalWithDiscount)}
                                         <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
                                             arrow_forward
                                         </span>
@@ -558,222 +777,10 @@ export default function Checkout() {
                             </div>
                         </div>
 
-                        {/* ══════ Columna Order Manifest (5 cols sticky) ══════ */}
+                        {/* ══════ Columna Order Manifest (5 cols sticky) — desktop ══════ */}
                         <div className="hidden lg:block lg:col-span-5">
-                            <div className="sticky top-24 p-6 bg-[#1a1f27] border border-[#333b49] shadow-2xl">
-
-                                {/* Header */}
-                                <div className="flex justify-between items-center mb-6 border-b border-[#333b49] pb-4">
-                                    <h3 className="text-lg font-bold text-white uppercase font-mono">Resumen de Orden</h3>
-                                    <span className="text-xs text-slate-500 font-mono">[{displayItems.length} ARTÍCULOS]</span>
-                                </div>
-
-                                {/* Resumen numérico */}
-                                <div className="space-y-3 font-mono text-sm mb-8">
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400 uppercase">Subtotal</span>
-                                        <span className="font-medium text-white">${displaySubtotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400 uppercase">Envío</span>
-                                        <span className="font-bold text-primary uppercase">
-                                            {displayShipping === 0 ? 'Gratis' : `$${displayShipping.toFixed(2)}`}
-                                        </span>
-                                    </div>
-
-                                    {/* Desglose de descuento */}
-                                    {discountAmount > 0 && (
-                                        <div className="bg-[#232a35]/50 border border-green-500/20 p-3 rounded mt-4 mb-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="material-symbols-outlined text-xs text-green-400">local_offer</span>
-                                                <span className="text-green-400 font-bold uppercase tracking-wide">
-                                                    Cupón {appliedCoupon.code} ({appliedCoupon.discount_percentage}%)
-                                                </span>
-                                            </div>
-
-                                            {/* Productos elegibles */}
-                                            <div className="space-y-1 mb-2 border-b border-green-500/10 pb-2">
-                                                {couponEligibleItems.map(item => {
-                                                    const itemDiscount = +(item.price * item.qty * appliedCoupon.discount_percentage / 100).toFixed(2)
-                                                    const itemFinal = +(item.price * item.qty - itemDiscount).toFixed(2)
-                                                    return (
-                                                        <div key={item.id} className="flex items-center justify-between text-xs text-green-300">
-                                                            <span className="flex items-center gap-2">
-                                                                <span className="material-symbols-outlined text-[10px]">check_circle</span>
-                                                                {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
-                                                            </span>
-                                                            <span>${itemFinal.toFixed(2)}</span>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-
-                                            {/* Productos NO elegibles (si hay) */}
-                                            {discountAmount > 0 && appliedCoupon.applies_to !== 'ambos' && (
-                                                displayItems.some(i => !couponEligibleItems.find(e => e.id === i.id)) && (
-                                                    <div className="space-y-1 border-b border-slate-500/20 pb-2 mb-2">
-                                                        {displayItems
-                                                            .filter(i => !couponEligibleItems.find(e => e.id === i.id))
-                                                            .map(item => (
-                                                                <div key={item.id} className="flex items-center justify-between text-xs text-slate-500">
-                                                                    <span className="flex items-center gap-2">
-                                                                        <span className="material-symbols-outlined text-[10px]">cancel</span>
-                                                                        {item.name} {item.qty > 1 ? `(×${item.qty})` : ''}
-                                                                    </span>
-                                                                    <span className="text-slate-500">${(item.price * item.qty).toFixed(2)}</span>
-                                                                </div>
-                                                            ))
-                                                        }
-                                                    </div>
-                                                )
-                                            )}
-
-                                            {/* Descuento total */}
-                                            <div className="flex justify-between text-xs font-bold text-green-400 pt-1">
-                                                <span>Ahorro:</span>
-                                                <span>-${discountAmount.toFixed(2)}</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {discountAmount > 0 && (
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400 uppercase">Descuento</span>
-                                            <span className="font-bold text-green-500">-${discountAmount.toFixed(2)}</span>
-                                        </div>
-                                    )}
-
-                                    <div className="h-px bg-[#333b49] my-2" />
-                                    <div className="flex justify-between text-base font-bold items-center">
-                                        <span className="text-white uppercase tracking-wider">Monto Total</span>
-                                        <span
-                                            className="text-primary text-2xl"
-                                            style={{ textShadow: '0 0 8px rgba(0,240,255,0.5)' }}
-                                        >
-                                            ${displayTotalWithDiscount.toFixed(2)}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Items de la orden — agrupados por menor / mayor */}
-                                <div>
-                                    {retailItems.length > 0 && (
-                                        <>
-                                            <ManifestSectionHeader
-                                                label="Por Menor"
-                                                count={retailItems.length}
-                                                accent={{ text: 'text-primary', badge: 'border-primary/40 text-primary bg-primary/10', line: 'bg-primary/20' }}
-                                            />
-                                            <div className="space-y-3">
-                                                {retailItems.map(({ id, name, qty, price, img }) => (
-                                                    <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-[#333b49]/50">
-                                                        <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
-                                                            <img
-                                                                src={img}
-                                                                alt={name}
-                                                                className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
-                                                            />
-                                                        </div>
-                                                        <div className="flex flex-col justify-center gap-1 flex-1">
-                                                            <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
-                                                                {name}
-                                                            </span>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-[10px] text-slate-500 font-mono">CTD: {qty}</span>
-                                                                <span className="text-xs text-primary font-mono font-bold">${price}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {wholesaleItems.length > 0 && (
-                                        <>
-                                            <ManifestSectionHeader
-                                                label="Por Mayor"
-                                                count={wholesaleItems.length}
-                                                accent={{ text: 'text-amber-400', badge: 'border-amber-400/40 text-amber-400 bg-amber-400/10', line: 'bg-amber-400/20' }}
-                                            />
-                                            <div className="space-y-3">
-                                                {wholesaleItems.map(({ id, name, qty, price, img }) => (
-                                                    <div key={id} className="flex gap-4 p-3 bg-[#12161c]/50 border border-amber-400/20">
-                                                        <div className="h-16 w-12 bg-[#232a35] border border-[#4a5568] overflow-hidden flex-shrink-0">
-                                                            <img
-                                                                src={img}
-                                                                alt={name}
-                                                                className="h-full w-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
-                                                            />
-                                                        </div>
-                                                        <div className="flex flex-col justify-center gap-1 flex-1">
-                                                            <span className="text-xs font-bold text-white uppercase font-mono leading-tight">
-                                                                {name}
-                                                            </span>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-[10px] text-slate-500 font-mono">CTD: {qty}</span>
-                                                                <span className="text-xs text-amber-400 font-mono font-bold">${price}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Promo code */}
-                                <div className="mt-6">
-                                    {!appliedCoupon ? (
-                                        <>
-                                            <div className="flex mb-2">
-                                                <input
-                                                    type="text"
-                                                    value={couponCode}
-                                                    onChange={e => setCouponCode(e.target.value)}
-                                                    placeholder="CÓDIGO DE PROMOCIÓN"
-                                                    disabled={couponLoading}
-                                                    className="flex-1 bg-[#12161c] border border-[#333b49] text-white px-4 py-2.5 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono placeholder-[#5a6478] outline-none disabled:opacity-50"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={handleApplyCoupon}
-                                                    disabled={couponLoading || !couponCode.trim()}
-                                                    className="px-4 py-2.5 bg-[#232a35] border border-l-0 border-[#333b49] hover:border-primary hover:text-primary text-slate-400 text-xs font-mono uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {couponLoading ? 'Validando...' : 'Aplicar'}
-                                                </button>
-                                            </div>
-                                            {couponError && (
-                                                <div className="text-red-400 text-xs font-mono uppercase tracking-wide border border-red-500/30 bg-red-500/10 px-3 py-2 flex items-center gap-2">
-                                                    <span className="material-symbols-outlined text-sm">error</span>
-                                                    {couponError}
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className="flex items-center justify-between bg-[#232a35] border border-green-500/30 p-3 rounded">
-                                            <span className="font-mono text-xs text-green-400 uppercase tracking-wide flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-sm">check_circle</span>
-                                                {appliedCoupon.code} · -{appliedCoupon.discount_percentage}%
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={handleRemoveCoupon}
-                                                className="text-xs font-mono text-slate-400 hover:text-red-400 uppercase tracking-wide transition-colors border-b border-transparent hover:border-red-400"
-                                            >
-                                                Quitar
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Seguridad */}
-                                <div className="mt-6 flex items-center justify-center gap-4 opacity-30">
-                                    <span className="material-symbols-outlined text-2xl text-white">lock</span>
-                                    <span className="material-symbols-outlined text-2xl text-white">verified_user</span>
-                                    <span className="material-symbols-outlined text-2xl text-white">shield</span>
-                                </div>
+                            <div className="sticky top-24 p-6 bg-surface border border-border shadow-2xl">
+                                {orderSummaryBody}
                             </div>
                         </div>
 
@@ -795,7 +802,7 @@ function RadioBtn({ id, name, checked, onChange, ariaLabel }) {
                 checked={checked}
                 onChange={onChange}
                 aria-label={ariaLabel}
-                className="peer h-4 w-4 appearance-none rounded-full border border-[#4a5568] bg-[#12161c] checked:border-primary checked:bg-[#12161c] transition-all cursor-pointer"
+                className="peer h-4 w-4 appearance-none rounded-full border border-border bg-surface-container checked:border-primary checked:bg-surface-container transition-all cursor-pointer"
             />
             <div className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
         </div>

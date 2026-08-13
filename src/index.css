@@ -29,22 +29,35 @@
   .tech-underline:hover::after {
     width: 100%;
   }
+  .text-stroke {
+    -webkit-text-stroke: 1px currentColor;
+    color: transparent;
+  }
+  /* Oculta la scrollbar en carruseles horizontales (el scroll táctil/drag
+     sigue funcionando, solo se esconde la barra visual) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 
 /* ── Design Tokens ── */
 :root {
-  --color-primary: #00f0ff;
-  --color-primary-dark: #00b8c4;
-  --color-bg: #12161c;
-  --color-surface: #1a1f27;
-  --color-card: #1e2530;
-  --color-charcoal: #2a3140;
-  --color-bone: #e7edf3;
-  --color-text-muted: #94a3b8;
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-primary: #000000;
+  --color-primary-dark: #1a1c1f;
+  --color-bg: #f9f9fb;
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-charcoal: #eeeef0;
+  --color-text: #1a1c1d;
+  --color-text-muted: #45474a;
+  --color-border: #e2e2e4;
 
-  --font-display: 'Rajdhani', sans-serif;
+  --font-display: 'Hanken Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
 
@@ -69,7 +82,7 @@ html {
 
 body {
   background-color: var(--color-bg);
-  color: var(--color-bone);
+  color: var(--color-text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -79,8 +92,8 @@ body {
 
 /* Selección de texto temática */
 ::selection {
-  background-color: rgba(0, 240, 255, 0.3);
-  color: var(--color-primary);
+  background-color: rgba(0, 0, 0, 0.08);
+  color: var(--color-text);
 }
 
 /* ── MiniCart — native dialog drawer ──
@@ -175,7 +188,7 @@ body {
     linear-gradient(to bottom, rgba(120, 120, 120, 0.05) 1px, transparent 1px),
     url('/noise.svg');
   background-size: 40px 40px, 40px 40px, 150px 150px;
-  opacity: 0.15;
+  opacity: 0;
   pointer-events: none;
   z-index: 0;
   mix-blend-mode: overlay;

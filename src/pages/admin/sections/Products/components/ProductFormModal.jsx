@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   dozen_length: '',
   dozen_weight: '',
   stock: '',
+  unlimited_stock: false,
   category_id: '',
   price_on_request: false,
 }
@@ -46,6 +47,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 dozen_length:      initialProduct.dozen_length ?? '',
                 dozen_weight:      initialProduct.dozen_weight ?? '',
                 stock:             initialProduct.stock ?? '',
+                unlimited_stock:   initialProduct.unlimited_stock ?? false,
                 category_id:       initialProduct.category_id || '',
                 price_on_request:  initialProduct.price_on_request ?? false,
             }
@@ -85,11 +87,6 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
 
         if (!form.price_on_request && !form.retail_price) {
             setValidationError('Precio minorista es obligatorio o activa "Precio a consultar"')
-            return
-        }
-
-        if (!form.stock) {
-            setValidationError('Stock es obligatorio')
             return
         }
 
@@ -295,14 +292,39 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                             </div>
                         </div>
 
-                        {/* Stock - siempre editable */}
+                        {/* Disponible sin control de stock */}
+                        <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                                <ToggleSwitch
+                                    checked={form.unlimited_stock}
+                                    onChange={() => setForm(p => ({ ...p, unlimited_stock: !p.unlimited_stock }))}
+                                    label="Disponible sin control de stock"
+                                    disabled={saving}
+                                />
+                                <div>
+                                    <div style={{ ...S.label, marginBottom: '0.25rem', cursor: 'pointer' }} onClick={() => setForm(p => ({ ...p, unlimited_stock: !p.unlimited_stock }))}>
+                                        Disponible sin stock
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', lineHeight: 1.4 }}>
+                                        En el catálogo público se muestra "Disponible" sin importar el número de stock (incluso en 0). Podés cargar el stock real más adelante sin afectar esto.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stock - siempre editable, opcional al crear (se puede cargar después) */}
                         <div style={{ marginBottom: '1rem' }}>
-                            <label style={S.label}>Stock *</label>
+                            <label style={S.label}>Stock</label>
                             <input
                                 type="number" min="0" value={form.stock}
                                 onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
                                 placeholder="0" style={S.input}
                             />
+                            <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', marginTop: '0.35rem' }}>
+                                {form.unlimited_stock
+                                    ? 'Este número no se muestra al público mientras "Disponible sin control de stock" esté activo.'
+                                    : 'Opcional — si lo dejás vacío, el producto se crea sin stock (0) y podés cargarlo más adelante.'}
+                            </div>
                         </div>
 
                         <div>
@@ -323,7 +345,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
 
                         <ProductColorManager colors={colors} onColorsChange={setColors} images={images} />
 
-                        <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} />
+                        <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} productName={form.name} />
                         {imageError && (
                             <p style={{ margin: 0, color: '#eab308', fontFamily: 'monospace', fontSize: '0.75rem' }}>{imageError}</p>
                         )}
