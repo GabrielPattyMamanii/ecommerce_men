@@ -284,7 +284,7 @@
   transform: translateY(-6.5px) rotate(-45deg);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1080px) {
   .navbar__hamburger { display: none; }
 }
 
