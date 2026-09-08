@@ -922,11 +922,21 @@
     }
 }
 
-/* ── Cards de producto (mobile/tablet) — reemplazan la tabla ancha ── */
-.admin-product-cards {
+/* ── Cards de producto (mobile/tablet) — reemplazan la tabla ancha ──
+   Selector compuesto por el mismo motivo que .admin-schedule-list (ver más
+   abajo): sin esto, su "display: flex" le gana por orden de declaración al
+   "display: none" de .admin-mobile-only en desktop y las cards quedan
+   visibles siempre, duplicando la tabla. ── */
+.admin-product-cards.admin-mobile-only {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+    .admin-product-cards.admin-mobile-only {
+        display: none;
+    }
 }
 
 .admin-product-card {
@@ -1052,11 +1062,22 @@
     border-bottom-color: var(--admin-primary);
 }
 
-/* ── Horarios de atención — lista apilada (mobile), reemplaza la tabla ── */
-.admin-schedule-list {
+/* ── Horarios de atención — lista apilada (mobile), reemplaza la tabla ──
+   Selector compuesto (2 clases) a propósito: necesita más especificidad que
+   .admin-mobile-only/.admin-desktop-only (894-910) para que su "display: flex"
+   no le gane por orden de declaración al "display: none" que le corresponde
+   en desktop (si no, la lista mobile queda visible siempre y se duplica con
+   la tabla). ── */
+.admin-schedule-list.admin-mobile-only {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+    .admin-schedule-list.admin-mobile-only {
+        display: none;
+    }
 }
 
 .admin-schedule-row {
