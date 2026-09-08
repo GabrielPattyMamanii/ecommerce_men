@@ -103,12 +103,14 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 role="dialog" aria-modal="true" aria-label={isEditMode ? 'Editar producto' : 'Nuevo producto'}
                 style={{ background: '#161b2e', border: '1px solid #334155', borderRadius: '4px', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, background: '#161b2e' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="material-symbols-outlined" style={{ color: 'var(--admin-primary)' }}>{isEditMode ? 'edit' : 'add_box'}</span>
-                        {isEditMode ? 'Editar producto' : 'Nuevo producto'}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, background: '#161b2e' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                        <span className="material-symbols-outlined" style={{ color: 'var(--admin-primary)', flexShrink: 0 }}>{isEditMode ? 'edit' : 'add_box'}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {isEditMode ? 'Editar producto' : 'Nuevo producto'}
+                        </span>
                     </h2>
-                    <button onClick={resetAndClose} disabled={saving} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex' }}>
+                    <button onClick={resetAndClose} disabled={saving} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', flexShrink: 0 }}>
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
@@ -168,7 +170,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
 
                         {/* Precios y stock - deshabilitados si price_on_request */}
                         <div style={{ opacity: form.price_on_request ? 0.4 : 1, pointerEvents: form.price_on_request ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                            <div className="admin-form-grid-2" style={{ marginBottom: '1rem' }}>
                                 <div>
                                     <label style={S.label}>Precio Minorista ($) *</label>
                                     <input
@@ -191,7 +193,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                             {/* Dimensiones de la unidad (retail) — opcional pero necesarias para envío */}
                             <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
                                 <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la unidad (obligatoria para envío)</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                                <div className="admin-form-grid-2" style={{ marginBottom: '0.75rem' }}>
                                     <div>
                                         <label style={S.label}>Alto (cm)</label>
                                         <input
@@ -209,7 +211,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                         />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="admin-form-grid-2">
                                     <div>
                                         <label style={S.label}>Largo (cm)</label>
                                         <input
@@ -232,7 +234,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                             {/* Dimensiones de la docena — opcional, solo relevante si hay precio mayorista */}
                             <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
                                 <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la docena (opcional)</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                                <div className="admin-form-grid-2" style={{ marginBottom: '0.75rem' }}>
                                     <div>
                                         <label style={S.label}>Alto (cm)</label>
                                         <input
@@ -250,7 +252,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                         />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="admin-form-grid-2">
                                     <div>
                                         <label style={S.label}>Largo (cm)</label>
                                         <input

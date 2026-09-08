@@ -35,13 +35,26 @@ export default function ConfiguracionContacto() {
         .maybeSingle()
       if (error) addToast('error', 'No se pudo cargar la configuración')
       if (data) {
+        let horarios = EMPTY_HORARIOS
+        if (data.hours_text) {
+          try {
+            const parsed = JSON.parse(data.hours_text)
+            // merge para tolerar días faltantes/formato viejo sin romper el formulario
+            horarios = DIAS_SEMANA.reduce((acc, dia) => {
+              acc[dia] = { ...EMPTY_HORA, ...parsed[dia] }
+              return acc
+            }, {})
+          } catch (e) {
+            console.error('No se pudo parsear hours_text:', e)
+          }
+        }
         setForm({
           whatsapp_url: data.whatsapp_url || '',
           instagram_url: data.instagram_url || '',
           facebook_url: data.facebook_url || '',
           tiktok_url: data.tiktok_url || '',
           email: data.email || '',
-          horarios: EMPTY_HORARIOS,
+          horarios,
         })
       }
       setLoading(false)
@@ -108,7 +121,7 @@ export default function ConfiguracionContacto() {
   if (loading) return <div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando…</div>
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px' }}>
+    <div className="admin-config-page">
       <ConfiguracionNav />
       <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">contact_mail</span>
@@ -117,11 +130,11 @@ export default function ConfiguracionContacto() {
 
       {/* Sección: Redes Sociales */}
       <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // CANALES DE COMUNICACIÓN
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="admin-form-grid-2">
           <div>
             <label style={S.label}>WhatsApp (URL wa.me)</label>
             <input style={S.input} value={form.whatsapp_url}
@@ -155,32 +168,32 @@ export default function ConfiguracionContacto() {
         </div>
       </div>
 
-      {/* Sección: Horarios */}
+      {/* Sección: Horarios — tabla en desktop (≥1024px), lista apilada en mobile/tablet */}
       <div>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // HORARIOS DE ATENCIÓN
         </h2>
 
-        <div style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid #333b49', borderRadius: '2px', overflow: 'hidden' }}>
+        <div className="admin-desktop-only" style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid #333b49', borderRadius: '2px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #333b49', background: '#1a1f27' }}>
-                <th style={{ padding: '1rem', textAlign: 'left', color: '#00f0ff', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Día</th>
-                <th style={{ padding: '1rem', textAlign: 'center', color: '#00f0ff', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abierto</th>
-                <th style={{ padding: '1rem', textAlign: 'center', color: '#00f0ff', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inicio</th>
-                <th style={{ padding: '1rem', textAlign: 'center', color: '#00f0ff', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fin</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Día</th>
+                <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abierto</th>
+                <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inicio</th>
+                <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fin</th>
               </tr>
             </thead>
             <tbody>
               {DIAS_SEMANA.map((dia, idx) => (
-                <tr key={dia} style={{ borderBottom: idx < DIAS_SEMANA.length - 1 ? '1px solid #2a3142' : 'none', background: idx % 2 === 0 ? 'transparent' : 'rgba(0, 240, 255, 0.02)' }}>
+                <tr key={dia} style={{ borderBottom: idx < DIAS_SEMANA.length - 1 ? '1px solid #2a3142' : 'none', background: idx % 2 === 0 ? 'transparent' : 'rgba(13, 70, 242, 0.04)' }}>
                   <td style={{ padding: '1rem', color: 'white', fontSize: '0.875rem', fontWeight: 500 }}>{dia}</td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     <input
                       type="checkbox"
                       checked={form.horarios[dia].abierto}
                       onChange={e => handleChangeHorario(dia, 'abierto', e.target.checked)}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#00f0ff' }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--admin-primary)' }}
                     />
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
@@ -225,6 +238,52 @@ export default function ConfiguracionContacto() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="admin-schedule-list admin-mobile-only">
+          {DIAS_SEMANA.map(dia => {
+            const { abierto, inicio, fin } = form.horarios[dia]
+            return (
+              <div key={dia} className={`admin-schedule-row${abierto ? '' : ' admin-schedule-row--closed'}`}>
+                <label className="admin-schedule-row__day">
+                  <input
+                    type="checkbox"
+                    checked={abierto}
+                    onChange={e => handleChangeHorario(dia, 'abierto', e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--admin-primary)', flexShrink: 0 }}
+                  />
+                  {dia}
+                </label>
+                <div className="admin-schedule-row__times">
+                  <input
+                    type="time"
+                    disabled={!abierto}
+                    value={inicio}
+                    onChange={e => handleChangeHorario(dia, 'inicio', e.target.value)}
+                    style={{
+                      background: 'transparent', border: '1px solid #334155',
+                      color: abierto ? 'white' : '#64748b', padding: '0.4rem 0.5rem',
+                      borderRadius: '2px', fontFamily: 'monospace', fontSize: '0.8rem',
+                      cursor: abierto ? 'pointer' : 'not-allowed',
+                    }}
+                  />
+                  <span>a</span>
+                  <input
+                    type="time"
+                    disabled={!abierto}
+                    value={fin}
+                    onChange={e => handleChangeHorario(dia, 'fin', e.target.value)}
+                    style={{
+                      background: 'transparent', border: '1px solid #334155',
+                      color: abierto ? 'white' : '#64748b', padding: '0.4rem 0.5rem',
+                      borderRadius: '2px', fontFamily: 'monospace', fontSize: '0.8rem',
+                      cursor: abierto ? 'pointer' : 'not-allowed',
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 

@@ -63,7 +63,6 @@ export default function ProductDetail() {
 
     const TABS = [
         { id: 'specs', label: 'Detalles' },
-        { id: 'logistics', label: 'Envío' },
         { id: 'care', label: 'Cuidado' },
     ]
 
@@ -602,21 +601,6 @@ export default function ProductDetail() {
                                             >
                                                 <span className="text-muted font-mono text-xs uppercase">{key}</span>
                                                 <span className="text-primary font-medium text-right">{value}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {activeTab === 'logistics' && (
-                                    <div className="py-4 space-y-3" role="tabpanel">
-                                        {[
-                                            ['Shipping', 'Gratis en pedidos mayores a $5000'],
-                                            ['Delivery', '3–5 días hábiles'],
-                                            ['Returns', '30 días de devolución'],
-                                        ].map(([k, v]) => (
-                                            <div key={k} className="flex justify-between text-sm border-b border-border/70 pb-2 border-dashed last:border-none">
-                                                <span className="text-muted font-mono text-xs uppercase">{k}</span>
-                                                <span className="text-primary text-right">{v}</span>
                                             </div>
                                         ))}
                                     </div>

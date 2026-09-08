@@ -82,7 +82,7 @@ export default function ConfiguracionWhatsapp() {
   const previewMessage = `${previewIntro}\n\n${EXAMPLE_PRODUCT_NAME}`
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px' }}>
+    <div className="admin-config-page">
       <ConfiguracionNav />
       <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">chat</span>
@@ -110,7 +110,7 @@ export default function ConfiguracionWhatsapp() {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // NÚMERO DE WHATSAPP
         </h2>
         <label style={S.label}>WhatsApp (URL wa.me)</label>
@@ -126,7 +126,7 @@ export default function ConfiguracionWhatsapp() {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // MENSAJE DE BIENVENIDA
         </h2>
         <label style={S.label}>Mensaje que recibe el cliente al presionar "Consultar"</label>
@@ -142,7 +142,7 @@ export default function ConfiguracionWhatsapp() {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // VISTA PREVIA
         </h2>
         <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '2px', padding: '1rem', color: '#e2e8f0', fontSize: '0.85rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>

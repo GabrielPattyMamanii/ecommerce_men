@@ -83,6 +83,74 @@ function StockBadge({ value, unlimited }) {
     )
 }
 
+/* ── Card de producto — reemplaza la fila de tabla en mobile/tablet (<1024px).
+   Misma información que la fila, reorganizada en bloques apilados para
+   lectura vertical y con los botones de acción a tamaño de toque. ── */
+function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }) {
+    return (
+        <article className="admin-product-card">
+            <div className="admin-product-card__top">
+                <ProductThumb src={product.images?.[0]} name={product.name} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="admin-product-card__id">#{product.id.slice(0, 8)}</div>
+                    <h3 className="admin-product-card__name">{product.name}</h3>
+                    {product.description && (
+                        <p className="admin-product-card__desc">{product.description}</p>
+                    )}
+                </div>
+                <ToggleSwitch
+                    checked={product.visible}
+                    onChange={() => onToggleVisibility(product)}
+                    label={product.visible ? `Ocultar ${product.name} del catálogo` : `Mostrar ${product.name} en el catálogo`}
+                    disabled={toggling}
+                />
+            </div>
+
+            <div className="admin-product-card__row">
+                <div>
+                    {product.price_on_request ? (
+                        <span style={{ color: '#eab308', fontSize: '0.85rem', fontWeight: 600 }}>Consultar</span>
+                    ) : (
+                        <>
+                            <div style={{ color: 'white', fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
+                                {formatCurrency(product.retail_price)}
+                            </div>
+                            {product.wholesale_price && (
+                                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.15rem' }}>
+                                    {formatCurrency(product.wholesale_price)} mayorista
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+                <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
+            </div>
+
+            <div className="admin-product-card__row admin-product-card__tags">
+                <span>{product.categories?.name || 'Sin categoría'}</span>
+                {product.sizes?.length > 0 && <span>Talles: {product.sizes.join(', ')}</span>}
+                <ColorSwatches colors={product.colors} />
+            </div>
+
+            <div className="admin-product-card__row">
+                <span className="admin-product-card__status">
+                    {product.visible ? 'Visible en catálogo' : 'Oculto del catálogo'}
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <ActionBtn
+                        icon="edit" color="var(--admin-primary)" title="Editar producto"
+                        onClick={() => onEdit(product)}
+                    />
+                    <ActionBtn
+                        icon="delete" color="#ef4444" title="Eliminar producto"
+                        onClick={() => onDelete(product.id, product.name)}
+                    />
+                </div>
+            </div>
+        </article>
+    )
+}
+
 /* ══════════════════════════════════════════════════
    COMPONENTE PRINCIPAL
    ══════════════════════════════════════════════════ */
@@ -277,123 +345,144 @@ export default function ProductsTable() {
                 </div>
             )}
 
-            {/* ── Tabla de productos ── */}
-            <div className="admin-orders">
-                <div className="admin-orders__table-wrap">
-                    {loading ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
-                            <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
-                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading inventory…</span>
-                        </div>
-                    ) : products.length === 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>inventory_2</span>
-                            <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No products — add one above</p>
-                        </div>
-                    ) : (
-                        <table className="admin-orders__table">
-                            <thead>
-                                <tr>
-                                    {['Image', 'ID', 'Name', 'Description', 'Category', 'Sizes', 'Colors', 'Price', 'Stock', 'Visible', 'Actions'].map((h, i) => (
-                                        <th
-                                            key={h}
-                                            className={`admin-orders__th${i === 10 ? ' admin-orders__th--right' : ''}`}
-                                        >
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map(product => (
-                                    <tr key={product.id} className="admin-orders__row">
-
-                                        {/* Image */}
-                                        <td className="admin-orders__td">
-                                            <ProductThumb src={product.images?.[0]} name={product.name} />
-                                        </td>
-
-                                        {/* ID */}
-                                        <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#475569', fontSize: '0.7rem' }}>
-                                            #{product.id.slice(0, 8)}
-                                        </td>
-
-                                        {/* Name */}
-                                        <td className="admin-orders__td admin-orders__td--white" style={{ fontWeight: 500 }}>
-                                            {product.name}
-                                        </td>
-
-                                        {/* Description */}
-                                        <td className="admin-orders__td" style={{ color: '#64748b', fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {product.description || '—'}
-                                        </td>
-
-                                        {/* Category */}
-                                        <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
-                                            {product.categories?.name || '—'}
-                                        </td>
-
-                                        {/* Sizes */}
-                                        <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {product.sizes?.length ? product.sizes.join(', ') : '—'}
-                                        </td>
-
-                                        {/* Colors */}
-                                        <td className="admin-orders__td">
-                                            <ColorSwatches colors={product.colors} />
-                                        </td>
-
-                                        {/* Price */}
-                                        <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
-                                            {product.price_on_request ? (
-                                                <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 600 }}>Consultar</span>
-                                            ) : (
-                                                <div>
-                                                    <div>{formatCurrency(product.retail_price)}</div>
-                                                    {product.wholesale_price && (
-                                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                                                            {formatCurrency(product.wholesale_price)} mayorista
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </td>
-
-                                        {/* Stock */}
-                                        <td className="admin-orders__td admin-orders__td--mono">
-                                            <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
-                                        </td>
-
-                                        {/* Visible */}
-                                        <td className="admin-orders__td">
-                                            <ToggleSwitch
-                                                checked={product.visible}
-                                                onChange={() => toggleVisibility(product)}
-                                                label={product.visible ? `Ocultar ${product.name} del catálogo` : `Mostrar ${product.name} en el catálogo`}
-                                                disabled={togglingId === product.id}
-                                            />
-                                        </td>
-
-                                        {/* Actions */}
-                                        <td className="admin-orders__td admin-orders__td--right">
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
-                                                <ActionBtn
-                                                    icon="edit" color="var(--admin-primary)" title="Edit product"
-                                                    onClick={() => openEditModal(product)}
-                                                />
-                                                <ActionBtn
-                                                    icon="delete" color="#ef4444" title="Delete product"
-                                                    onClick={() => handleDelete(product.id, product.name)}
-                                                />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+            {/* ── Listado de productos: tabla en desktop (≥1024px), cards en mobile/tablet ── */}
+            {loading ? (
+                <div className="admin-orders">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
+                        <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading inventory…</span>
+                    </div>
                 </div>
-            </div>
+            ) : products.length === 0 ? (
+                <div className="admin-orders">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>inventory_2</span>
+                        <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No products — add one above</p>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Tabla — desktop */}
+                    <div className="admin-orders admin-desktop-only">
+                        <div className="admin-orders__table-wrap">
+                            <table className="admin-orders__table">
+                                <thead>
+                                    <tr>
+                                        {['Image', 'ID', 'Name', 'Description', 'Category', 'Sizes', 'Colors', 'Price', 'Stock', 'Visible', 'Actions'].map((h, i) => (
+                                            <th
+                                                key={h}
+                                                className={`admin-orders__th${i === 10 ? ' admin-orders__th--right' : ''}`}
+                                            >
+                                                {h}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {products.map(product => (
+                                        <tr key={product.id} className="admin-orders__row">
+
+                                            {/* Image */}
+                                            <td className="admin-orders__td">
+                                                <ProductThumb src={product.images?.[0]} name={product.name} />
+                                            </td>
+
+                                            {/* ID */}
+                                            <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#475569', fontSize: '0.7rem' }}>
+                                                #{product.id.slice(0, 8)}
+                                            </td>
+
+                                            {/* Name */}
+                                            <td className="admin-orders__td admin-orders__td--white" style={{ fontWeight: 500 }}>
+                                                {product.name}
+                                            </td>
+
+                                            {/* Description */}
+                                            <td className="admin-orders__td" style={{ color: '#64748b', fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {product.description || '—'}
+                                            </td>
+
+                                            {/* Category */}
+                                            <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                {product.categories?.name || '—'}
+                                            </td>
+
+                                            {/* Sizes */}
+                                            <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {product.sizes?.length ? product.sizes.join(', ') : '—'}
+                                            </td>
+
+                                            {/* Colors */}
+                                            <td className="admin-orders__td">
+                                                <ColorSwatches colors={product.colors} />
+                                            </td>
+
+                                            {/* Price */}
+                                            <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
+                                                {product.price_on_request ? (
+                                                    <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 600 }}>Consultar</span>
+                                                ) : (
+                                                    <div>
+                                                        <div>{formatCurrency(product.retail_price)}</div>
+                                                        {product.wholesale_price && (
+                                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                                                {formatCurrency(product.wholesale_price)} mayorista
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </td>
+
+                                            {/* Stock */}
+                                            <td className="admin-orders__td admin-orders__td--mono">
+                                                <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
+                                            </td>
+
+                                            {/* Visible */}
+                                            <td className="admin-orders__td">
+                                                <ToggleSwitch
+                                                    checked={product.visible}
+                                                    onChange={() => toggleVisibility(product)}
+                                                    label={product.visible ? `Ocultar ${product.name} del catálogo` : `Mostrar ${product.name} en el catálogo`}
+                                                    disabled={togglingId === product.id}
+                                                />
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td className="admin-orders__td admin-orders__td--right">
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
+                                                    <ActionBtn
+                                                        icon="edit" color="var(--admin-primary)" title="Edit product"
+                                                        onClick={() => openEditModal(product)}
+                                                    />
+                                                    <ActionBtn
+                                                        icon="delete" color="#ef4444" title="Delete product"
+                                                        onClick={() => handleDelete(product.id, product.name)}
+                                                    />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Cards — mobile / tablet */}
+                    <div className="admin-product-cards admin-mobile-only">
+                        {products.map(product => (
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                onEdit={openEditModal}
+                                onDelete={handleDelete}
+                                onToggleVisibility={toggleVisibility}
+                                toggling={togglingId === product.id}
+                            />
+                        ))}
+                    </div>
+                </>
+            )}
         </section>
     )
 }

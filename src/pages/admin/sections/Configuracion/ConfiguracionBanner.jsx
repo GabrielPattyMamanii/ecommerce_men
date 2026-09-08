@@ -117,7 +117,7 @@ export default function ConfiguracionBanner() {
   if (loading) return <div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando…</div>
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px' }}>
+    <div className="admin-config-page">
       <ConfiguracionNav />
       <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">campaign</span>
@@ -134,11 +134,11 @@ export default function ConfiguracionBanner() {
       </div>
 
       <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // TEXTOS DEL BANNER
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="admin-form-grid-2">
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={S.label}>Eyebrow (texto pequeño arriba del título)</label>
             <input style={S.input} value={form.eyebrow}
@@ -167,11 +167,11 @@ export default function ConfiguracionBanner() {
       </div>
 
       <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ color: '#00f0ff', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+        <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
           // BOTONES (CTA)
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="admin-form-grid-2">
           <div>
             <label style={S.label}>Botón principal — texto</label>
             <input style={S.input} value={form.cta_primary_text}

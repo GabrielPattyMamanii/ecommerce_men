@@ -83,7 +83,7 @@ export default function ConfiguracionLogo() {
   if (loading) return <div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando…</div>
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px' }}>
+    <div className="admin-config-page">
       <ConfiguracionNav />
       <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">image</span>

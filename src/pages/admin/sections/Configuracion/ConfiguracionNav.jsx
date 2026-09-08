@@ -9,26 +9,19 @@ const LINKS = [
 
 export default function ConfiguracionNav() {
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid #1e293b' }}>
+    <nav className="admin-config-nav" aria-label="Secciones de configuración">
       {LINKS.map(({ to, label, end }) => (
         <NavLink
           key={to}
           to={to}
           end={end}
-          style={({ isActive }) => ({
-            padding: '0.75rem 1rem',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: isActive ? '#00f0ff' : '#94a3b8',
-            borderBottom: isActive ? '2px solid #00f0ff' : '2px solid transparent',
-            textDecoration: 'none',
-          })}
+          className={({ isActive }) =>
+            `admin-config-nav__link${isActive ? ' admin-config-nav__link--active' : ''}`
+          }
         >
           {label}
         </NavLink>
       ))}
-    </div>
+    </nav>
   )
 }

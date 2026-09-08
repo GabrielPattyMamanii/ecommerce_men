@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import './AdminLayout.css'
@@ -23,7 +23,7 @@ const SIDEBAR_LINKS = [
 /* ────────────────────────────────────────────────
    SIDEBAR
 ──────────────────────────────────────────────── */
-function Sidebar({ collapsed, onToggle }) {
+function Sidebar({ collapsed, mobileOpen, onClose }) {
     const navigate = useNavigate()
     const { role, permissions } = useAuth()
 
@@ -34,63 +34,84 @@ function Sidebar({ collapsed, onToggle }) {
         return permissions?.includes(section)
     })
 
+    // En el drawer mobile siempre se muestran las etiquetas completas,
+    // aunque el rail de escritorio esté colapsado a solo-íconos.
+    const iconOnly = collapsed && !mobileOpen
+
     return (
-        <aside className={`admin-sidebar${collapsed ? ' admin-sidebar--collapsed' : ''}`}>
-            {/* Logo / marca */}
-            <div className="admin-sidebar__header" role="banner">
-                <div className="admin-sidebar__logo-icon" aria-hidden="true">
-                    <span className="material-symbols-outlined">hexagon</span>
-                </div>
-                {!collapsed && (
-                    <span className="admin-sidebar__logo-text">TECH_ADMIN</span>
-                )}
-            </div>
-
-            {/* Nav links */}
-            <nav className="admin-sidebar__nav" aria-label="Admin navigation">
-                {!collapsed && (
-                    <p className="admin-sidebar__section-label">Main Menu</p>
-                )}
-
-                {visibleLinks.map(({ label, icon, to, badge, end }) => (
-                    <NavLink
-                        key={to}
-                        to={to}
-                        end={end}
-                        className={({ isActive }) =>
-                            `admin-sidebar__link${isActive ? ' admin-sidebar__link--active' : ''}`
-                        }
-                    >
-                        <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
-                        {!collapsed && <span className="admin-sidebar__link-label">{label}</span>}
-                        {!collapsed && badge && (
-                            <span className="admin-sidebar__badge">{badge}</span>
-                        )}
-                    </NavLink>
-                ))}
-            </nav>
-
-            {/* Footer — usuario */}
-            {!collapsed && (
-                <div className="admin-sidebar__footer">
-                    <div className="admin-sidebar__user-card">
-                        <div className="admin-sidebar__avatar" role="img" aria-label="Admin avatar" />
-                        <div>
-                            <p className="admin-sidebar__user-name">SYS_ADMIN_01</p>
-                            <p className="admin-sidebar__user-status">ONLINE • V.2.4</p>
-                        </div>
+        <>
+            <aside className={`admin-sidebar${iconOnly ? ' admin-sidebar--collapsed' : ''}${mobileOpen ? ' admin-sidebar--mobile-open' : ''}`}>
+                {/* Logo / marca */}
+                <div className="admin-sidebar__header" role="banner">
+                    <div className="admin-sidebar__logo-icon" aria-hidden="true">
+                        <span className="material-symbols-outlined">hexagon</span>
                     </div>
+                    {!iconOnly && (
+                        <span className="admin-sidebar__logo-text">TECH_ADMIN</span>
+                    )}
                     <button
-                        className="admin-sidebar__logout"
-                        onClick={() => navigate('/')}
-                        aria-label="Logout"
+                        className="admin-sidebar__close-btn"
+                        onClick={onClose}
+                        aria-label="Cerrar menú"
                     >
-                        <span className="material-symbols-outlined" aria-hidden="true">logout</span>
-                        LOGOUT
+                        <span className="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
                 </div>
-            )}
-        </aside>
+
+                {/* Nav links */}
+                <nav className="admin-sidebar__nav" aria-label="Admin navigation">
+                    {!iconOnly && (
+                        <p className="admin-sidebar__section-label">Main Menu</p>
+                    )}
+
+                    {visibleLinks.map(({ label, icon, to, badge, end }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            end={end}
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                                `admin-sidebar__link${isActive ? ' admin-sidebar__link--active' : ''}`
+                            }
+                        >
+                            <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+                            {!iconOnly && <span className="admin-sidebar__link-label">{label}</span>}
+                            {!iconOnly && badge && (
+                                <span className="admin-sidebar__badge">{badge}</span>
+                            )}
+                        </NavLink>
+                    ))}
+                </nav>
+
+                {/* Footer — usuario */}
+                {!iconOnly && (
+                    <div className="admin-sidebar__footer">
+                        <div className="admin-sidebar__user-card">
+                            <div className="admin-sidebar__avatar" role="img" aria-label="Admin avatar" />
+                            <div>
+                                <p className="admin-sidebar__user-name">SYS_ADMIN_01</p>
+                                <p className="admin-sidebar__user-status">ONLINE • V.2.4</p>
+                            </div>
+                        </div>
+                        <button
+                            className="admin-sidebar__logout"
+                            onClick={() => navigate('/')}
+                            aria-label="Logout"
+                        >
+                            <span className="material-symbols-outlined" aria-hidden="true">logout</span>
+                            LOGOUT
+                        </button>
+                    </div>
+                )}
+            </aside>
+
+            {/* Backdrop — solo visible en mobile con el drawer abierto */}
+            <div
+                className={`admin-sidebar-backdrop${mobileOpen ? ' admin-sidebar-backdrop--visible' : ''}`}
+                onClick={onClose}
+                aria-hidden="true"
+            />
+        </>
     )
 }
 
@@ -140,17 +161,48 @@ function AdminHeader({ onMenuToggle, title = 'Performance Overview' }) {
     )
 }
 
+/* Breakpoint compartido con AdminLayout.css: por debajo de 1024px
+   el sidebar deja de ser un rail fijo y pasa a ser un drawer off-canvas. */
+const MOBILE_QUERY = '(max-width: 1023px)'
+
 /* ────────────────────────────────────────────────
    LAYOUT — shell puro: sidebar + header + outlet
 ──────────────────────────────────────────────── */
 export default function AdminLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+    // Si la ventana crece de mobile → desktop con el drawer abierto,
+    // lo cerramos para no dejar el backdrop/estado colgado.
+    useEffect(() => {
+        const mql = window.matchMedia(MOBILE_QUERY)
+        const handleChange = e => {
+            if (!e.matches) setMobileNavOpen(false)
+        }
+        mql.addEventListener('change', handleChange)
+        return () => mql.removeEventListener('change', handleChange)
+    }, [])
+
+    // Bloquea el scroll del body mientras el drawer mobile está abierto.
+    useEffect(() => {
+        document.body.style.overflow = mobileNavOpen ? 'hidden' : ''
+        return () => { document.body.style.overflow = '' }
+    }, [mobileNavOpen])
+
+    function handleMenuToggle() {
+        if (window.matchMedia(MOBILE_QUERY).matches) {
+            setMobileNavOpen(p => !p)
+        } else {
+            setSidebarCollapsed(p => !p)
+        }
+    }
 
     return (
         <div className="admin-layout">
             <Sidebar
                 collapsed={sidebarCollapsed}
-                onToggle={() => setSidebarCollapsed(p => !p)}
+                mobileOpen={mobileNavOpen}
+                onClose={() => setMobileNavOpen(false)}
             />
 
             <div className="admin-main">
@@ -158,7 +210,7 @@ export default function AdminLayout() {
                 <div className="admin-main__grid-bg" aria-hidden="true" />
 
                 <AdminHeader
-                    onMenuToggle={() => setSidebarCollapsed(p => !p)}
+                    onMenuToggle={handleMenuToggle}
                 />
 
                 {/*
