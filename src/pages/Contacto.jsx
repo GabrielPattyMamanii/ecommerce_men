@@ -9,6 +9,7 @@ const CHANNEL_META = [
         desc: 'Respuesta directa en tiempo real',
         color: '#25d366',
         field: 'whatsapp_url',
+        activeField: 'whatsapp_active',
     },
     {
         id: 'instagram',
@@ -17,6 +18,7 @@ const CHANNEL_META = [
         desc: 'Seguinos para novedades y drops',
         color: '#e1306c',
         field: 'instagram_url',
+        activeField: 'instagram_active',
     },
     {
         id: 'facebook',
@@ -25,6 +27,7 @@ const CHANNEL_META = [
         desc: 'Sumate a la comunidad',
         color: '#1877f2',
         field: 'facebook_url',
+        activeField: 'facebook_active',
     },
     {
         id: 'tiktok',
@@ -33,6 +36,7 @@ const CHANNEL_META = [
         desc: 'Contenido técnico y behind the scenes',
         color: '#69c9d0',
         field: 'tiktok_url',
+        activeField: 'tiktok_active',
     },
     {
         id: 'email',
@@ -41,6 +45,7 @@ const CHANNEL_META = [
         desc: 'Para consultas detalladas y pedidos custom',
         color: '#1a1c1d',
         field: 'email',
+        activeField: 'email_active',
         hrefPrefix: 'mailto:',
     },
 ]
@@ -53,7 +58,7 @@ export default function Contacto() {
 
     const channels = settings
         ? CHANNEL_META
-            .filter(ch => settings[ch.field])
+            .filter(ch => settings[ch.field] && settings[ch.activeField] !== false)
             .map(ch => ({ ...ch, href: (ch.hrefPrefix ?? '') + settings[ch.field] }))
         : []
 

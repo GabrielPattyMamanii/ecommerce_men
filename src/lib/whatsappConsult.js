@@ -7,11 +7,12 @@
 export const DEFAULT_CONSULT_MESSAGE = 'Hola, quiero consultar el precio de este producto:'
 
 /**
- * @param {{ whatsapp_url?: string, consult_message?: string } | null} contactSettings
+ * @param {{ whatsapp_url?: string, whatsapp_active?: boolean, consult_message?: string } | null} contactSettings
  * @param {string} [productName]
- * @returns {string|null} URL lista para window.open, o null si no hay whatsapp_url configurado
+ * @returns {string|null} URL lista para window.open, o null si no hay whatsapp_url configurado o el canal está desactivado
  */
 export function buildConsultWhatsappUrl(contactSettings, productName) {
+  if (contactSettings?.whatsapp_active === false) return null
   const baseUrl = contactSettings?.whatsapp_url?.trim()
   if (!baseUrl) return null
 

@@ -2,7 +2,7 @@ import { useContactSettings } from '../hooks/useContactSettings';
 
 export default function WhatsAppButton() {
   const contact = useContactSettings();
-  const whatsappUrl = contact?.whatsapp_url?.trim();
+  const whatsappUrl = contact?.whatsapp_active !== false ? contact?.whatsapp_url?.trim() : null;
 
   const handleClick = () => {
     if (!whatsappUrl) return;

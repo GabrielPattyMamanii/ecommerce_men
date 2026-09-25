@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabaseClient'
-import { S, useToasts, ToastStack } from '../../../../components/admin/AdminKit'
+import { S, useToasts, ToastStack, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ConfiguracionNav from './ConfiguracionNav'
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -11,12 +11,32 @@ const EMPTY_HORARIOS = DIAS_SEMANA.reduce((acc, dia) => {
   return acc
 }, {})
 
+// Un canal = una URL/dato de contacto + su toggle de activo, igual al patrón
+// "abierto" de HORARIOS DE ATENCIÓN: desactivar no borra lo cargado, solo
+// oculta el canal en el sitio público (Footer, /contacto, botón WhatsApp).
+// Íconos y colores calcan los de CHANNEL_META en pages/Contacto.jsx (mismo
+// canal, mismo color, en el admin y en el sitio público) — Email usa el azul
+// de marca del panel en vez de un color de red social porque es el canal
+// "propio" del sitio, no una plataforma de terceros.
+const CANALES = [
+  { field: 'whatsapp_url', activeField: 'whatsapp_active', label: 'WhatsApp', placeholder: 'https://wa.me/549...', icon: 'chat', color: '#25d366' },
+  { field: 'instagram_url', activeField: 'instagram_active', label: 'Instagram', placeholder: 'https://instagram.com/tu_usuario', icon: 'photo_camera', color: '#e1306c' },
+  { field: 'facebook_url', activeField: 'facebook_active', label: 'Facebook', placeholder: 'https://facebook.com/tu_pagina', icon: 'thumb_up', color: '#1877f2' },
+  { field: 'tiktok_url', activeField: 'tiktok_active', label: 'TikTok', placeholder: 'https://tiktok.com/@tu_usuario', icon: 'video_library', color: '#69c9d0' },
+  { field: 'email', activeField: 'email_active', label: 'Email de contacto', placeholder: 'info@tudominio.com', icon: 'mail', color: '#0d46f2' },
+]
+
 const EMPTY_FORM = {
   whatsapp_url: '',
   instagram_url: '',
   facebook_url: '',
   tiktok_url: '',
   email: '',
+  whatsapp_active: true,
+  instagram_active: true,
+  facebook_active: true,
+  tiktok_active: true,
+  email_active: true,
   horarios: EMPTY_HORARIOS,
 }
 
@@ -30,7 +50,7 @@ export default function ConfiguracionContacto() {
     async function fetchSettings() {
       const { data, error } = await supabase
         .from('contact_settings')
-        .select('whatsapp_url, instagram_url, facebook_url, tiktok_url, email, hours_text')
+        .select('whatsapp_url, instagram_url, facebook_url, tiktok_url, email, hours_text, whatsapp_active, instagram_active, facebook_active, tiktok_active, email_active')
         .eq('id', 1)
         .maybeSingle()
       if (error) addToast('error', 'No se pudo cargar la configuración')
@@ -54,6 +74,13 @@ export default function ConfiguracionContacto() {
           facebook_url: data.facebook_url || '',
           tiktok_url: data.tiktok_url || '',
           email: data.email || '',
+          // ?? true: si la migración de las columnas *_active todavía no corrió
+          // (o la fila es vieja), el canal se sigue mostrando como hoy.
+          whatsapp_active: data.whatsapp_active ?? true,
+          instagram_active: data.instagram_active ?? true,
+          facebook_active: data.facebook_active ?? true,
+          tiktok_active: data.tiktok_active ?? true,
+          email_active: data.email_active ?? true,
           horarios,
         })
       }
@@ -89,6 +116,11 @@ export default function ConfiguracionContacto() {
           facebook_url: (form.facebook_url || '').trim() || null,
           tiktok_url: (form.tiktok_url || '').trim() || null,
           email: (form.email || '').trim() || null,
+          whatsapp_active: form.whatsapp_active,
+          instagram_active: form.instagram_active,
+          facebook_active: form.facebook_active,
+          tiktok_active: form.tiktok_active,
+          email_active: form.email_active,
           hours_text: horarios_json,
           updated_at: new Date().toISOString(),
         })
@@ -134,37 +166,44 @@ export default function ConfiguracionContacto() {
           // CANALES DE COMUNICACIÓN
         </h2>
 
-        <div className="admin-form-grid-2">
-          <div>
-            <label style={S.label}>WhatsApp (URL wa.me)</label>
-            <input style={S.input} value={form.whatsapp_url}
-              onChange={e => handleChangeRed('whatsapp_url', e.target.value)}
-              placeholder="https://wa.me/549..." />
-          </div>
-          <div>
-            <label style={S.label}>Instagram (URL)</label>
-            <input style={S.input} value={form.instagram_url}
-              onChange={e => handleChangeRed('instagram_url', e.target.value)}
-              placeholder="https://instagram.com/tu_usuario" />
-          </div>
-          <div>
-            <label style={S.label}>Facebook (URL)</label>
-            <input style={S.input} value={form.facebook_url}
-              onChange={e => handleChangeRed('facebook_url', e.target.value)}
-              placeholder="https://facebook.com/tu_pagina" />
-          </div>
-          <div>
-            <label style={S.label}>TikTok (URL)</label>
-            <input style={S.input} value={form.tiktok_url}
-              onChange={e => handleChangeRed('tiktok_url', e.target.value)}
-              placeholder="https://tiktok.com/@tu_usuario" />
-          </div>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <label style={S.label}>Email de contacto</label>
-            <input style={S.input} value={form.email}
-              onChange={e => handleChangeRed('email', e.target.value)}
-              placeholder="info@tudominio.com" />
-          </div>
+        <div className="admin-channel-list">
+          {CANALES.map(({ field, activeField, label, placeholder, icon, color }) => {
+            const isActive = form[activeField]
+            return (
+              <div
+                key={field}
+                className={`admin-channel-row${isActive ? '' : ' admin-channel-row--inactive'}`}
+                style={{ '--channel-accent': color }}
+              >
+                <div
+                  className="admin-channel-row__icon"
+                  style={{ borderColor: `${color}40`, background: `${color}1a`, color }}
+                  aria-hidden="true"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.15rem' }}>{icon}</span>
+                </div>
+
+                <label className="admin-channel-row__label" htmlFor={`canal-${field}`}>{label}</label>
+
+                <input
+                  id={`canal-${field}`}
+                  className="admin-channel-row__input"
+                  value={form[field]}
+                  onChange={e => handleChangeRed(field, e.target.value)}
+                  placeholder={placeholder}
+                />
+
+                <div className="admin-channel-row__toggle">
+                  <span className="admin-channel-row__toggle-label">{isActive ? 'Activo' : 'Inactivo'}</span>
+                  <ToggleSwitch
+                    checked={isActive}
+                    onChange={() => handleChangeRed(activeField, !isActive)}
+                    label={`${isActive ? 'Desactivar' : 'Activar'} ${label}`}
+                  />
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 

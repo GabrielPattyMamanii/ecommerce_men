@@ -1062,6 +1062,98 @@
     border-bottom-color: var(--admin-primary);
 }
 
+/* ── Canales de comunicación — una fila por canal (ícono de marca + URL +
+   toggle de activo), mismo lenguaje visual que .admin-schedule-row de abajo:
+   tarjeta con borde sutil sobre --admin-card, la fila entera se atenúa
+   cuando el canal está inactivo. El borde izquierdo toma el color de marca
+   del canal (--channel-accent, inline por fila) para poder identificarlo de
+   un vistazo sin leer la etiqueta. ── */
+.admin-channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-channel-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.85rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #1e293b;
+    border-left: 3px solid var(--channel-accent, var(--admin-primary));
+    border-radius: 2px;
+    background-color: var(--admin-card);
+    transition: opacity 0.15s, border-color 0.15s;
+}
+
+.admin-channel-row--inactive {
+    opacity: 0.5;
+}
+
+.admin-channel-row__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid;
+    border-radius: 2px;
+}
+
+.admin-channel-row__label {
+    flex: 0 1 auto;
+    min-width: 84px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.admin-channel-row__input {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    box-sizing: border-box;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 2px;
+    color: white;
+    font-family: monospace;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.admin-channel-row__input:focus {
+    border-color: var(--channel-accent, var(--admin-primary));
+}
+
+.admin-channel-row__toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.admin-channel-row__toggle-label {
+    font-family: monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    min-width: 46px;
+    text-align: right;
+}
+
+.admin-channel-row:not(.admin-channel-row--inactive) .admin-channel-row__toggle-label {
+    color: var(--admin-green);
+}
+
 /* ── Horarios de atención — lista apilada (mobile), reemplaza la tabla ──
    Selector compuesto (2 clases) a propósito: necesita más especificidad que
    .admin-mobile-only/.admin-desktop-only (894-910) para que su "display: flex"
