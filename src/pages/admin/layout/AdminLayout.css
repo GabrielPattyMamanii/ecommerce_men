@@ -1034,91 +1034,6 @@
     }
 }
 
-/* ── Cards de producto (mobile/tablet) — reemplazan la tabla ancha ──
-   Selector compuesto por el mismo motivo que .admin-schedule-list (ver más
-   abajo): sin esto, su "display: flex" le gana por orden de declaración al
-   "display: none" de .admin-mobile-only en desktop y las cards quedan
-   visibles siempre, duplicando la tabla. ── */
-.admin-product-cards.admin-mobile-only {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-@media (min-width: 1024px) {
-    .admin-product-cards.admin-mobile-only {
-        display: none;
-    }
-}
-
-.admin-product-card {
-    border: 1px solid var(--admin-border);
-    border-radius: 10px;
-    background-color: var(--admin-card);
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.admin-product-card__top {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-}
-
-.admin-product-card__id {
-    font-family: monospace;
-    font-size: 0.65rem;
-    color: var(--admin-text-subtle);
-}
-
-.admin-product-card__name {
-    color: var(--admin-text);
-    font-weight: 600;
-    font-size: 0.9375rem;
-    line-height: 1.3;
-    margin: 0.2rem 0 0.3rem;
-}
-
-.admin-product-card__desc {
-    color: var(--admin-text-faint);
-    font-size: 0.78rem;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin: 0;
-}
-
-.admin-product-card__row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--admin-border);
-}
-
-.admin-product-card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem 1rem;
-    font-size: 0.75rem;
-    color: var(--admin-text-muted);
-}
-
-.admin-product-card__status {
-    font-size: 0.65rem;
-    font-family: monospace;
-    color: var(--admin-text-subtle);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
 /* ════════════════════════════════
    CONFIGURACIÓN — páginas de settings (Contacto/WhatsApp/Banner/Logo)
    ════════════════════════════════ */
@@ -1446,4 +1361,309 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
+}
+
+/* ════════════════════════════════
+   PRODUCTOS — grilla de cards (reemplaza tabla + cards mobile)
+   ════════════════════════════════ */
+.admin-products-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.admin-products-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-products-chip {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--admin-border-strong);
+    background: var(--admin-card);
+    color: var(--admin-text-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.admin-products-chip span {
+    margin-left: 0.3rem;
+    font-weight: 500;
+    color: var(--admin-text-subtle);
+}
+
+.admin-products-chip:hover {
+    color: var(--admin-text);
+    border-color: var(--admin-primary);
+}
+
+.admin-products-chip[aria-pressed="true"] {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-products-chip[aria-pressed="true"] span {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.admin-products-chip:focus-visible,
+.admin-pcard__btn:focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+}
+
+.admin-products-summary {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--admin-text-muted);
+}
+
+.admin-products-summary b {
+    color: var(--admin-text);
+    font-weight: 700;
+}
+
+.admin-products-summary i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+}
+
+.admin-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.admin-pcard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0.75rem 1rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    background: var(--admin-card);
+    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+
+.admin-pcard:hover {
+    border-color: var(--admin-border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.55);
+}
+
+.admin-pcard__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.1rem 0.15rem 0;
+}
+
+.admin-pcard__id {
+    font-family: monospace;
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    background: var(--admin-field-bg);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-faint);
+}
+
+.admin-pcard__media {
+    position: relative;
+    aspect-ratio: 4 / 3.4;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--admin-field-bg);
+    border: 1px solid var(--admin-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-subtle);
+}
+
+.admin-pcard__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.admin-pcard--hidden .admin-pcard__media img {
+    filter: grayscale(1) blur(1.5px);
+    opacity: 0.7;
+}
+
+.admin-pcard__badge {
+    position: absolute;
+    left: 0.6rem;
+    bottom: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(8, 12, 22, 0.78);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.admin-pcard__badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--dot, var(--admin-green));
+}
+
+.admin-pcard__badge--hidden {
+    left: auto;
+    right: 0.6rem;
+    top: 0.6rem;
+    bottom: auto;
+}
+
+.admin-pcard__badge--hidden::before {
+    display: none;
+}
+
+.admin-pcard__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.admin-pcard__cat {
+    color: var(--admin-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-pcard__sizes {
+    color: var(--admin-text-faint);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.admin-pcard__name {
+    margin: 0;
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--admin-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.admin-pcard__price {
+    margin-top: auto;
+    padding: 0.75rem 0.25rem 0;
+    border-top: 1px solid var(--admin-border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.admin-pcard__price-label {
+    font-size: 0.7rem;
+    color: var(--admin-text-faint);
+}
+
+.admin-pcard__price-main {
+    font-family: monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--admin-text);
+}
+
+.admin-pcard__price-main--ask {
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #eab308;
+}
+
+.admin-pcard__actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 0.25rem;
+}
+
+.admin-pcard__btn {
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--admin-border-strong);
+    background: transparent;
+    color: var(--admin-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.admin-pcard__btn--edit {
+    flex: 1;
+    color: var(--admin-primary);
+    border-color: rgba(var(--admin-primary-rgb), 0.45);
+    background: rgba(var(--admin-primary-rgb), 0.08);
+}
+
+.admin-pcard__btn--edit:hover {
+    background: rgba(var(--admin-primary-rgb), 0.18);
+}
+
+.admin-pcard__btn--icon {
+    width: 38px;
+}
+
+.admin-pcard__btn--danger:hover {
+    color: var(--admin-red);
+    border-color: var(--admin-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-pcard {
+        transition: none;
+    }
+    .admin-pcard:hover {
+        transform: none;
+    }
 }

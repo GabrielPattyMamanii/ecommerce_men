@@ -6,12 +6,12 @@ import { convertToWebP, validateImageFile } from '../../../../../lib/imageUtils'
    verse consistente con el diseño Stitch sin tocar estos otros usos. */
 const DEFAULT_THEME = {
     accent: 'var(--admin-primary)',
-    accentSoft: 'rgba(13,70,242,0.15)',
-    border: '#334155',
-    surfaceLowest: 'rgba(15,23,42,0.4)',
-    surfaceContainer: '#1e293b',
-    text: 'white',
-    textMuted: '#64748b',
+    accentSoft: 'rgba(var(--admin-primary-rgb),0.15)',
+    border: 'var(--admin-border-strong)',
+    surfaceLowest: 'var(--admin-field-bg-soft)',
+    surfaceContainer: 'var(--admin-surface)',
+    text: 'var(--admin-text)',
+    textMuted: 'var(--admin-text-faint)',
     radius: '2px',
     radiusSm: '2px',
     font: 'monospace',
@@ -23,7 +23,18 @@ const DEFAULT_THEME = {
  * a WebP antes de agregarla (mismo patrón que BrandPhotoUploader).
  * Hacer clic sobre una miniatura abre un lightbox para verla en grande.
  */
-export default function ProductImageUploader({ images = [], onImagesChange, maxImages = 6, onError, productName = '', theme }) {
+export default function ProductImageUploader({
+    images = [], onImagesChange, maxImages = 6, onError, productName = '', theme,
+    label = 'Imágenes del producto',
+    optionalLabel = true,
+    emptyText = 'Adjuntar imágenes del producto',
+    moreText = 'Agregar más imágenes',
+    previewFit = 'cover',       // 'contain' para logos: no recorta la miniatura
+    previewAspect = '1',
+    previewMinWidth = 80,
+    previewBg,                  // ej. fondo a cuadros para ver la transparencia
+    convertOptions = { quality: 0.85, maxWidth: 1600, maxHeight: 1600 },
+}) {
     const t = { ...DEFAULT_THEME, ...theme }
     const fileInputRef = useRef(null)
     const [isDragging, setIsDragging] = useState(false)
@@ -49,7 +60,7 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
                 continue
             }
             try {
-                const webpFile = await convertToWebP(file, { quality: 0.85, maxWidth: 1600, maxHeight: 1600 })
+                const webpFile = await convertToWebP(file, convertOptions)
                 convertedFiles.push(webpFile)
             } catch (error) {
                 reportError(`Error al procesar ${file.name}: ${error.message}`)
@@ -109,8 +120,8 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.65rem', fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: t.font }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>photo_camera</span>
-                    Imágenes del producto
-                    <span style={{ opacity: 0.6, fontWeight: 400 }}>(opcional)</span>
+                    {label}
+                    {optionalLabel && <span style={{ opacity: 0.6, fontWeight: 400 }}>(opcional)</span>}
                 </label>
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.5rem', borderRadius: '999px', background: t.accentSoft, color: t.accent }}>
                     {images.length}/{maxImages}
@@ -140,7 +151,7 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
                     <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: t.accent }}>upload</span>
                     <div style={{ textAlign: 'left' }}>
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: t.text, fontFamily: t.font }}>
-                            {images.length === 0 ? 'Adjuntar imágenes del producto' : 'Agregar más imágenes'}
+                            {images.length === 0 ? emptyText : moreText}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: t.textMuted, fontFamily: t.font }}>Arrastra archivos aquí o hacé clic — JPG, PNG, WebP (máx. 10MB)</div>
                     </div>
@@ -152,13 +163,13 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
             </div>
 
             {images.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.625rem', marginTop: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${previewMinWidth}px, 1fr))`, gap: '0.625rem', marginTop: '0.75rem' }}>
                     {images.map((image, index) => (
-                        <div key={index} style={{ position: 'relative', aspectRatio: '1', borderRadius: t.radiusSm, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.surfaceContainer }}>
+                        <div key={index} style={{ position: 'relative', aspectRatio: previewAspect, borderRadius: t.radiusSm, overflow: 'hidden', border: `1px solid ${t.border}`, background: previewBg || t.surfaceContainer }}>
                             <img
                                 src={typeof image === 'string' ? image : URL.createObjectURL(image)}
                                 alt={`Producto - imagen ${index + 1}`}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                                style={{ width: '100%', height: '100%', objectFit: previewFit, cursor: 'pointer' }}
                                 onClick={() => openLightbox(index)}
                             />
                             <button

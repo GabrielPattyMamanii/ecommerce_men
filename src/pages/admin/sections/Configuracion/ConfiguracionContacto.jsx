@@ -150,12 +150,12 @@ export default function ConfiguracionContacto() {
     }
   }
 
-  if (loading) return <div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando…</div>
+  if (loading) return <div style={{ padding: '2rem', color: 'var(--admin-text-muted)' }}>Cargando…</div>
 
   return (
     <div className="admin-config-page">
       <ConfiguracionNav />
-      <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <h1 style={{ color: 'var(--admin-text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">contact_mail</span>
         Configuración de Contacto
       </h1>
@@ -213,10 +213,10 @@ export default function ConfiguracionContacto() {
           Horarios de atención
         </h2>
 
-        <div className="admin-desktop-only" style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid #333b49', borderRadius: '10px', overflow: 'hidden' }}>
+        <div className="admin-desktop-only" style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid var(--admin-border-strong)', borderRadius: '10px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #333b49', background: '#1a1f27' }}>
+              <tr style={{ borderBottom: '1px solid var(--admin-border-strong)', background: 'var(--admin-surface)' }}>
                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Día</th>
                 <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abierto</th>
                 <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--admin-primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inicio</th>
@@ -226,7 +226,7 @@ export default function ConfiguracionContacto() {
             <tbody>
               {DIAS_SEMANA.map((dia, idx) => (
                 <tr key={dia} style={{ borderBottom: idx < DIAS_SEMANA.length - 1 ? '1px solid #2a3142' : 'none', background: idx % 2 === 0 ? 'transparent' : 'rgba(13, 70, 242, 0.04)' }}>
-                  <td style={{ padding: '1rem', color: 'white', fontSize: '0.875rem', fontWeight: 500 }}>{dia}</td>
+                  <td style={{ padding: '1rem', color: 'var(--admin-text)', fontSize: '0.875rem', fontWeight: 500 }}>{dia}</td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     <input
                       type="checkbox"
@@ -243,8 +243,8 @@ export default function ConfiguracionContacto() {
                       onChange={e => handleChangeHorario(dia, 'inicio', e.target.value)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #334155',
-                        color: form.horarios[dia].abierto ? 'white' : '#64748b',
+                        border: '1px solid var(--admin-border-strong)',
+                        color: form.horarios[dia].abierto ? 'var(--admin-text)' : 'var(--admin-text-faint)',
                         padding: '0.5rem',
                         borderRadius: '2px',
                         fontFamily: 'monospace',
@@ -262,8 +262,8 @@ export default function ConfiguracionContacto() {
                       onChange={e => handleChangeHorario(dia, 'fin', e.target.value)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #334155',
-                        color: form.horarios[dia].abierto ? 'white' : '#64748b',
+                        border: '1px solid var(--admin-border-strong)',
+                        color: form.horarios[dia].abierto ? 'var(--admin-text)' : 'var(--admin-text-faint)',
                         padding: '0.5rem',
                         borderRadius: '2px',
                         fontFamily: 'monospace',
@@ -300,8 +300,8 @@ export default function ConfiguracionContacto() {
                     value={inicio}
                     onChange={e => handleChangeHorario(dia, 'inicio', e.target.value)}
                     style={{
-                      background: 'transparent', border: '1px solid #334155',
-                      color: abierto ? 'white' : '#64748b', padding: '0.4rem 0.5rem',
+                      background: 'transparent', border: '1px solid var(--admin-border-strong)',
+                      color: abierto ? 'var(--admin-text)' : 'var(--admin-text-faint)', padding: '0.4rem 0.5rem',
                       borderRadius: '2px', fontFamily: 'monospace', fontSize: '0.8rem',
                       cursor: abierto ? 'pointer' : 'not-allowed',
                     }}
@@ -313,8 +313,8 @@ export default function ConfiguracionContacto() {
                     value={fin}
                     onChange={e => handleChangeHorario(dia, 'fin', e.target.value)}
                     style={{
-                      background: 'transparent', border: '1px solid #334155',
-                      color: abierto ? 'white' : '#64748b', padding: '0.4rem 0.5rem',
+                      background: 'transparent', border: '1px solid var(--admin-border-strong)',
+                      color: abierto ? 'var(--admin-text)' : 'var(--admin-text-faint)', padding: '0.4rem 0.5rem',
                       borderRadius: '2px', fontFamily: 'monospace', fontSize: '0.8rem',
                       cursor: abierto ? 'pointer' : 'not-allowed',
                     }}

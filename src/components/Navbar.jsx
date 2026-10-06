@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useSiteLogo } from '../hooks/useSiteLogo'
@@ -18,9 +18,51 @@ export default function Navbar() {
     const [categories, setCategories] = useState([])
     const { totalCount, toggleCart } = useCart()
     const { user } = useAuth()
-    const logoUrl = useSiteLogo()
+    const { logoUrl, logoType } = useSiteLogo()
+    const stacked = logoType === 'stacked'
     const navigate = useNavigate()
     const productsRef = useRef(null)
+    const headerRef = useRef(null)
+    const mobileMenuRef = useRef(null)
+    const { pathname } = useLocation()
+    const isHome = pathname === '/'
+    const [pastHero, setPastHero] = useState(false)
+    // Transparente solo sobre el banner del Home; blanco al salir de él o
+    // cuando hay un menú desplegado (que necesita fondo para leerse).
+    const overHero = isHome && !pastHero && !menuOpen && !productsOpen
+
+    // Publica la altura del header (sin el menú mobile desplegado) para que el
+    // banner del Home se extienda por detrás del header transparente.
+    useEffect(() => {
+        const header = headerRef.current
+        if (!header) return
+        const root = document.documentElement
+        function publish() {
+            const menuH = mobileMenuRef.current?.offsetHeight ?? 0
+            root.style.setProperty('--navbar-h', `${header.offsetHeight - menuH}px`)
+        }
+        publish()
+        const ro = new ResizeObserver(publish)
+        ro.observe(header)
+        return () => { ro.disconnect(); root.style.removeProperty('--navbar-h') }
+    }, [])
+
+    // Detecta cuándo el banner (data-hero) ya quedó detrás del header
+    useEffect(() => {
+        if (!isHome) { setPastHero(false); return }
+        function check() {
+            const hero = document.querySelector('[data-hero]')
+            const navH = headerRef.current ? headerRef.current.offsetHeight : 0
+            setPastHero(hero ? hero.getBoundingClientRect().bottom <= navH : false)
+        }
+        check()
+        window.addEventListener('scroll', check, { passive: true })
+        window.addEventListener('resize', check)
+        return () => {
+            window.removeEventListener('scroll', check)
+            window.removeEventListener('resize', check)
+        }
+    }, [isHome])
 
     // Categorías reales para el dropdown "Productos" — mismo query que el Footer
     useEffect(() => {
@@ -53,11 +95,11 @@ export default function Navbar() {
     }
 
     return (
-        <header className="navbar">
+        <header ref={headerRef} className={`navbar${overHero ? ' navbar--hero' : ''}`}>
             <div className="navbar__grid-bg" aria-hidden="true" />
 
             {/* ── Fila principal: buscador / logo centrado / cuenta + carrito ── */}
-            <div className="navbar__inner">
+            <div className={`navbar__inner${stacked ? ' navbar__inner--stacked' : ''}`}>
                 {/* ── Izquierda: Buscador ── */}
                 <form className="navbar__search" role="search" onSubmit={submitSearch} aria-label="Buscar productos">
                     <div className="navbar__search-box">
@@ -74,12 +116,12 @@ export default function Navbar() {
                 </form>
 
                 {/* ── Centro: Logo ── */}
-                <Link to="/" className="navbar__logo group">
+                <Link to="/" className={`navbar__logo group${stacked ? ' navbar__logo--stacked' : ''}`}>
                     {logoUrl && (
                         <img
                             src={logoUrl}
                             alt="Logo de la tienda"
-                            className="w-full h-full object-contain opacity-95 transition-all duration-300 group-hover:scale-105"
+                            className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                         />
                     )}
                 </Link>
@@ -164,6 +206,7 @@ export default function Navbar() {
 
             {/* ── Menú mobile ── */}
             <nav
+                ref={mobileMenuRef}
                 className={`navbar__mobile-menu${menuOpen ? ' navbar__mobile-menu--open' : ''}`}
                 aria-label="Menú móvil"
             >

@@ -7,7 +7,7 @@ import { useSiteLogo } from '../hooks/useSiteLogo';
 export default function Footer() {
   const [categories, setCategories] = useState([]);
   const contact = useContactSettings();
-  const logoUrl = useSiteLogo();
+  const { logoUrl, logoType } = useSiteLogo();
 
   useEffect(() => {
     async function fetchCategories() {
@@ -37,7 +37,7 @@ export default function Footer() {
                 <img
                   src={logoUrl}
                   alt="NEXO Performance"
-                  className="h-14 w-auto opacity-90 group-hover:opacity-100 transition-opacity"
+                  className={`${logoType === 'stacked' ? 'h-28' : 'h-14'} w-auto opacity-90 group-hover:opacity-100 transition-opacity`}
                 />
               )}
             </Link>

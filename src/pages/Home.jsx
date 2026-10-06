@@ -37,7 +37,7 @@ export default function Home() {
 
     return (
         <div
-            className="relative min-h-screen bg-background text-primary font-body antialiased selection:bg-black/10 selection:text-primary overflow-x-hidden"
+            className="relative min-h-screen bg-background text-primary font-body antialiased selection:bg-black/10 selection:text-primary overflow-x-clip"
         >
             {/* ── Grid pattern ── */}
             <div
@@ -53,7 +53,11 @@ export default function Home() {
                  Altura y tipografía escalan desde mobile (menos scroll antes de
                  llegar a producto) hasta desktop, en vez de forzar 600px+text-6xl
                  en pantallas de 360px. ══ */}
-            <section className="relative z-10 w-full min-h-[440px] sm:min-h-[540px] md:min-h-[800px] flex items-center bg-primary overflow-hidden">
+            <section
+                data-hero
+                className="relative z-10 w-full min-h-[440px] sm:min-h-[540px] md:min-h-[800px] flex items-center bg-primary overflow-hidden"
+                style={{ marginTop: 'calc(var(--navbar-h, 0px) * -1)', paddingTop: 'var(--navbar-h, 0px)' }}
+            >
                 <div className="absolute inset-0 z-0">
                     <div
                         className="w-full h-full opacity-60 bg-cover bg-center"

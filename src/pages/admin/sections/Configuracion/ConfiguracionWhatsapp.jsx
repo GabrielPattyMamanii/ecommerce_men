@@ -76,7 +76,7 @@ export default function ConfiguracionWhatsapp() {
     }
   }
 
-  if (loading) return <div style={{ padding: '2rem', color: '#94a3b8' }}>Cargando…</div>
+  if (loading) return <div style={{ padding: '2rem', color: 'var(--admin-text-muted)' }}>Cargando…</div>
 
   const previewIntro = form.consult_message.trim() || DEFAULT_CONSULT_MESSAGE
   const previewMessage = `${previewIntro}\n\n${EXAMPLE_PRODUCT_NAME}`
@@ -84,23 +84,23 @@ export default function ConfiguracionWhatsapp() {
   return (
     <div className="admin-config-page">
       <ConfiguracionNav />
-      <h1 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <h1 style={{ color: 'var(--admin-text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined">chat</span>
         Configuración de WhatsApp
       </h1>
-      <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
+      <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
         Define a qué número y con qué mensaje se contacta un cliente al presionar el botón{' '}
-        <strong style={{ color: 'white' }}>"Consultar"</strong> de un producto marcado como{' '}
+        <strong style={{ color: 'var(--admin-text)' }}>"Consultar"</strong> de un producto marcado como{' '}
         <em>Precio a consultar</em> en el catálogo.
       </p>
 
       <div style={{
         display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
-        background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.35)',
+        background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)',
         borderRadius: '2px', padding: '0.85rem 1rem', marginBottom: '2rem',
       }}>
         <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: '1.1rem' }}>info</span>
-        <p style={{ color: '#fbbf24', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: '#b45309', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
           Este mensaje de bienvenida <strong>solo</strong> se usa cuando el cliente presiona el botón{' '}
           <strong>"Consultar"</strong> de un producto puntual. El número de WhatsApp de acá arriba también
           es el que usa el <strong>botón flotante</strong> (el ícono verde fijo abajo a la derecha de toda
@@ -120,7 +120,7 @@ export default function ConfiguracionWhatsapp() {
           onChange={e => handleChange('whatsapp_url', e.target.value)}
           placeholder="https://wa.me/549..."
         />
-        <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+        <p style={{ color: 'var(--admin-text-faint)', fontSize: '0.75rem', marginTop: '0.5rem' }}>
           Es el mismo número usado en el resto del sitio (Footer y página de Contacto). Editarlo acá lo actualiza en todos lados.
         </p>
       </div>
@@ -136,7 +136,7 @@ export default function ConfiguracionWhatsapp() {
           onChange={e => handleChange('consult_message', e.target.value)}
           placeholder={DEFAULT_CONSULT_MESSAGE}
         />
-        <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+        <p style={{ color: 'var(--admin-text-faint)', fontSize: '0.75rem', marginTop: '0.5rem' }}>
           El nombre del producto consultado se agrega automáticamente al final del mensaje — no hace falta escribirlo.
         </p>
       </div>

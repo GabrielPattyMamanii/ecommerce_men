@@ -8,33 +8,12 @@
  *    price, stock, category_id, images (subidas a Storage bucket product-images)
  *  - DELETE  producto con confirmación
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../../services/supabaseClient'
 import { convertToWebP } from '../../../../lib/imageUtils'
-import { S, ActionBtn, ToggleSwitch } from '../../../../components/admin/AdminKit'
+import { S, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ProductFormModal from './components/ProductFormModal'
 import { formatCurrency } from '../../../../lib/productPricing'
-
-/* ── Miniatura de producto (o placeholder si no tiene imágenes) ── */
-function ProductThumb({ src, name }) {
-    if (!src) {
-        return (
-            <div style={{
-                width: '40px', height: '40px', borderRadius: '2px', background: 'var(--admin-border)',
-                border: '1px solid var(--admin-border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--admin-text-subtle)', flexShrink: 0,
-            }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>image</span>
-            </div>
-        )
-    }
-    return (
-        <img
-            src={src} alt={name}
-            style={{ width: '40px', height: '40px', borderRadius: '2px', objectFit: 'cover', border: '1px solid var(--admin-border-strong)', flexShrink: 0 }}
-        />
-    )
-}
 
 /* ── Cuadros de color del producto (nunca texto/hex visible) ── */
 function ColorSwatches({ colors }) {
@@ -57,47 +36,22 @@ function ColorSwatches({ colors }) {
     )
 }
 
-/* ── Badge de stock con color según nivel. Si unlimited_stock está activo, el
-   número real queda oculto al público (ver ProductDetail/ProductCard), pero
-   acá en admin se muestra igual junto a un indicador "∞ Disponible". ── */
-function StockBadge({ value, unlimited }) {
-    const color = value === 0 ? 'var(--admin-red)' : value < 5 ? '#eab308' : 'var(--admin-green)'
-    return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600, color, fontSize: '0.875rem' }}>
-                {value}
-            </span>
-            {unlimited && (
-                <span
-                    title="Disponible sin control de stock — se muestra como 'Disponible' al público sin importar este número"
-                    style={{
-                        fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700,
-                        padding: '0.1rem 0.4rem', borderRadius: '999px',
-                        background: 'rgba(16,185,129,0.15)', color: 'var(--admin-green)',
-                    }}
-                >
-                    ∞ Disponible
-                </span>
-            )}
-        </span>
-    )
-}
-
-/* ── Card de producto — reemplaza la fila de tabla en mobile/tablet (<1024px).
-   Misma información que la fila, reorganizada en bloques apilados para
-   lectura vertical y con los botones de acción a tamaño de toque. ── */
+/* ── Card de producto — grilla responsive (misma card en desktop y mobile) ── */
 function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }) {
+    const stock = product.stock
+    const badge = product.unlimited_stock
+        ? { text: 'Disponible', dot: 'var(--admin-green)' }
+        : stock === 0
+            ? { text: 'Sin stock', dot: 'var(--admin-red)' }
+            : stock < 5
+                ? { text: `${stock} · Stock bajo`, dot: '#eab308' }
+                : { text: `${stock} en stock`, dot: 'var(--admin-green)' }
+    const hasWholesale = !product.price_on_request && product.wholesale_price
+
     return (
-        <article className="admin-product-card">
-            <div className="admin-product-card__top">
-                <ProductThumb src={product.images?.[0]} name={product.name} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="admin-product-card__id">#{product.id.slice(0, 8)}</div>
-                    <h3 className="admin-product-card__name">{product.name}</h3>
-                    {product.description && (
-                        <p className="admin-product-card__desc">{product.description}</p>
-                    )}
-                </div>
+        <article className={`admin-pcard${product.visible ? '' : ' admin-pcard--hidden'}`}>
+            <div className="admin-pcard__head">
+                <span className="admin-pcard__id">#{product.id.slice(0, 8)}</span>
                 <ToggleSwitch
                     checked={product.visible}
                     onChange={() => onToggleVisibility(product)}
@@ -106,46 +60,65 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
                 />
             </div>
 
-            <div className="admin-product-card__row">
+            <div className="admin-pcard__media">
+                {product.images?.[0] ? (
+                    <img src={product.images[0]} alt={product.name} loading="lazy" />
+                ) : (
+                    <span className="material-symbols-outlined" style={{ fontSize: '2.5rem' }}>image</span>
+                )}
+                {product.visible ? (
+                    <span className="admin-pcard__badge" style={{ '--dot': badge.dot }}>{badge.text}</span>
+                ) : (
+                    <span className="admin-pcard__badge admin-pcard__badge--hidden">Oculto</span>
+                )}
+            </div>
+
+            <div className="admin-pcard__meta">
+                <span className="admin-pcard__cat">{product.categories?.name || 'Sin categoría'}</span>
+                {product.colors?.length > 0 ? (
+                    <ColorSwatches colors={product.colors} />
+                ) : (
+                    <span className="admin-pcard__sizes">
+                        {product.sizes?.length ? product.sizes.join(', ') : 'Sin talles'}
+                    </span>
+                )}
+            </div>
+
+            <h3 className="admin-pcard__name">{product.name}</h3>
+
+            <div className="admin-pcard__price">
                 <div>
+                    <div className="admin-pcard__price-label">
+                        {product.price_on_request ? 'Precio' : hasWholesale ? 'Minorista' : 'Precio venta'}
+                    </div>
                     {product.price_on_request ? (
-                        <span style={{ color: '#eab308', fontSize: '0.85rem', fontWeight: 600 }}>Consultar</span>
+                        <div className="admin-pcard__price-main admin-pcard__price-main--ask">A consultar</div>
                     ) : (
-                        <>
-                            <div style={{ color: 'var(--admin-text)', fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
-                                {formatCurrency(product.retail_price)}
-                            </div>
-                            {product.wholesale_price && (
-                                <div style={{ fontSize: '0.72rem', color: 'var(--admin-text-faint)', marginTop: '0.15rem' }}>
-                                    {formatCurrency(product.wholesale_price)} mayorista
-                                </div>
-                            )}
-                        </>
+                        <div className="admin-pcard__price-main">{formatCurrency(product.retail_price)}</div>
                     )}
                 </div>
-                <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
+                {hasWholesale && (
+                    <div style={{ textAlign: 'right' }}>
+                        <div className="admin-pcard__price-label">Mayorista</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--admin-text-muted)' }}>
+                            {formatCurrency(product.wholesale_price)}
+                        </div>
+                    </div>
+                )}
             </div>
 
-            <div className="admin-product-card__row admin-product-card__tags">
-                <span>{product.categories?.name || 'Sin categoría'}</span>
-                {product.sizes?.length > 0 && <span>Talles: {product.sizes.join(', ')}</span>}
-                <ColorSwatches colors={product.colors} />
-            </div>
-
-            <div className="admin-product-card__row">
-                <span className="admin-product-card__status">
-                    {product.visible ? 'Visible en catálogo' : 'Oculto del catálogo'}
-                </span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <ActionBtn
-                        icon="edit" color="var(--admin-primary)" title="Editar producto"
-                        onClick={() => onEdit(product)}
-                    />
-                    <ActionBtn
-                        icon="delete" color="var(--admin-red)" title="Eliminar producto"
-                        onClick={() => onDelete(product.id, product.name)}
-                    />
-                </div>
+            <div className="admin-pcard__actions">
+                <button type="button" className="admin-pcard__btn admin-pcard__btn--edit" onClick={() => onEdit(product)}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.05rem' }}>edit</span>
+                    Editar
+                </button>
+                <button
+                    type="button" className="admin-pcard__btn admin-pcard__btn--icon admin-pcard__btn--danger"
+                    title="Eliminar producto" aria-label={`Eliminar ${product.name}`}
+                    onClick={() => onDelete(product.id, product.name)}
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.05rem' }}>delete</span>
+                </button>
             </div>
         </article>
     )
@@ -167,6 +140,23 @@ export default function ProductsTable() {
     const [modalError, setModalError] = useState(null)
     const [saving, setSaving]   = useState(false)
     const [togglingId, setTogglingId] = useState(null)
+    const [categoryFilter, setCategoryFilter] = useState('all')
+
+    /* ─ Chips de categoría con conteo + lista filtrada ─ */
+    const categoryChips = useMemo(() => {
+        const map = new Map()
+        for (const p of products) {
+            const key = p.category_id || 'none'
+            const entry = map.get(key) ?? { key, name: p.categories?.name || 'Sin categoría', count: 0 }
+            entry.count += 1
+            map.set(key, entry)
+        }
+        return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
+    }, [products])
+    const filteredProducts = categoryFilter === 'all'
+        ? products
+        : products.filter(p => (p.category_id || 'none') === categoryFilter)
+    const visibleCount = products.filter(p => p.visible).length
 
     /* ─ Fetch ─ */
     async function load() {
@@ -249,9 +239,19 @@ export default function ProductsTable() {
     async function handleDelete(id, name) {
         if (!window.confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return
         setError(null)
-        const { error: err } = await supabase.from('products').delete().eq('id', id)
-        if (err) setError(err.message)
-        else load()
+        const { data, error: err } = await supabase.from('products').delete().eq('id', id).select('id')
+        if (err) {
+            // 23503 = foreign_key_violation: el producto figura en pedidos (order_items)
+            setError(err.code === '23503'
+                ? `No se puede eliminar "${name}" porque forma parte de pedidos existentes. Ocultalo del catálogo con el interruptor de la card.`
+                : `No se pudo eliminar "${name}": ${err.message}`)
+        } else if (!data?.length) {
+            // RLS bloquea el DELETE sin devolver error: 0 filas afectadas
+            setError(`No se eliminó "${name}": la base de datos rechazó la operación (probablemente falta una policy de DELETE en products para tu usuario).`)
+        } else {
+            load()
+        }
+        if (err || !data?.length) window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     /* ─ Mostrar/ocultar producto del catálogo público ─
@@ -314,7 +314,7 @@ export default function ProductsTable() {
                     </button>
                     <button onClick={openAddModal} style={S.btnPrimary}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
-                        Add Product
+                        Nuevo producto
                     </button>
                 </div>
             </div>
@@ -360,115 +360,25 @@ export default function ProductsTable() {
                 </div>
             ) : (
                 <>
-                    {/* Tabla — desktop */}
-                    <div className="admin-orders admin-desktop-only">
-                        <div className="admin-orders__table-wrap">
-                            <table className="admin-orders__table">
-                                <thead>
-                                    <tr>
-                                        {['Imagen', 'ID', 'Nombre', 'Descripción', 'Categoría', 'Talles', 'Colores', 'Precio', 'Stock', 'Visible', 'Acciones'].map((h, i) => (
-                                            <th
-                                                key={h}
-                                                className={`admin-orders__th${i === 10 ? ' admin-orders__th--right' : ''}`}
-                                            >
-                                                {h}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {products.map(product => (
-                                        <tr key={product.id} className="admin-orders__row">
-
-                                            {/* Image */}
-                                            <td className="admin-orders__td">
-                                                <ProductThumb src={product.images?.[0]} name={product.name} />
-                                            </td>
-
-                                            {/* ID */}
-                                            <td className="admin-orders__td admin-orders__td--mono" style={{ color: 'var(--admin-text-subtle)', fontSize: '0.7rem' }}>
-                                                #{product.id.slice(0, 8)}
-                                            </td>
-
-                                            {/* Name */}
-                                            <td className="admin-orders__td admin-orders__td--white" style={{ fontWeight: 500 }}>
-                                                {product.name}
-                                            </td>
-
-                                            {/* Description */}
-                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-faint)', fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {product.description || '—'}
-                                            </td>
-
-                                            {/* Category */}
-                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-muted)', fontSize: '0.8rem' }}>
-                                                {product.categories?.name || '—'}
-                                            </td>
-
-                                            {/* Sizes */}
-                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-muted)', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {product.sizes?.length ? product.sizes.join(', ') : '—'}
-                                            </td>
-
-                                            {/* Colors */}
-                                            <td className="admin-orders__td">
-                                                <ColorSwatches colors={product.colors} />
-                                            </td>
-
-                                            {/* Price */}
-                                            <td className="admin-orders__td admin-orders__td--mono admin-orders__td--white">
-                                                {product.price_on_request ? (
-                                                    <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 600 }}>Consultar</span>
-                                                ) : (
-                                                    <div>
-                                                        <div>{formatCurrency(product.retail_price)}</div>
-                                                        {product.wholesale_price && (
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-faint)', marginTop: '0.25rem' }}>
-                                                                {formatCurrency(product.wholesale_price)} mayorista
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </td>
-
-                                            {/* Stock */}
-                                            <td className="admin-orders__td admin-orders__td--mono">
-                                                <StockBadge value={product.stock} unlimited={product.unlimited_stock} />
-                                            </td>
-
-                                            {/* Visible */}
-                                            <td className="admin-orders__td">
-                                                <ToggleSwitch
-                                                    checked={product.visible}
-                                                    onChange={() => toggleVisibility(product)}
-                                                    label={product.visible ? `Ocultar ${product.name} del catálogo` : `Mostrar ${product.name} en el catálogo`}
-                                                    disabled={togglingId === product.id}
-                                                />
-                                            </td>
-
-                                            {/* Acciones */}
-                                            <td className="admin-orders__td admin-orders__td--right">
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
-                                                    <ActionBtn
-                                                        icon="edit" color="var(--admin-primary)" title="Editar producto"
-                                                        onClick={() => openEditModal(product)}
-                                                    />
-                                                    <ActionBtn
-                                                        icon="delete" color="var(--admin-red)" title="Eliminar producto"
-                                                        onClick={() => handleDelete(product.id, product.name)}
-                                                    />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div className="admin-products-toolbar">
+                        <div className="admin-products-chips" role="group" aria-label="Filtrar por categoría">
+                            <button type="button" className="admin-products-chip" aria-pressed={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
+                                Todos<span>{products.length}</span>
+                            </button>
+                            {categoryChips.map(c => (
+                                <button key={c.key} type="button" className="admin-products-chip" aria-pressed={categoryFilter === c.key} onClick={() => setCategoryFilter(c.key)}>
+                                    {c.name}<span>{c.count}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="admin-products-summary">
+                            <span><i style={{ background: 'var(--admin-green)' }} />Visibles: <b>{visibleCount}</b></span>
+                            <span><i style={{ background: 'var(--admin-text-subtle)' }} />Ocultos: <b>{products.length - visibleCount}</b></span>
                         </div>
                     </div>
 
-                    {/* Cards — mobile / tablet */}
-                    <div className="admin-product-cards admin-mobile-only">
-                        {products.map(product => (
+                    <div className="admin-products-grid">
+                        {filteredProducts.map(product => (
                             <ProductCard
                                 key={product.id}
                                 product={product}
