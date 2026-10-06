@@ -1,10 +1,15 @@
 /* ─────────────────────────────────────────
-   NAVBAR — TEKGEAR
-   Diseño basado en Stitch: Minimalist Men's Fashion Home Page
+   NAVBAR — TEKGEAR / AURA
+   Diseño basado en Stitch: "Cabecera Aura Store — Variante Moscú"
+   Buscador a la izquierda · logo centrado · cuenta + carrito a la derecha
+   Segunda fila: navegación con dropdown de categorías reales.
    ───────────────────────────────────────── */
 
 /* ── Contenedor principal ── */
 .navbar {
+  --navbar-accent: #3b5bfd;
+  --navbar-accent-soft: rgba(59, 91, 253, 0.1);
+  --navbar-accent-softer: rgba(59, 91, 253, 0.06);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -12,7 +17,7 @@
   flex-direction: column;
   border-bottom: 1px solid #e2e2e4;
   background-color: #ffffff;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Cuadrícula decorativa de fondo */
@@ -28,10 +33,7 @@
   z-index: 0;
 }
 
-/* ── Fila principal ──
-   Padding lateral más generoso en mobile/tablet (< 1280px, rango donde
-   vive la hamburguesa) para que el cluster de íconos nunca quede pegado
-   al borde de la pantalla. */
+/* ── Fila principal: buscador / logo / cuenta+carrito ── */
 .navbar__inner {
   display: flex;
   align-items: center;
@@ -50,147 +52,48 @@
 
 @media (min-width: 1280px) {
   .navbar__inner {
-    gap: 1rem;
+    padding: 1rem 2rem;
   }
 }
 
-/* ── Lado izquierdo: Logo + nav ── */
-.navbar__left {
-  display: flex;
-  align-items: center;
-  gap: 3rem;
-}
-
-/* ── Logo ──
-   Más chico en mobile/tablet (< 1280px) para liberar espacio horizontal
-   y que el cluster de íconos (carrito, usuario, hamburguesa) respire.
-   Tamaño completo solo en desktop, donde también aparece el nav de texto. */
+/* ── Logo — centrado absoluto en desktop, orden natural en mobile ── */
 .navbar__logo {
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   cursor: pointer;
-  width: 150px;
-  height: 40px;
+  width: 130px;
+  height: 36px;
   flex-shrink: 0;
+  order: 2;
 }
 
 @media (min-width: 1280px) {
   .navbar__logo {
-    width: 214px;
-    height: 56px;
+    width: 190px;
+    height: 50px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 }
 
-.navbar__logo-icon {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  background-color: rgba(0, 0, 0, 0.04);
-  color: var(--color-primary);
-  flex-shrink: 0;
-}
-
-.navbar__logo-icon .material-symbols-outlined {
-  font-size: 1.25rem;
-}
-
-.navbar__logo-text {
-  font-family: 'Hanken Grotesk', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #1a1c1d;
-  transition: color 0.2s;
-}
-
-.navbar__logo:hover .navbar__logo-text {
-  color: var(--color-primary);
-}
-
-.navbar__logo-accent {
-  color: var(--color-primary);
-}
-
-/* ── Nav links desktop ──
-   Antes aparecían desde 768px pero el buscador recién desde 1024px: en el
-   rango 768–1023px (tablets) no había ni menú hamburguesa (se ocultaba en
-   768px) ni buscador visible — quedaba un hueco sin acceso a búsqueda.
-   Ahora los tres (nav links, search, hamburguesa) comparten el mismo
-   breakpoint de 1024px. */
-.navbar__nav {
+/* ── Búsqueda — izquierda en desktop ── */
+.navbar__search {
   display: none;
-  align-items: center;
-  gap: 2rem;
+  order: 1;
 }
 
 @media (min-width: 1280px) {
-  .navbar__nav { display: flex; }
-}
-
-.navbar__link {
-  position: relative;
-  color: #45474a;
-  font-family: 'Hanken Grotesk', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.navbar__link:hover,
-.navbar__link--active {
-  color: var(--color-primary);
-}
-
-.navbar__link-underline {
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background-color: var(--color-primary);
-  transition: width 0.25s ease;
-}
-
-.navbar__link:hover .navbar__link-underline,
-.navbar__link--active .navbar__link-underline {
-  width: 100%;
-}
-
-/* ── Lado derecho ──
-   Gap más ajustado que el resto del navbar: los 3 íconos se leen como
-   un solo cluster compacto en vez de elementos sueltos. flex-shrink:0
-   asegura que nunca se compriman aunque el buscador central crezca. */
-.navbar__right {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex-shrink: 0;
-}
-
-/* ── Búsqueda desktop — centrada ── */
-.navbar__search {
-  display: none;
-}
-
-@media (min-width: 1024px) {
   .navbar__search {
     display: flex;
     flex-direction: column;
     flex: 1;
-    max-width: 420px;
+    max-width: 320px;
     height: 2.75rem;
     cursor: text;
-    /* Centra automáticamente dentro del flex de navbar__inner */
-    margin: 0 2rem;
   }
 }
 
@@ -198,23 +101,30 @@
   display: flex;
   align-items: stretch;
   flex: 1;
-  border: 1px solid #e2e2e4;
-  background-color: #f3f3f5;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  background-color: #f2f3f7;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .navbar__search-box:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  border-color: var(--navbar-accent);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px var(--navbar-accent-softer), 0 6px 16px -8px rgba(59, 91, 253, 0.25);
 }
 
 .navbar__search-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 1rem;
-  color: #45474a;
-  font-size: 1.25rem;  /* ícono más grande */
+  padding-left: 1.1rem;
+  color: #76777b;
+  font-size: 1.2rem;
+  transition: color 0.2s;
+}
+
+.navbar__search-box:focus-within .navbar__search-icon {
+  color: var(--navbar-accent);
 }
 
 .navbar__search-input {
@@ -225,22 +135,39 @@
   color: #1a1c1d;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  padding: 0 1rem;
+  padding: 0 1.2rem 0 0.75rem;
 }
 
 .navbar__search-input::placeholder {
   color: #76777b;
 }
 
-/* ── Botones de íconos ── */
-.navbar__icon-btn {
-  position: relative;
+/* ── Derecha: cuenta + carrito + hamburguesa ── */
+.navbar__right {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 2.25rem;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  order: 3;
+  margin-left: auto;
+}
+
+@media (min-width: 1280px) {
+  .navbar__right {
+    flex: 1;
+    justify-content: flex-end;
+  }
+}
+
+/* ── Botón "Mi Cuenta" — ícono + etiqueta en desktop, solo ícono en mobile ── */
+.navbar__account {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   height: 2.25rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0 0.9rem;
+  border-radius: 9999px;
+  border: 1.5px solid #e4e4e8;
   background: transparent;
   color: #1a1c1d;
   cursor: pointer;
@@ -248,10 +175,54 @@
   transition: border-color 0.2s, background-color 0.2s, color 0.2s;
 }
 
+.navbar__account:hover {
+  border-color: var(--navbar-accent);
+  background-color: var(--navbar-accent-soft);
+  color: var(--navbar-accent);
+}
+
+.navbar__account .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.navbar__account-label {
+  display: none;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .navbar__account-label {
+    display: inline;
+  }
+}
+
+/* ── Botones de ícono genéricos (carrito) ── */
+.navbar__icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: 1.5px solid #e4e4e8;
+  background: transparent;
+  color: #1a1c1d;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s, transform 0.2s;
+}
+
 .navbar__icon-btn:hover {
-  border-color: var(--color-primary);
-  background-color: rgba(0, 0, 0, 0.05);
-  color: var(--color-primary);
+  border-color: var(--navbar-accent);
+  background-color: var(--navbar-accent-soft);
+  color: var(--navbar-accent);
+  transform: translateY(-1px);
 }
 
 .navbar__icon-btn .material-symbols-outlined {
@@ -263,17 +234,28 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background-color: var(--color-primary);
+  background-color: var(--navbar-accent);
   color: #ffffff;
   font-size: 0.6rem;
   font-weight: 700;
   font-family: 'Hanken Grotesk', sans-serif;
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
+  animation: navbar-badge-pop 0.3s ease;
+}
+
+@keyframes navbar-badge-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  70%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar__cart-badge { animation: none; }
 }
 
 /* ── Hamburger (mobile) ── */
@@ -285,15 +267,17 @@
   gap: 5px;
   width: 2.25rem;
   height: 2.25rem;
+  border-radius: 9999px;
   background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1.5px solid #e4e4e8;
   cursor: pointer;
   padding: 0;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background-color 0.2s;
 }
 
 .navbar__hamburger:hover {
-  border-color: var(--color-primary);
+  border-color: var(--navbar-accent);
+  background-color: var(--navbar-accent-soft);
 }
 
 .navbar__hamburger span {
@@ -318,6 +302,125 @@
   .navbar__hamburger { display: none; }
 }
 
+/* ── Segunda fila: navegación desktop ── */
+.navbar__nav {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 2rem;
+  border-top: 1px solid #f0f0f2;
+  background-color: #ffffff;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1280px) {
+  .navbar__nav { display: flex; }
+}
+
+.navbar__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  color: #45474a;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.navbar__link:hover {
+  color: var(--navbar-accent);
+  background-color: var(--navbar-accent-soft);
+}
+
+.navbar__link--active {
+  color: var(--navbar-accent);
+  background-color: var(--navbar-accent-softer);
+}
+
+/* El subrayado del diseño original queda reemplazado por el chip de fondo */
+.navbar__link-underline {
+  display: none;
+}
+
+/* ── Dropdown "Productos" — categorías reales desde Supabase ── */
+.navbar__dropdown {
+  position: relative;
+}
+
+.navbar__dropdown-trigger {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.navbar__dropdown-chevron {
+  font-size: 1.1rem !important;
+  transition: transform 0.2s ease;
+}
+
+.navbar__dropdown-trigger[aria-expanded="true"] .navbar__dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.navbar__dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #ededf1;
+  box-shadow: 0 16px 32px -12px rgba(59, 91, 253, 0.18);
+  padding: 0.5rem;
+  gap: 0.15rem;
+  animation: navbar-dropdown-in 0.15s ease;
+}
+
+@keyframes navbar-dropdown-in {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.navbar__dropdown-item {
+  padding: 0.6rem 1rem;
+  border-radius: 9999px;
+  color: #45474a;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.navbar__dropdown-item:hover {
+  color: var(--navbar-accent);
+  background-color: var(--navbar-accent-soft);
+}
+
+.navbar__dropdown-item--all {
+  color: var(--navbar-accent);
+  border-bottom: 1px solid #f0f0f2;
+  border-radius: 9999px 9999px 0 0;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.75rem;
+}
+
 /* ── Menú mobile ── */
 .navbar__mobile-menu {
   display: flex;
@@ -330,7 +433,8 @@
 }
 
 .navbar__mobile-menu--open {
-  max-height: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
   border-top-color: #e2e2e4;
 }
 
@@ -343,13 +447,15 @@
   display: flex;
   align-items: stretch;
   margin: 0.875rem 1.5rem 0.25rem;
-  border: 1px solid #e2e2e4;
-  background-color: #f3f3f5;
-  transition: border-color 0.2s;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  background-color: #f2f3f7;
+  transition: border-color 0.2s, background-color 0.2s;
 }
 
 .navbar__mobile-search:focus-within {
-  border-color: var(--color-primary);
+  border-color: var(--navbar-accent);
+  background-color: #ffffff;
 }
 
 .navbar__mobile-search-input {
@@ -369,6 +475,9 @@
 }
 
 .navbar__mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.875rem 1.5rem;
   color: #45474a;
   font-family: 'Hanken Grotesk', sans-serif;
@@ -384,4 +493,10 @@
 .navbar__mobile-link:hover {
   color: var(--color-primary);
   background-color: rgba(0, 0, 0, 0.04);
+}
+
+.navbar__mobile-link--category {
+  padding-left: 2.25rem;
+  font-size: 0.75rem;
+  color: #76777b;
 }

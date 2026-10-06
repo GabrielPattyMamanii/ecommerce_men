@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { S } from '../../../../../components/admin/AdminKit'
+import { PF, pfStyles } from './productFormTheme'
 import ImageColorPicker from './ImageColorPicker'
 
 /**
@@ -13,7 +13,7 @@ import ImageColorPicker from './ImageColorPicker'
  * API del sistema ni de herramientas externas.
  */
 export default function ProductColorManager({ colors = [], onColorsChange, images = [] }) {
-    const [pendingColor, setPendingColor] = useState('#00f0ff')
+    const [pendingColor, setPendingColor] = useState('#00f2ff')
     const [showPicker, setShowPicker] = useState(false)
 
     const addColor = (hex) => {
@@ -28,7 +28,7 @@ export default function ProductColorManager({ colors = [], onColorsChange, image
 
     return (
         <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', ...pfStyles.label, marginBottom: '0.6rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>palette</span>
                 Colores disponibles
                 <span style={{ opacity: 0.6, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span>
@@ -41,9 +41,9 @@ export default function ProductColorManager({ colors = [], onColorsChange, image
                     value={pendingColor}
                     onChange={e => setPendingColor(e.target.value)}
                     aria-label="Elegir color"
-                    style={{ width: '44px', height: '38px', padding: '2px', border: '1px solid #334155', borderRadius: '2px', background: 'transparent', cursor: 'pointer' }}
+                    style={{ width: '44px', height: '38px', padding: '2px', border: `1px solid ${PF.color.borderStrong}`, borderRadius: PF.radius.md, background: 'transparent', cursor: 'pointer' }}
                 />
-                <button type="button" onClick={() => addColor(pendingColor)} style={S.btnGhost}>
+                <button type="button" onClick={() => addColor(pendingColor)} style={pfStyles.btnGhost}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
                     Agregar
                 </button>
@@ -52,7 +52,7 @@ export default function ProductColorManager({ colors = [], onColorsChange, image
                     onClick={() => setShowPicker(true)}
                     disabled={!hasImages}
                     title={hasImages ? 'Tomar color de una imagen del producto' : 'Adjuntá al menos una imagen para usar el cuentagotas'}
-                    style={{ ...S.btnGhost, opacity: hasImages ? 1 : 0.5, cursor: hasImages ? 'pointer' : 'not-allowed' }}
+                    style={{ ...pfStyles.btnGhost, opacity: hasImages ? 1 : 0.5, cursor: hasImages ? 'pointer' : 'not-allowed' }}
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>colorize</span>
                     Cuentagotas
@@ -61,34 +61,20 @@ export default function ProductColorManager({ colors = [], onColorsChange, image
 
             {/* Cuadros de colores agregados */}
             {colors.length === 0 ? (
-                <p style={{ margin: 0, color: '#475569', fontFamily: 'monospace', fontSize: '0.75rem' }}>Sin colores agregados</p>
+                <p style={{ margin: 0, color: PF.color.textMuted, fontFamily: PF.font.body, fontSize: '0.75rem' }}>Sin colores agregados</p>
             ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {colors.map(hex => (
-                        <div
-                            key={hex}
-                            style={{
-                                display: 'flex', alignItems: 'stretch', height: '34px', borderRadius: '4px', overflow: 'hidden',
-                                border: '1px solid #334155',
-                            }}
-                        >
-                            <span
-                                title={hex}
-                                style={{ width: '34px', background: hex, flexShrink: 0 }}
-                            />
+                        <div key={hex} style={pfStyles.chip}>
+                            <span title={hex} style={{ width: '34px', background: hex, flexShrink: 0 }} />
                             <button
                                 type="button"
                                 onClick={() => removeColor(hex)}
                                 title={`Quitar color ${hex}`}
                                 aria-label={`Quitar color ${hex}`}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    width: '30px', background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                                    border: 'none', borderLeft: '1px solid #334155', cursor: 'pointer',
-                                    transition: 'background-color 0.15s, color 0.15s',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = 'white' }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.15)'; e.currentTarget.style.color = '#ef4444' }}
+                                style={pfStyles.chipRemove}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = PF.color.danger; e.currentTarget.style.color = PF.color.surfaceLow }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = PF.color.dangerSoft; e.currentTarget.style.color = PF.color.danger }}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>close</span>
                             </button>

@@ -163,7 +163,7 @@ export default function ConfiguracionContacto() {
       {/* Sección: Redes Sociales */}
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // CANALES DE COMUNICACIÓN
+          Canales de comunicación
         </h2>
 
         <div className="admin-channel-list">
@@ -210,10 +210,10 @@ export default function ConfiguracionContacto() {
       {/* Sección: Horarios — tabla en desktop (≥1024px), lista apilada en mobile/tablet */}
       <div>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // HORARIOS DE ATENCIÓN
+          Horarios de atención
         </h2>
 
-        <div className="admin-desktop-only" style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid #333b49', borderRadius: '2px', overflow: 'hidden' }}>
+        <div className="admin-desktop-only" style={{ borderCollapse: 'collapse', width: '100%', border: '1px solid #333b49', borderRadius: '10px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #333b49', background: '#1a1f27' }}>

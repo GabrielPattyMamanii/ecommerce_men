@@ -1,0 +1,45 @@
+/* ─────────────────────────────────────────
+   POPUP AGREGAR/EDITAR PRODUCTO
+   Portado del diseño Stitch "Edición de Producto - Vista Completa SaaS
+   Limpia" (ver productFormTheme.js para los tokens de color/radio).
+   Aislado con prefijo .pfm- para no interferir con el resto de /admin.
+   ───────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+
+.pfm-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@media (min-width: 860px) {
+    .pfm-grid {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+}
+
+.pfm-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.pfm input::placeholder,
+.pfm textarea::placeholder {
+    color: var(--pf-placeholder);
+}
+
+.pfm input:focus,
+.pfm textarea:focus,
+.pfm select:focus {
+    border-color: var(--pf-accent) !important;
+    box-shadow: 0 0 0 1px var(--pf-accent);
+}
+
+.pfm ::-webkit-scrollbar { width: 6px; height: 6px; }
+.pfm ::-webkit-scrollbar-track { background: var(--pf-surface-lowest); }
+.pfm ::-webkit-scrollbar-thumb { background: var(--pf-border-strong); border-radius: 4px; }
+.pfm ::-webkit-scrollbar-thumb:hover { background: var(--pf-accent); }

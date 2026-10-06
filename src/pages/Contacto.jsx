@@ -94,9 +94,6 @@ export default function Contacto() {
 
                 {/* Encabezado ── */}
                 <div className="mb-10 border-b border-border pb-6">
-                    <p className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] mb-2">
-            // CONTACTO
-                    </p>
                     <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-primary">
                         CONTACTO<span className="text-primary"></span>
                     </h1>
@@ -106,9 +103,6 @@ export default function Contacto() {
 
                     {/* ── Canales (IZQUIERDA) ── */}
                     <div>
-                        <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-5">
-                // CANALES DE COMUNICACIÓN
-                        </p>
                         <div className="space-y-3">
                             {channels.length > 0 ? (
                                 channels.map(ch => (
@@ -117,23 +111,23 @@ export default function Contacto() {
                                         href={ch.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="group flex items-center gap-5 p-5 border border-border hover:border-primary/40 bg-surface hover:bg-surface-container transition-all duration-200"
+                                        className="group flex items-center gap-5 p-5 rounded-2xl bg-surface border border-border hover:border-transparent hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.3)] transition-all duration-200"
                                     >
                                         <div
-                                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 border"
+                                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full border"
                                             style={{ borderColor: ch.color + '40', color: ch.color }}
                                         >
                                             <span className="material-symbols-outlined text-lg">{ch.icon}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary group-hover:text-primary transition-colors">
+                                            <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary group-hover:text-accent transition-colors">
                                                 {ch.label}
                                             </p>
                                             <p className="font-mono text-[10px] text-muted mt-0.5 uppercase tracking-wide">
                                                 {ch.desc}
                                             </p>
                                         </div>
-                                        <span className="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all text-sm">
+                                        <span className="material-symbols-outlined text-outline group-hover:text-accent group-hover:translate-x-1 transition-all text-sm">
                                             arrow_forward
                                         </span>
                                     </a>
@@ -148,10 +142,7 @@ export default function Contacto() {
 
                     {/* ── Horarios (DERECHA) ── */}
                     <div>
-                        <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-5">
-                            //HORARIOS DE ATENCIÓN AL PUBLICO
-                        </p>
-                        <div className="border border-border overflow-hidden rounded-sm">
+                        <div className="border border-border overflow-hidden rounded-2xl">
                             {settings?.hours_text ? (() => {
                                 try {
                                     const horarios = JSON.parse(settings.hours_text)
@@ -189,9 +180,6 @@ export default function Contacto() {
 
             {/* ── UBICACIÓN ── */}
             <section className="relative z-10 mt-10 px-4 sm:px-6 lg:px-10 max-w-[1100px] mx-auto pb-16">
-                <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] mb-4">
-                    // UBICACIÓN
-                </p>
                 {/* ── Google Maps Embed ──
                     Cuando tengas el iframe de Google Maps, reemplazá el div de abajo
                     por el <iframe ...> que te proporciona Google Maps al hacer clic en
@@ -207,8 +195,8 @@ export default function Contacto() {
                         title="Ubicación NEXO Performance"
                     />
                 */}
-                <div className="w-full h-80 border border-border bg-surface-container flex flex-col items-center justify-center gap-3 text-outline">
-                    <span className="material-symbols-outlined text-4xl">location_on</span>
+                <div className="w-full h-80 rounded-2xl border border-border bg-surface-container flex flex-col items-center justify-center gap-3 text-outline">
+                    <span className="material-symbols-outlined text-4xl text-accent">location_on</span>
                     <p className="font-mono text-[10px] uppercase tracking-widest">Mapa próximamente</p>
                 </div>
             </section>

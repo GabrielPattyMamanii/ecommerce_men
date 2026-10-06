@@ -17,32 +17,33 @@
  *    counter_end_time desde el momento actual y lo activa como banner exclusivo.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../../../services/supabaseClient'
 
 /* ── Estilos reutilizables (mismo patrón que ProductsTable/CategoriesTable) ── */
 const S = {
     label: {
         display: 'block', fontSize: '0.65rem', fontWeight: 600,
-        color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em',
+        color: 'var(--admin-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
         marginBottom: '0.375rem', fontFamily: 'monospace',
     },
     input: {
         width: '100%', padding: '0.5rem 0.75rem', boxSizing: 'border-box',
-        background: '#0f172a', border: '1px solid #334155', borderRadius: '2px',
-        color: 'white', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
+        background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border-strong)', borderRadius: '10px',
+        color: 'var(--admin-text)', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
     },
     btnPrimary: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
         padding: '0.5rem 1.25rem', background: 'var(--admin-primary)',
-        border: 'none', borderRadius: '2px', cursor: 'pointer',
+        border: 'none', borderRadius: '9999px', cursor: 'pointer',
         color: 'white', fontFamily: 'var(--admin-font)',
         fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
     },
     btnGhost: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-        padding: '0.5rem 1rem', background: '#1e293b',
-        border: '1px solid #334155', borderRadius: '2px', cursor: 'pointer',
-        color: '#94a3b8', fontFamily: 'var(--admin-font)',
+        padding: '0.5rem 1rem', background: 'var(--admin-border)',
+        border: '1px solid var(--admin-border-strong)', borderRadius: '9999px', cursor: 'pointer',
+        color: 'var(--admin-text-muted)', fontFamily: 'var(--admin-font)',
         fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     },
 }
@@ -58,7 +59,7 @@ function ActionBtn({ icon, color, title, onClick, disabled = false }) {
             style={{
                 display: 'flex', alignItems: 'center', padding: '0.375rem',
                 background: 'transparent', border: `1px solid ${color}33`,
-                borderRadius: '2px', color, cursor: disabled ? 'not-allowed' : 'pointer',
+                borderRadius: '9999px', color, cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1, transition: 'background-color 0.15s',
             }}
             onMouseEnter={e => { if (!disabled) e.currentTarget.style.backgroundColor = `${color}18` }}
@@ -82,7 +83,7 @@ function ToggleSwitch({ checked, onChange, label, disabled }) {
             style={{
                 width: '38px', height: '20px', borderRadius: '999px', border: 'none',
                 cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-                background: checked ? '#10b981' : '#334155', position: 'relative',
+                background: checked ? 'var(--admin-green)' : 'var(--admin-border-strong)', position: 'relative',
                 transition: 'background-color 0.15s', padding: 0, flexShrink: 0,
             }}
         >
@@ -106,10 +107,10 @@ function Toast({ id, type, message, onDismiss }) {
     return (
         <div role="status" style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '260px',
-            padding: '0.75rem 1rem', borderRadius: '2px',
+            padding: '0.75rem 1rem', borderRadius: '10px',
             background: isError ? '#1f1315' : '#0f1f1a',
             border: `1px solid ${isError ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
-            color: isError ? '#ef4444' : '#10b981',
+            color: isError ? 'var(--admin-red)' : 'var(--admin-green)',
             fontFamily: 'monospace', fontSize: '0.8rem', boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
         }}>
             <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>
@@ -135,31 +136,33 @@ function ToastStack({ toasts, onDismiss }) {
     )
 }
 
-/* ── Modal de confirmación (eliminar) ── */
+/* ── Modal de confirmación (eliminar) ──
+   Portado fuera de .admin-main__content: ese contenedor crea un stacking
+   context local que capea el z-index del modal por debajo del header. */
 function ConfirmModal({ title, message, busy, onConfirm, onCancel }) {
-    return (
+    return createPortal((
         <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
             onClick={onCancel}
         >
             <div
                 onClick={e => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-label={title}
-                style={{ background: '#161b2e', border: '1px solid #334155', borderRadius: '4px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
+                style={{ background: 'var(--admin-card)', border: '1px solid var(--admin-border-strong)', borderRadius: '16px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
             >
-                <h3 style={{ margin: '0 0 0.75rem', color: 'white', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
+                <h3 style={{ margin: '0 0 0.75rem', color: 'var(--admin-text)', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
+                <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={onCancel} style={S.btnGhost}>Cancelar</button>
                     <button
                         onClick={onConfirm} disabled={busy}
-                        style={{ ...S.btnPrimary, background: '#ef4444', opacity: busy ? 0.6 : 1 }}
+                        style={{ ...S.btnPrimary, background: 'var(--admin-red)', opacity: busy ? 0.6 : 1 }}
                     >
                         {busy ? 'Eliminando…' : 'Eliminar'}
                     </button>
                 </div>
             </div>
         </div>
-    )
+    ), document.querySelector('.admin-layout') || document.body)
 }
 
 /* ── Conversión duración ↔ segundos (días/horas/minutos) ── */
@@ -395,29 +398,26 @@ export default function CouponsTable() {
 
     /* ════════════════ RENDER ════════════════ */
     return (
-        <section aria-label="Coupon management">
+        <section aria-label="Gestión de cupones">
 
             {/* ── Encabezado de sección ── */}
             <div style={{
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end',
                 justifyContent: 'space-between', gap: '1rem',
-                borderBottom: '1px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '1.5rem',
+                borderBottom: '1px solid var(--admin-border)', paddingBottom: '1.5rem', marginBottom: '1.5rem',
             }}>
                 <div>
-                    <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--admin-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>
-                        // Coupon Management
-                    </p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--admin-text)', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
                         Cupones
-                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#64748b', letterSpacing: 0, textTransform: 'none' }}>
+                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--admin-text-faint)', letterSpacing: 0, textTransform: 'none' }}>
                             ({coupons.length} · {publishedCount} publicados)
                         </span>
                     </h2>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={load} style={S.btnGhost} title="Refresh">
+                    <button onClick={load} style={S.btnGhost} title="Actualizar">
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
-                        Refresh
+                        Actualizar
                     </button>
                     <button onClick={openCreate} style={S.btnPrimary}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
@@ -430,8 +430,8 @@ export default function CouponsTable() {
             {error && (
                 <div role="alert" style={{
                     background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-                    borderRadius: '2px', padding: '0.75rem 1rem', marginBottom: '1rem',
-                    color: '#ef4444', fontFamily: 'monospace', fontSize: '0.8rem',
+                    borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem',
+                    color: 'var(--admin-red)', fontFamily: 'monospace', fontSize: '0.8rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
@@ -441,12 +441,12 @@ export default function CouponsTable() {
 
             {/* ── Grid de tarjetas ── */}
             {loading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: 'var(--admin-text-faint)' }}>
                     <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading coupons…</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Cargando cupones…</span>
                 </div>
             ) : coupons.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: 'var(--admin-border-strong)' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>redeem</span>
                     <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No coupons — creá uno arriba</p>
                 </div>
@@ -507,13 +507,13 @@ function CouponCard({ coupon, nowMs, onEdit, onDeleteRequest, onToggleStatus, on
 
     return (
         <div style={{
-            background: '#161b2e', border: `1px solid ${coupon.show_in_banner ? 'rgba(13,70,242,0.5)' : '#1e293b'}`,
-            borderRadius: '4px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+            background: 'var(--admin-card)', border: `1px solid ${coupon.show_in_banner ? 'rgba(13,70,242,0.5)' : 'var(--admin-border)'}`,
+            borderRadius: '16px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem',
         }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--admin-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {coupon.name}
                     </p>
                     <p style={{ margin: '0.25rem 0 0', fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--admin-primary)', letterSpacing: '0.05em' }}>
@@ -531,19 +531,19 @@ function CouponCard({ coupon, nowMs, onEdit, onDeleteRequest, onToggleStatus, on
                 </div>
                 <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
                     <ActionBtn icon="edit" color="var(--admin-primary)" title="Editar cupón" onClick={onEdit} />
-                    <ActionBtn icon="delete" color="#ef4444" title="Eliminar cupón" onClick={onDeleteRequest} />
+                    <ActionBtn icon="delete" color="var(--admin-red)" title="Eliminar cupón" onClick={onDeleteRequest} />
                 </div>
             </div>
 
             {coupon.description && (
-                <p style={{ margin: 0, color: '#64748b', fontSize: '0.8rem', lineHeight: 1.4 }}>{coupon.description}</p>
+                <p style={{ margin: 0, color: 'var(--admin-text-faint)', fontSize: '0.8rem', lineHeight: 1.4 }}>{coupon.description}</p>
             )}
 
             {/* Estado: toggle borrador/publicado */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #1e293b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid var(--admin-border)' }}>
                 <span style={{
                     fontFamily: 'monospace', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em',
-                    color: isPublished ? '#10b981' : '#64748b',
+                    color: isPublished ? 'var(--admin-green)' : 'var(--admin-text-faint)',
                 }}>
                     {isPublished ? 'Publicado' : 'Borrador'}
                 </span>
@@ -554,7 +554,7 @@ function CouponCard({ coupon, nowMs, onEdit, onDeleteRequest, onToggleStatus, on
             {isPublished && (
                 coupon.show_in_banner ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#10b981', fontFamily: 'monospace' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--admin-green)', fontFamily: 'monospace' }}>
                             <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>campaign</span>
                             Banner activo
                         </span>
@@ -574,9 +574,9 @@ function CouponCard({ coupon, nowMs, onEdit, onDeleteRequest, onToggleStatus, on
             {coupon.has_counter && (
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: '#0f172a', border: '1px solid #1e293b', borderRadius: '2px', padding: '0.5rem 0.75rem',
+                    background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border)', borderRadius: '10px', padding: '0.5rem 0.75rem',
                 }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700, color: expired ? '#ef4444' : 'white' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700, color: expired ? 'var(--admin-red)' : 'white' }}>
                         {coupon.counter_end_time ? formatCountdown(remainingMs) : 'Sin iniciar'}
                     </span>
                     {coupon.counter_duration_seconds > 0 && (
@@ -607,12 +607,12 @@ function CouponFormModal({ mode, form, setForm, error, saving, onSubmit, onCance
                 onClick={e => e.stopPropagation()}
                 role="dialog" aria-modal="true" aria-label={mode === 'create' ? 'Crear cupón' : 'Editar cupón'}
                 style={{
-                    background: '#161b2e', border: '1px solid rgba(13,70,242,0.35)', borderRadius: '4px',
+                    background: 'var(--admin-card)', border: '1px solid rgba(13,70,242,0.35)', borderRadius: '16px',
                     padding: '1.5rem', maxWidth: '520px', width: '100%', maxHeight: '90vh', overflowY: 'auto',
                     display: 'flex', flexDirection: 'column', gap: '1rem', margin: 'auto',
                 }}
             >
-                <h3 style={{ margin: 0, color: 'white', fontSize: '1.1rem', fontWeight: 700 }}>
+                <h3 style={{ margin: 0, color: 'var(--admin-text)', fontSize: '1.1rem', fontWeight: 700 }}>
                     {mode === 'create' ? 'Nuevo cupón' : 'Editar cupón'}
                 </h3>
 
@@ -689,7 +689,7 @@ function CouponFormModal({ mode, form, setForm, error, saving, onSubmit, onCance
                 </div>
 
                 {/* Contador regresivo */}
-                <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem' }}>
+                <div style={{ border: '1px solid var(--admin-border)', borderRadius: '10px', padding: '0.875rem' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: form.has_counter ? '0.875rem' : 0 }}>
                         <input
                             type="checkbox" checked={form.has_counter}
@@ -718,8 +718,8 @@ function CouponFormModal({ mode, form, setForm, error, saving, onSubmit, onCance
                 {error && (
                     <div role="alert" style={{
                         background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-                        borderRadius: '2px', padding: '0.625rem 0.875rem',
-                        color: '#ef4444', fontFamily: 'monospace', fontSize: '0.8rem',
+                        borderRadius: '10px', padding: '0.625rem 0.875rem',
+                        color: 'var(--admin-red)', fontFamily: 'monospace', fontSize: '0.8rem',
                     }}>
                         {error}
                     </div>

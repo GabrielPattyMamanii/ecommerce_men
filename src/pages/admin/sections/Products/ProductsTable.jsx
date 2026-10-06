@@ -20,9 +20,9 @@ function ProductThumb({ src, name }) {
     if (!src) {
         return (
             <div style={{
-                width: '40px', height: '40px', borderRadius: '2px', background: '#1e293b',
-                border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#475569', flexShrink: 0,
+                width: '40px', height: '40px', borderRadius: '2px', background: 'var(--admin-border)',
+                border: '1px solid var(--admin-border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--admin-text-subtle)', flexShrink: 0,
             }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>image</span>
             </div>
@@ -31,7 +31,7 @@ function ProductThumb({ src, name }) {
     return (
         <img
             src={src} alt={name}
-            style={{ width: '40px', height: '40px', borderRadius: '2px', objectFit: 'cover', border: '1px solid #334155', flexShrink: 0 }}
+            style={{ width: '40px', height: '40px', borderRadius: '2px', objectFit: 'cover', border: '1px solid var(--admin-border-strong)', flexShrink: 0 }}
         />
     )
 }
@@ -39,7 +39,7 @@ function ProductThumb({ src, name }) {
 /* ── Cuadros de color del producto (nunca texto/hex visible) ── */
 function ColorSwatches({ colors }) {
     if (!colors?.length) {
-        return <span style={{ color: '#475569' }}>—</span>
+        return <span style={{ color: 'var(--admin-text-subtle)' }}>—</span>
     }
     return (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
@@ -61,7 +61,7 @@ function ColorSwatches({ colors }) {
    número real queda oculto al público (ver ProductDetail/ProductCard), pero
    acá en admin se muestra igual junto a un indicador "∞ Disponible". ── */
 function StockBadge({ value, unlimited }) {
-    const color = value === 0 ? '#ef4444' : value < 5 ? '#eab308' : '#10b981'
+    const color = value === 0 ? 'var(--admin-red)' : value < 5 ? '#eab308' : 'var(--admin-green)'
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ fontFamily: 'monospace', fontWeight: 600, color, fontSize: '0.875rem' }}>
@@ -73,7 +73,7 @@ function StockBadge({ value, unlimited }) {
                     style={{
                         fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700,
                         padding: '0.1rem 0.4rem', borderRadius: '999px',
-                        background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                        background: 'rgba(16,185,129,0.15)', color: 'var(--admin-green)',
                     }}
                 >
                     ∞ Disponible
@@ -112,11 +112,11 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
                         <span style={{ color: '#eab308', fontSize: '0.85rem', fontWeight: 600 }}>Consultar</span>
                     ) : (
                         <>
-                            <div style={{ color: 'white', fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
+                            <div style={{ color: 'var(--admin-text)', fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
                                 {formatCurrency(product.retail_price)}
                             </div>
                             {product.wholesale_price && (
-                                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.15rem' }}>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--admin-text-faint)', marginTop: '0.15rem' }}>
                                     {formatCurrency(product.wholesale_price)} mayorista
                                 </div>
                             )}
@@ -142,7 +142,7 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
                         onClick={() => onEdit(product)}
                     />
                     <ActionBtn
-                        icon="delete" color="#ef4444" title="Eliminar producto"
+                        icon="delete" color="var(--admin-red)" title="Eliminar producto"
                         onClick={() => onDelete(product.id, product.name)}
                     />
                 </div>
@@ -174,7 +174,7 @@ export default function ProductsTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('products')
-            .select('id, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, visible, created_at, category_id, categories(name)')
+            .select('id, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide, visible, created_at, category_id, categories(name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setProducts(data ?? [])
@@ -226,6 +226,7 @@ export default function ProductsTable() {
                 images:            [...existingUrls, ...uploadedUrls],
                 sizes:             Array.isArray(values.sizes) ? values.sizes : [],
                 colors:            Array.isArray(values.colors) ? values.colors : [],
+                size_guide:        values.size_guide ?? null,
             }
 
             const { error: err } = editingProduct
@@ -290,29 +291,26 @@ export default function ProductsTable() {
 
     /* ════════════════ RENDER ════════════════ */
     return (
-        <section aria-label="Products inventory">
+        <section aria-label="Inventario de productos">
 
             {/* ── Encabezado de sección ── */}
             <div style={{
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end',
                 justifyContent: 'space-between', gap: '1rem',
-                borderBottom: '1px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '1.5rem',
+                borderBottom: '1px solid var(--admin-border)', paddingBottom: '1.5rem', marginBottom: '1.5rem',
             }}>
                 <div>
-                    <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--admin-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>
-                        // Inventory Management
-                    </p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
-                        Products
-                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#64748b', letterSpacing: 0, textTransform: 'none' }}>
-                            ({products.length} SKUs)
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--admin-text)', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
+                        Productos
+                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--admin-text-faint)', letterSpacing: 0, textTransform: 'none' }}>
+                            ({products.length} productos)
                         </span>
                     </h2>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={load} style={S.btnGhost} title="Refresh">
+                    <button onClick={load} style={S.btnGhost} title="Actualizar">
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
-                        Refresh
+                        Actualizar
                     </button>
                     <button onClick={openAddModal} style={S.btnPrimary}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
@@ -337,7 +335,7 @@ export default function ProductsTable() {
                 <div role="alert" style={{
                     background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
                     borderRadius: '2px', padding: '0.75rem 1rem', marginBottom: '1rem',
-                    color: '#ef4444', fontFamily: 'monospace', fontSize: '0.8rem',
+                    color: 'var(--admin-red)', fontFamily: 'monospace', fontSize: '0.8rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
@@ -348,14 +346,14 @@ export default function ProductsTable() {
             {/* ── Listado de productos: tabla en desktop (≥1024px), cards en mobile/tablet ── */}
             {loading ? (
                 <div className="admin-orders">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: 'var(--admin-text-faint)' }}>
                         <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading inventory…</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Cargando inventario…</span>
                     </div>
                 </div>
             ) : products.length === 0 ? (
                 <div className="admin-orders">
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: 'var(--admin-border-strong)' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>inventory_2</span>
                         <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No products — add one above</p>
                     </div>
@@ -368,7 +366,7 @@ export default function ProductsTable() {
                             <table className="admin-orders__table">
                                 <thead>
                                     <tr>
-                                        {['Image', 'ID', 'Name', 'Description', 'Category', 'Sizes', 'Colors', 'Price', 'Stock', 'Visible', 'Actions'].map((h, i) => (
+                                        {['Imagen', 'ID', 'Nombre', 'Descripción', 'Categoría', 'Talles', 'Colores', 'Precio', 'Stock', 'Visible', 'Acciones'].map((h, i) => (
                                             <th
                                                 key={h}
                                                 className={`admin-orders__th${i === 10 ? ' admin-orders__th--right' : ''}`}
@@ -388,7 +386,7 @@ export default function ProductsTable() {
                                             </td>
 
                                             {/* ID */}
-                                            <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#475569', fontSize: '0.7rem' }}>
+                                            <td className="admin-orders__td admin-orders__td--mono" style={{ color: 'var(--admin-text-subtle)', fontSize: '0.7rem' }}>
                                                 #{product.id.slice(0, 8)}
                                             </td>
 
@@ -398,17 +396,17 @@ export default function ProductsTable() {
                                             </td>
 
                                             {/* Description */}
-                                            <td className="admin-orders__td" style={{ color: '#64748b', fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-faint)', fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {product.description || '—'}
                                             </td>
 
                                             {/* Category */}
-                                            <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-muted)', fontSize: '0.8rem' }}>
                                                 {product.categories?.name || '—'}
                                             </td>
 
                                             {/* Sizes */}
-                                            <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <td className="admin-orders__td" style={{ color: 'var(--admin-text-muted)', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {product.sizes?.length ? product.sizes.join(', ') : '—'}
                                             </td>
 
@@ -425,7 +423,7 @@ export default function ProductsTable() {
                                                     <div>
                                                         <div>{formatCurrency(product.retail_price)}</div>
                                                         {product.wholesale_price && (
-                                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-faint)', marginTop: '0.25rem' }}>
                                                                 {formatCurrency(product.wholesale_price)} mayorista
                                                             </div>
                                                         )}
@@ -448,15 +446,15 @@ export default function ProductsTable() {
                                                 />
                                             </td>
 
-                                            {/* Actions */}
+                                            {/* Acciones */}
                                             <td className="admin-orders__td admin-orders__td--right">
                                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
                                                     <ActionBtn
-                                                        icon="edit" color="var(--admin-primary)" title="Edit product"
+                                                        icon="edit" color="var(--admin-primary)" title="Editar producto"
                                                         onClick={() => openEditModal(product)}
                                                     />
                                                     <ActionBtn
-                                                        icon="delete" color="#ef4444" title="Delete product"
+                                                        icon="delete" color="var(--admin-red)" title="Eliminar producto"
                                                         onClick={() => handleDelete(product.id, product.name)}
                                                     />
                                                 </div>

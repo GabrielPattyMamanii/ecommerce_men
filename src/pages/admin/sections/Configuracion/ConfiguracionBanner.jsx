@@ -135,7 +135,7 @@ export default function ConfiguracionBanner() {
 
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // TEXTOS DEL BANNER
+          Textos del banner
         </h2>
 
         <div className="admin-form-grid-2">
@@ -168,7 +168,7 @@ export default function ConfiguracionBanner() {
 
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // BOTONES (CTA)
+          Botones (CTA)
         </h2>
 
         <div className="admin-form-grid-2">

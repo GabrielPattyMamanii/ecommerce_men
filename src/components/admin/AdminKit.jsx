@@ -7,37 +7,42 @@
  */
 /* eslint-disable react-refresh/only-export-components -- kit compartido, no una página; mezcla adrede estilos/hooks con componentes */
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 /* ── Estilos reutilizables (mismo patrón que ProductsTable/CategoriesTable/CouponsTable) ── */
 export const S = {
     label: {
         display: 'block', fontSize: '0.65rem', fontWeight: 600,
-        color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em',
+        color: 'var(--admin-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
         marginBottom: '0.375rem', fontFamily: 'monospace',
     },
     input: {
         width: '100%', padding: '0.5rem 0.75rem', boxSizing: 'border-box',
-        background: '#0f172a', border: '1px solid #334155', borderRadius: '2px',
-        color: 'white', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
+        background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border-strong)', borderRadius: '10px',
+        color: 'var(--admin-text)', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
     },
     inlineInput: {
         padding: '0.375rem 0.625rem', boxSizing: 'border-box',
-        background: '#0f172a', border: '1px solid #334155', borderRadius: '2px',
-        color: 'white', fontFamily: 'monospace', fontSize: '0.8rem', outline: 'none',
+        background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border-strong)', borderRadius: '8px',
+        color: 'var(--admin-text)', fontFamily: 'monospace', fontSize: '0.8rem', outline: 'none',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
     },
     btnPrimary: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-        padding: '0.5rem 1.25rem', background: 'var(--admin-primary)',
-        border: 'none', borderRadius: '2px', cursor: 'pointer',
+        padding: '0.55rem 1.4rem', background: 'var(--admin-primary)',
+        border: 'none', borderRadius: '9999px', cursor: 'pointer',
         color: 'white', fontFamily: 'var(--admin-font)',
         fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+        transition: 'transform 0.15s, box-shadow 0.15s',
     },
     btnGhost: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-        padding: '0.5rem 1rem', background: '#1e293b',
-        border: '1px solid #334155', borderRadius: '2px', cursor: 'pointer',
-        color: '#94a3b8', fontFamily: 'var(--admin-font)',
+        padding: '0.5rem 1.1rem', background: 'var(--admin-border)',
+        border: '1px solid var(--admin-border-strong)', borderRadius: '9999px', cursor: 'pointer',
+        color: 'var(--admin-text-muted)', fontFamily: 'var(--admin-font)',
         fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+        transition: 'border-color 0.15s, color 0.15s',
     },
 }
 
@@ -52,7 +57,7 @@ export function ActionBtn({ icon, color, title, onClick, disabled = false }) {
             style={{
                 display: 'flex', alignItems: 'center', padding: '0.375rem',
                 background: 'transparent', border: `1px solid ${color}33`,
-                borderRadius: '2px', color, cursor: disabled ? 'not-allowed' : 'pointer',
+                borderRadius: '9999px', color, cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1, transition: 'background-color 0.15s',
             }}
             onMouseEnter={e => { if (!disabled) e.currentTarget.style.backgroundColor = `${color}18` }}
@@ -76,7 +81,7 @@ export function ToggleSwitch({ checked, onChange, label, disabled }) {
             style={{
                 width: '38px', height: '20px', borderRadius: '999px', border: 'none',
                 cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-                background: checked ? '#10b981' : '#334155', position: 'relative',
+                background: checked ? '#10b981' : 'var(--admin-border-strong)', position: 'relative',
                 transition: 'background-color 0.15s', padding: 0, flexShrink: 0,
             }}
         >
@@ -100,7 +105,7 @@ export function Toast({ id, type, message, onDismiss }) {
     return (
         <div role="status" style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '260px',
-            padding: '0.75rem 1rem', borderRadius: '2px',
+            padding: '0.75rem 1rem', borderRadius: '12px',
             background: isError ? '#1f1315' : '#0f1f1a',
             border: `1px solid ${isError ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
             color: isError ? '#ef4444' : '#10b981',
@@ -141,19 +146,29 @@ export function useToasts() {
     return { toasts, addToast, dismissToast }
 }
 
+/* Raíz del portal — un hijo directo de .admin-layout escapa del stacking
+   context que .admin-main__content crea (su z-index local "cubre" a los
+   descendientes con position:fixed aunque tengan un z-index mayor, por eso
+   un modal renderizado ahí quedaba tapado por el header). Portando acá
+   como hermano de .admin-main, el modal hereda las variables --admin-*
+   (sigue dentro de .admin-layout) y pinta por encima de todo el shell. */
+function getAdminPortalRoot() {
+    return document.querySelector('.admin-layout') || document.body
+}
+
 /* ── Modal de confirmación (eliminar / acciones destructivas) ── */
 export function ConfirmModal({ title, message, busy, confirmLabel = 'Eliminar', busyLabel = 'Eliminando…', onConfirm, onCancel }) {
-    return (
+    return createPortal((
         <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
             onClick={onCancel}
         >
             <div
                 onClick={e => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-label={title}
-                style={{ background: '#161b2e', border: '1px solid #334155', borderRadius: '4px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
+                style={{ background: 'var(--admin-card)', border: '1px solid var(--admin-border-strong)', borderRadius: '18px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
             >
-                <h3 style={{ margin: '0 0 0.75rem', color: 'white', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
+                <h3 style={{ margin: '0 0 0.75rem', color: 'var(--admin-text)', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
+                <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={onCancel} style={S.btnGhost}>Cancelar</button>
                     <button
@@ -165,5 +180,5 @@ export function ConfirmModal({ title, message, busy, confirmLabel = 'Eliminar', 
                 </div>
             </div>
         </div>
-    )
+    ), getAdminPortalRoot())
 }

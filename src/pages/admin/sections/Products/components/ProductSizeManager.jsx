@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { S } from '../../../../../components/admin/AdminKit'
+import { PF, pfStyles } from './productFormTheme'
 
 const SIZE_PRESETS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Único']
 
@@ -32,7 +32,7 @@ export default function ProductSizeManager({ sizes = [], onSizesChange }) {
 
     return (
         <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', ...pfStyles.label, marginBottom: '0.6rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>straighten</span>
                 Talles disponibles
                 <span style={{ opacity: 0.6, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span>
@@ -49,11 +49,11 @@ export default function ProductSizeManager({ sizes = [], onSizesChange }) {
                             onClick={() => togglePreset(preset)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '0.3rem',
-                                padding: '0.3rem 0.65rem', borderRadius: '2px',
-                                border: `1px solid ${active ? 'var(--admin-primary)' : '#334155'}`,
-                                background: active ? 'rgba(13,70,242,0.15)' : 'rgba(15,23,42,0.4)',
-                                color: active ? 'var(--admin-primary)' : '#94a3b8',
-                                fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600,
+                                padding: '0.3rem 0.65rem', borderRadius: PF.radius.md,
+                                border: `1px solid ${active ? PF.color.accent : PF.color.borderStrong}`,
+                                background: active ? PF.color.accentSoft : PF.color.surfaceLowest,
+                                color: active ? PF.color.accent : PF.color.textMuted,
+                                fontFamily: PF.font.body, fontSize: '0.75rem', fontWeight: 600,
                                 cursor: 'pointer', transition: 'all 0.15s',
                             }}
                         >
@@ -72,9 +72,9 @@ export default function ProductSizeManager({ sizes = [], onSizesChange }) {
                     onChange={e => setCustomSize(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSize(customSize) } }}
                     placeholder='Talle personalizado (ej. "38", "S/M")'
-                    style={{ ...S.input, flex: 1 }}
+                    style={{ ...pfStyles.input, flex: 1 }}
                 />
-                <button type="button" onClick={() => addSize(customSize)} style={{ ...S.btnGhost, flexShrink: 0 }}>
+                <button type="button" onClick={() => addSize(customSize)} style={{ ...pfStyles.btnGhost, flexShrink: 0 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
                     Agregar
                 </button>
@@ -82,20 +82,14 @@ export default function ProductSizeManager({ sizes = [], onSizesChange }) {
 
             {/* Chips de talles agregados (presets + custom) */}
             {sizes.length === 0 ? (
-                <p style={{ margin: 0, color: '#475569', fontFamily: 'monospace', fontSize: '0.75rem' }}>Sin talles agregados</p>
+                <p style={{ margin: 0, color: PF.color.textMuted, fontFamily: PF.font.body, fontSize: '0.75rem' }}>Sin talles agregados</p>
             ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {sizes.map(size => (
-                        <div
-                            key={size}
-                            style={{
-                                display: 'flex', alignItems: 'stretch', height: '34px', borderRadius: '4px', overflow: 'hidden',
-                                background: '#1e293b', border: '1px solid #334155',
-                            }}
-                        >
+                        <div key={size} style={pfStyles.chip}>
                             <span style={{
                                 display: 'flex', alignItems: 'center', padding: '0 0.75rem',
-                                color: 'white', fontFamily: 'monospace', fontSize: '0.8rem', fontWeight: 600,
+                                color: PF.color.text, fontFamily: PF.font.body, fontSize: '0.8rem', fontWeight: 600,
                             }}>
                                 {size}
                             </span>
@@ -104,14 +98,9 @@ export default function ProductSizeManager({ sizes = [], onSizesChange }) {
                                 onClick={() => removeSize(size)}
                                 title={`Quitar talle ${size}`}
                                 aria-label={`Quitar talle ${size}`}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    width: '30px', background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                                    border: 'none', borderLeft: '1px solid #334155', cursor: 'pointer',
-                                    transition: 'background-color 0.15s, color 0.15s',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = 'white' }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.15)'; e.currentTarget.style.color = '#ef4444' }}
+                                style={pfStyles.chipRemove}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = PF.color.danger; e.currentTarget.style.color = PF.color.surfaceLow }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = PF.color.dangerSoft; e.currentTarget.style.color = PF.color.danger }}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>close</span>
                             </button>

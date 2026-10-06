@@ -69,9 +69,6 @@ export default function PaymentResult() {
 
           {/* Título */}
           <div className="space-y-3">
-            <p className="text-xs font-mono text-muted uppercase tracking-widest">
-              // Payment_Status
-            </p>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-primary uppercase font-display">
               {config.title}
             </h1>

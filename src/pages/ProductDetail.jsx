@@ -50,7 +50,7 @@ export default function ProductDetail() {
             setError(null)
             const { data, error: err } = await supabase
                 .from('products')
-                .select('id, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors')
+                .select('id, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide')
                 .eq('id', id)
                 .eq('visible', true)
                 .single()
@@ -61,8 +61,11 @@ export default function ProductDetail() {
         if (id) fetchProduct()
     }, [id])
 
+    const sizeGuide = product?.size_guide
+    const hasSizeGuide = sizeGuide?.columns?.length > 0 && sizeGuide?.rows?.length > 0
     const TABS = [
         { id: 'specs', label: 'Detalles' },
+        ...(hasSizeGuide ? [{ id: 'sizeguide', label: 'Guía de talles' }] : []),
     ]
 
     /* ── Estados de carga ── */
@@ -83,7 +86,7 @@ export default function ProductDetail() {
                 </p>
                 <Link
                     to="/catalogo"
-                    className="px-6 py-3 border border-primary text-primary font-mono text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                    className="px-6 py-3 rounded-full border border-accent text-accent font-mono text-xs uppercase tracking-widest hover:bg-accent hover:text-white transition-all"
                 >
                     Volver al catálogo
                 </Link>
@@ -139,10 +142,10 @@ export default function ProductDetail() {
 
                 {/* ── Breadcrumb ── */}
                 <nav className="flex items-center gap-2 text-xs font-display tracking-widest text-muted mb-8 uppercase" aria-label="Breadcrumb">
-                    <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
-                    <span className="material-symbols-outlined text-[12px] text-primary">chevron_right</span>
-                    <Link to="/catalogo" className="hover:text-primary transition-colors">Catálogo</Link>
-                    <span className="material-symbols-outlined text-[12px] text-primary">chevron_right</span>
+                    <Link to="/" className="hover:text-accent transition-colors">Inicio</Link>
+                    <span className="material-symbols-outlined text-[12px] text-accent">chevron_right</span>
+                    <Link to="/catalogo" className="hover:text-accent transition-colors">Catálogo</Link>
+                    <span className="material-symbols-outlined text-[12px] text-accent">chevron_right</span>
                     <span className="text-primary truncate max-w-[200px]">{product.name}</span>
                 </nav>
 
@@ -154,12 +157,12 @@ export default function ProductDetail() {
 
                         {/* Imagen principal */}
                         <div
-                            className="aspect-[4/5] w-full bg-surface overflow-hidden relative group border border-border hover:border-primary/50 transition-colors"
+                            className="aspect-[4/5] w-full bg-surface overflow-hidden relative group rounded-2xl transition-shadow duration-300 hover:shadow-[0_24px_48px_-24px_rgba(59,91,253,0.3)]"
                         >
                             {/* Stock bajo badge — oculto si el producto está marcado como disponible sin control de stock */}
                             {!product.unlimited_stock && product.stock !== null && product.stock <= 5 && (
                                 <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                                    <span className={`px-3 py-1 text-[10px] font-display font-bold uppercase tracking-wider backdrop-blur-sm border
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider backdrop-blur-sm border
                                         ${product.stock === 0
                                             ? 'bg-red-500/10 border-red-500/30 text-red-700'
                                             : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-700'
@@ -193,9 +196,9 @@ export default function ProductDetail() {
                                         key={idx}
                                         onClick={() => setActiveImage(idx)}
                                         aria-label={`Ver imagen ${idx + 1}`}
-                                        className={`aspect-square bg-surface overflow-hidden border transition-all relative group ${activeImage === idx
-                                                ? 'border-primary'
-                                                : 'border-border hover:border-outline'
+                                        className={`aspect-square bg-surface overflow-hidden rounded-xl border-2 transition-all relative group ${activeImage === idx
+                                                ? 'border-accent'
+                                                : 'border-transparent hover:border-accent/40'
                                             }`}
                                     >
                                         <div
@@ -204,7 +207,7 @@ export default function ProductDetail() {
                                             style={{ backgroundImage: `url(${img})` }}
                                         />
                                         {activeImage === idx && (
-                                            <div className="absolute inset-0 bg-primary/10" />
+                                            <div className="absolute inset-0 bg-accent/10" />
                                         )}
                                     </button>
                                 ))}
@@ -231,7 +234,7 @@ export default function ProductDetail() {
 
                             {/* Toggle Por Menor / Por Mayor (solo si el producto tiene precio mayorista) */}
                             {hasWholesale(product) && (
-                                <div className="flex mt-4 border border-border w-fit" role="tablist" aria-label="Modalidad de compra">
+                                <div className="flex mt-4 p-1 rounded-full bg-surface-container w-fit" role="tablist" aria-label="Modalidad de compra">
                                     {[
                                         { id: 'retail', label: 'Por Menor' },
                                         { id: 'wholesale', label: 'Por Mayor' },
@@ -241,9 +244,9 @@ export default function ProductDetail() {
                                             role="tab"
                                             aria-selected={mode === id}
                                             onClick={() => setMode(id)}
-                                            className={`px-5 py-2 text-xs font-display font-bold uppercase tracking-widest transition-colors ${mode === id
-                                                    ? 'bg-primary text-white'
-                                                    : 'bg-surface text-muted hover:text-primary'
+                                            className={`px-5 py-2 rounded-full text-xs font-display font-bold uppercase tracking-widest transition-all ${mode === id
+                                                    ? 'bg-accent text-white shadow-[0_8px_16px_-8px_rgba(59,91,253,0.5)]'
+                                                    : 'text-muted hover:text-accent'
                                                 }`}
                                         >
                                             {label}
@@ -275,7 +278,7 @@ export default function ProductDetail() {
 
                             {/* Descripción */}
                             {product.description && (
-                                <div className="mb-8 p-4 bg-surface border border-border relative overflow-hidden">
+                                <div className="mb-8 p-4 rounded-2xl bg-surface border border-border relative overflow-hidden">
                                     <div className="absolute top-0 right-0 p-1 pointer-events-none">
                                         <span className="material-symbols-outlined text-border text-4xl opacity-20">science</span>
                                     </div>
@@ -290,7 +293,7 @@ export default function ProductDetail() {
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
-                                            Size Configuration
+                                            Talle
                                         </span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -302,18 +305,12 @@ export default function ProductDetail() {
                                                     onClick={() => setActiveSize(label)}
                                                     aria-label={`Talla ${label}`}
                                                     aria-pressed={isActive}
-                                                    className={`h-10 min-w-10 px-3 border relative overflow-hidden flex items-center justify-center text-xs font-display font-bold transition-all
+                                                    className={`h-10 min-w-10 px-3 rounded-full border-2 flex items-center justify-center text-xs font-display font-bold transition-all
                                                         ${isActive
-                                                            ? 'border-primary bg-primary/10 text-primary'
-                                                            : 'border-border bg-surface hover:bg-surface-container hover:border-primary/50 text-muted hover:text-primary'
+                                                            ? 'border-accent bg-accent/10 text-accent'
+                                                            : 'border-border bg-surface hover:border-accent/50 text-muted hover:text-accent'
                                                         }`}
                                                 >
-                                                    {isActive && (
-                                                        <>
-                                                            <span className="absolute top-0 right-0 w-1 h-1 bg-primary" />
-                                                            <span className="absolute bottom-0 left-0 w-1 h-1 bg-primary" />
-                                                        </>
-                                                    )}
                                                     {label}
                                                 </button>
                                             )
@@ -335,7 +332,7 @@ export default function ProductDetail() {
                                             <span
                                                 key={label}
                                                 aria-label={`Talla disponible ${label}`}
-                                                className="h-10 min-w-10 px-3 border border-border bg-surface flex items-center justify-center text-xs font-display font-bold text-primary"
+                                                className="h-10 min-w-10 px-3 rounded-full border border-border bg-surface flex items-center justify-center text-xs font-display font-bold text-primary"
                                             >
                                                 {label}
                                             </span>
@@ -349,10 +346,10 @@ export default function ProductDetail() {
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
-                                            Color Configuration
+                                            Color
                                         </span>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-3">
                                         {colors.map(hex => {
                                             const isActive = selectedColor === hex
                                             return (
@@ -362,19 +359,12 @@ export default function ProductDetail() {
                                                     title={hex}
                                                     aria-label={`Color ${hex}`}
                                                     aria-pressed={isActive}
-                                                    className={`w-8 h-8 relative transition-all ${isActive
-                                                            ? 'border-2 border-primary scale-110'
-                                                            : 'border border-border hover:border-primary/50'
+                                                    className={`w-9 h-9 rounded-full transition-all ${isActive
+                                                            ? 'ring-2 ring-accent ring-offset-2 ring-offset-background scale-110'
+                                                            : 'ring-1 ring-border hover:ring-accent/50'
                                                         }`}
                                                     style={{ background: hex }}
-                                                >
-                                                    {isActive && (
-                                                        <>
-                                                            <span className="absolute top-0 right-0 w-1 h-1 bg-primary" />
-                                                            <span className="absolute bottom-0 left-0 w-1 h-1 bg-primary" />
-                                                        </>
-                                                    )}
-                                                </button>
+                                                />
                                             )
                                         })}
                                     </div>
@@ -386,16 +376,16 @@ export default function ProductDetail() {
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
-                                            Color Configuration
+                                            Color
                                         </span>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-3">
                                         {colors.map(hex => (
                                             <span
                                                 key={hex}
                                                 title={hex}
                                                 aria-label={`Color disponible: ${hex}`}
-                                                className="w-8 h-8 border border-border"
+                                                className="w-9 h-9 rounded-full ring-1 ring-border"
                                                 style={{ background: hex }}
                                             />
                                         ))}
@@ -411,21 +401,21 @@ export default function ProductDetail() {
                                             Cantidad
                                         </span>
                                     </div>
-                                    <div className="flex items-center border border-border bg-surface w-fit">
+                                    <div className="flex items-center rounded-full bg-surface-container w-fit">
                                         <button
                                             onClick={() => setQty(q => Math.max(1, q - 1))}
                                             disabled={qty <= 1}
                                             aria-label="Reducir cantidad"
-                                            className="px-4 py-2 text-muted hover:text-primary hover:bg-surface-container transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full text-muted hover:text-accent hover:bg-accent/10 transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             −
                                         </button>
-                                        <span className="px-4 py-2 text-sm font-bold text-primary font-mono min-w-10 text-center">{qty}</span>
+                                        <span className="px-2 text-sm font-bold text-primary font-mono min-w-10 text-center">{qty}</span>
                                         <button
                                             onClick={() => setQty(q => Math.min(maxQty, q + 1))}
                                             disabled={qty >= maxQty}
                                             aria-label="Aumentar cantidad"
-                                            className="px-4 py-2 text-muted hover:text-primary hover:bg-surface-container transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full text-muted hover:text-accent hover:bg-accent/10 transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             +
                                         </button>
@@ -448,16 +438,16 @@ export default function ProductDetail() {
                                         value={dozens}
                                         onChange={e => setDozens(Math.max(1, parseInt(e.target.value, 10) || 1))}
                                         aria-label="Cantidad de docenas"
-                                        className="w-28 h-10 px-3 bg-surface border border-border text-primary font-mono text-sm focus:outline-none focus:border-primary"
+                                        className="w-28 h-10 px-3 rounded-full bg-surface-container border-2 border-transparent text-primary font-mono text-sm focus:outline-none focus:border-accent"
                                     />
                                 </div>
                             )}
 
                             {/* ── Dimensiones de la docena (si el producto las tiene cargadas) ── */}
                             {mode === 'wholesale' && hasDozenDimensions(product) && (
-                                <div className="mb-8 border border-border bg-surface/50 px-4 py-3">
+                                <div className="mb-8 rounded-2xl border border-border bg-surface/50 px-4 py-3">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <span className="material-symbols-outlined text-muted text-lg">inventory_2</span>
+                                        <span className="material-symbols-outlined text-accent text-lg">inventory_2</span>
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
                                             Dimensiones de la docena
                                         </span>
@@ -466,7 +456,7 @@ export default function ProductDetail() {
                                         {getDozenDimensionEntries(product).map(({ label, value }) => (
                                             <div
                                                 key={label}
-                                                className="flex flex-col items-center justify-center bg-surface border border-border py-2 px-1"
+                                                className="flex flex-col items-center justify-center rounded-xl bg-surface border border-border py-2 px-1"
                                             >
                                                 <span className="text-[10px] font-mono uppercase tracking-wide text-muted mb-1">
                                                     {label}
@@ -489,16 +479,13 @@ export default function ProductDetail() {
                                         onClick={handleAddWholesaleToCart}
                                         disabled={!isWholesalePurchasable(product) || dozens < 1}
                                         id="add-to-cart-wholesale-btn"
-                                        className={`w-full h-14 font-display font-bold text-base sm:text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-5 sm:px-8 group relative overflow-hidden
+                                        className={`w-full h-14 rounded-full font-display font-bold text-base sm:text-lg transition-all active:scale-[0.99] flex items-center justify-between px-5 sm:px-8 group relative overflow-hidden
                                             ${!isWholesalePurchasable(product) || dozens < 1
                                                 ? 'bg-surface-container text-outline cursor-not-allowed'
                                                 : added
                                                     ? 'bg-green-500 text-black'
-                                                    : 'bg-primary text-white hover:text-black'
+                                                    : 'bg-accent text-white hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.6)]'
                                             }`}                                    >
-                                        {isWholesalePurchasable(product) && !added && (
-                                            <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
-                                        )}
                                         <span className="z-10 flex items-center gap-2">
                                             {added ? (
                                                 <>
@@ -523,16 +510,13 @@ export default function ProductDetail() {
                                         onClick={product.price_on_request ? handleConsult : handleAddToCart}
                                         disabled={mainButtonDisabled}
                                         id="add-to-cart-btn"
-                                        className={`w-full h-14 font-display font-bold text-base sm:text-lg transition-all transform active:scale-[0.99] flex items-center justify-between px-5 sm:px-8 group relative overflow-hidden
+                                        className={`w-full h-14 rounded-full font-display font-bold text-base sm:text-lg transition-all active:scale-[0.99] flex items-center justify-between px-5 sm:px-8 group relative overflow-hidden
                                             ${mainButtonDisabled
                                                 ? 'bg-surface-container text-outline cursor-not-allowed'
                                                 : added
                                                     ? 'bg-green-500 text-black'
-                                                    : 'bg-primary text-white hover:text-black'
+                                                    : 'bg-accent text-white hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.6)]'
                                             }`}                                    >
-                                        {!mainButtonDisabled && !added && (
-                                            <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 z-0" />
-                                        )}
                                         <span className="z-10 flex items-center gap-2">
                                             {added ? (
                                                 <>
@@ -557,7 +541,7 @@ export default function ProductDetail() {
                                 {/* Botón secundario — Ver catálogo */}
                                 <Link
                                     to="/catalogo"
-                                    className="w-full h-12 bg-transparent border border-outline text-muted hover:border-primary hover:text-primary font-display text-sm tracking-wider transition-colors flex items-center justify-center gap-2 uppercase"
+                                    className="w-full h-12 rounded-full bg-transparent border border-border text-muted hover:border-accent hover:text-accent hover:bg-accent/5 font-display text-sm tracking-wider transition-all flex items-center justify-center gap-2 uppercase"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                                     Ver más productos
@@ -574,8 +558,8 @@ export default function ProductDetail() {
                                             aria-selected={activeTab === id}
                                             onClick={() => setActiveTab(id)}
                                             className={`py-3 text-xs font-display font-bold uppercase tracking-widest transition-colors ${activeTab === id
-                                                    ? 'text-primary border-b-2 border-primary'
-                                                    : 'text-muted hover:text-primary'
+                                                    ? 'text-accent border-b-2 border-accent'
+                                                    : 'text-muted hover:text-accent'
                                                 }`}
                                         >
                                             {label}
@@ -602,6 +586,31 @@ export default function ProductDetail() {
                                                 <span className="text-primary font-medium text-right">{value}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+
+                                {activeTab === 'sizeguide' && hasSizeGuide && (
+                                    <div className="py-2 overflow-x-auto" role="tabpanel">
+                                        <table className="w-full border-collapse text-sm text-center rounded-2xl overflow-hidden">
+                                            <thead>
+                                                <tr className="bg-accent text-white">
+                                                    <th className="px-3 py-2 font-display font-bold uppercase tracking-wider text-xs">Talle</th>
+                                                    {sizeGuide.columns.map(col => (
+                                                        <th key={col} className="px-3 py-2 font-display font-bold uppercase tracking-wider text-xs">{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sizeGuide.rows.map((row, idx) => (
+                                                    <tr key={row.size} className={idx % 2 === 1 ? 'bg-surface-container' : ''}>
+                                                        <td className="border-t border-border px-3 py-2 font-medium text-primary">{row.size}</td>
+                                                        {sizeGuide.columns.map((col, i) => (
+                                                            <td key={col} className="border-t border-border px-3 py-2 text-primary">{row.values?.[i] || '—'}</td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
 

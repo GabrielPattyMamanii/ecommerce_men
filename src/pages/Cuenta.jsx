@@ -37,9 +37,9 @@ function Field({ id, label, type = 'text', placeholder, value, onChange, require
                 onChange={onChange}
                 required={required}
                 autoComplete={type === 'password' ? 'current-password' : 'username'}
-                className="w-full bg-transparent border border-border text-primary px-4 py-3 text-sm
-                           focus:border-primary focus:outline-none focus:ring-1
-                           focus:ring-primary transition-all
+                className="w-full bg-surface-container/60 border border-transparent text-primary px-5 py-3 text-sm rounded-full
+                           focus:border-accent focus:outline-none focus:ring-4
+                           focus:ring-accent/10 focus:bg-white transition-all
                            placeholder-outline font-mono"
             />
         </div>
@@ -85,9 +85,6 @@ export default function Cuenta() {
 
                 {/* Encabezado */}
                 <div className="mb-8 text-center">
-                    <p className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] mb-3">
-                        // MI CUENTA
-                    </p>
                     <h1 className="text-3xl sm:text-4xl font-black text-primary uppercase tracking-tighter">
                         Iniciar sesión
                     </h1>
@@ -97,11 +94,11 @@ export default function Cuenta() {
                 </div>
 
                 {/* Tarjeta del formulario */}
-                <div className="bg-surface border border-border p-8 relative">
+                <div className="bg-surface border border-border rounded-2xl p-8 relative overflow-hidden shadow-[0_24px_48px_-24px_rgba(59,91,253,0.2)]">
                     {/* Línea de acento superior */}
                     <div
-                        className="absolute top-0 left-0 right-0 h-[2px]"
-                        style={{ background: 'linear-gradient(90deg, transparent, #000000, transparent)' }}
+                        className="absolute top-0 left-0 right-0 h-[3px]"
+                        style={{ background: 'linear-gradient(90deg, transparent, #3b5bfd, transparent)' }}
                     />
 
                     <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -129,7 +126,7 @@ export default function Cuenta() {
                         {error && (
                             <div
                                 role="alert"
-                                className="flex items-start gap-2 px-4 py-3 border border-red-500/30 bg-red-500/5
+                                className="flex items-start gap-2 px-4 py-3 rounded-2xl border border-red-500/30 bg-red-500/5
                                            text-red-600 text-xs font-mono uppercase tracking-wide"
                             >
                                 <span className="material-symbols-outlined text-sm flex-shrink-0">error</span>
@@ -141,11 +138,11 @@ export default function Cuenta() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-primary text-white font-black
+                            className="w-full py-3.5 bg-accent text-white font-black rounded-full
                                        text-sm uppercase tracking-widest font-mono
-                                       hover:bg-primary-strong active:bg-primary-strong
-                                       disabled:opacity-50 disabled:cursor-not-allowed
-                                       transition-colors duration-150 flex items-center justify-center gap-2"
+                                       hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.6)] active:translate-y-0
+                                       disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0
+                                       transition-all duration-150 flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>
@@ -167,7 +164,7 @@ export default function Cuenta() {
 
                 {/* Enlace back al home */}
                 <p className="text-center mt-6 text-xs text-outline font-mono">
-                    <Link to="/" className="hover:text-primary transition-colors uppercase tracking-widest">
+                    <Link to="/" className="hover:text-accent hover:bg-accent/10 rounded-full px-3 py-1.5 transition-all uppercase tracking-widest">
                         ← Volver al inicio
                     </Link>
                 </p>

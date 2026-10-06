@@ -135,6 +135,46 @@ dialog.cart-drawer[open] {
   animation: cart-slide-in 300ms ease-in-out;
 }
 
+/* ── Promo banner — ticker continuo de izquierda a derecha ── */
+.promo-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: promo-ticker-ltr 22s linear infinite;
+}
+
+.promo-ticker:hover .promo-ticker__track {
+  animation-play-state: paused;
+}
+
+.promo-ticker__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1.75rem;
+  white-space: nowrap;
+}
+
+.promo-ticker__sep {
+  color: #e4493f;
+  font-size: 0.6rem;
+}
+
+@keyframes promo-ticker-ltr {
+  from { transform: translateX(-10%); }
+  to   { transform: translateX(0%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-ticker__track {
+    animation: none;
+    width: 100%;
+    justify-content: center;
+  }
+  .promo-ticker__item:not(:first-child) {
+    display: none;
+  }
+}
+
 /* ── Material Symbols ── */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined', sans-serif;

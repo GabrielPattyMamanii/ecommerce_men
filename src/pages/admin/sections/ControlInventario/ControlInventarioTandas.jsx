@@ -57,9 +57,6 @@ export default function ControlInventarioTandas() {
                     <button onClick={() => navigate('/admin/inventario')} style={{ ...S.btnGhost, marginBottom: '0.75rem', padding: '0.375rem 0.75rem' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>arrow_back</span> Volver a inventario
                     </button>
-                    <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--admin-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>
-                        // Control de inventario
-                    </p>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
                         Control de tandas
                         <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#64748b', letterSpacing: 0, textTransform: 'none' }}>

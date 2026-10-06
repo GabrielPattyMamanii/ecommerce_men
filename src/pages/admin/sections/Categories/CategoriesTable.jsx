@@ -10,37 +10,38 @@
  *            si tiene subcategorías, la DB rechaza el borrado — ON DELETE RESTRICT)
  */
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../../../services/supabaseClient'
 
 /* ── Estilos reutilizables (inline, mismo patrón que ProductsTable) ── */
 const S = {
     label: {
         display: 'block', fontSize: '0.65rem', fontWeight: 600,
-        color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em',
+        color: 'var(--admin-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
         marginBottom: '0.375rem', fontFamily: 'monospace',
     },
     input: {
         width: '100%', padding: '0.5rem 0.75rem', boxSizing: 'border-box',
-        background: '#0f172a', border: '1px solid #334155', borderRadius: '2px',
-        color: 'white', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
+        background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border-strong)', borderRadius: '10px',
+        color: 'var(--admin-text)', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
     },
     inlineInput: {
         padding: '0.25rem 0.5rem',
-        background: '#0f172a', border: '1px solid #334155', borderRadius: '2px',
-        color: 'white', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
+        background: 'var(--admin-field-bg)', border: '1px solid var(--admin-border-strong)', borderRadius: '10px',
+        color: 'var(--admin-text)', fontFamily: 'monospace', fontSize: '0.875rem', outline: 'none',
     },
     btnPrimary: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
         padding: '0.5rem 1.25rem', background: 'var(--admin-primary)',
-        border: 'none', borderRadius: '2px', cursor: 'pointer',
+        border: 'none', borderRadius: '9999px', cursor: 'pointer',
         color: 'white', fontFamily: 'var(--admin-font)',
         fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
     },
     btnGhost: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-        padding: '0.5rem 1rem', background: '#1e293b',
-        border: '1px solid #334155', borderRadius: '2px', cursor: 'pointer',
-        color: '#94a3b8', fontFamily: 'var(--admin-font)',
+        padding: '0.5rem 1rem', background: 'var(--admin-border)',
+        border: '1px solid var(--admin-border-strong)', borderRadius: '9999px', cursor: 'pointer',
+        color: 'var(--admin-text-muted)', fontFamily: 'var(--admin-font)',
         fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     },
 }
@@ -70,7 +71,7 @@ function ActionBtn({ icon, color, title, onClick, disabled = false }) {
             style={{
                 display: 'flex', alignItems: 'center', padding: '0.375rem',
                 background: 'transparent', border: `1px solid ${color}33`,
-                borderRadius: '2px', color, cursor: disabled ? 'not-allowed' : 'pointer',
+                borderRadius: '9999px', color, cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1, transition: 'background-color 0.15s',
             }}
             onMouseEnter={e => { if (!disabled) e.currentTarget.style.backgroundColor = `${color}18` }}
@@ -91,31 +92,33 @@ function friendlyDeleteError(err) {
     return err.message
 }
 
-/* ── Modal de confirmación (eliminar) — mismo patrón que CouponsTable ── */
+/* ── Modal de confirmación (eliminar) — mismo patrón que CouponsTable ──
+   Portado fuera de .admin-main__content: ese contenedor crea un stacking
+   context local que capea el z-index del modal por debajo del header. */
 function ConfirmModal({ title, message, busy, onConfirm, onCancel }) {
-    return (
+    return createPortal((
         <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
             onClick={onCancel}
         >
             <div
                 onClick={e => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-label={title}
-                style={{ background: '#161b2e', border: '1px solid #334155', borderRadius: '4px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
+                style={{ background: 'var(--admin-card)', border: '1px solid var(--admin-border-strong)', borderRadius: '16px', padding: '1.5rem', maxWidth: '380px', width: '100%' }}
             >
-                <h3 style={{ margin: '0 0 0.75rem', color: 'white', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
+                <h3 style={{ margin: '0 0 0.75rem', color: 'var(--admin-text)', fontSize: '1.05rem', fontWeight: 700 }}>{title}</h3>
+                <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>{message}</p>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={onCancel} style={S.btnGhost}>Cancelar</button>
                     <button
                         onClick={onConfirm} disabled={busy}
-                        style={{ ...S.btnPrimary, background: '#ef4444', opacity: busy ? 0.6 : 1 }}
+                        style={{ ...S.btnPrimary, background: 'var(--admin-red)', opacity: busy ? 0.6 : 1 }}
                     >
                         {busy ? 'Eliminando…' : 'Eliminar'}
                     </button>
                 </div>
             </div>
         </div>
-    )
+    ), document.querySelector('.admin-layout') || document.body)
 }
 
 /* ══════════════════════════════════════════════════
@@ -253,33 +256,30 @@ export default function CategoriesTable() {
 
     /* ════════════════ RENDER ════════════════ */
     return (
-        <section aria-label="Category management">
+        <section aria-label="Gestión de categorías">
 
             {/* ── Encabezado de sección ── */}
             <div style={{
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end',
                 justifyContent: 'space-between', gap: '1rem',
-                borderBottom: '1px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '1.5rem',
+                borderBottom: '1px solid var(--admin-border)', paddingBottom: '1.5rem', marginBottom: '1.5rem',
             }}>
                 <div>
-                    <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--admin-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>
-                        // Category Management
-                    </p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
-                        Categories
-                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#64748b', letterSpacing: 0, textTransform: 'none' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--admin-text)', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
+                        Categorías
+                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--admin-text-faint)', letterSpacing: 0, textTransform: 'none' }}>
                             ({categories.length})
                         </span>
                     </h2>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={load} style={S.btnGhost} title="Refresh">
+                    <button onClick={load} style={S.btnGhost} title="Actualizar">
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
-                        Refresh
+                        Actualizar
                     </button>
                     <button
                         onClick={() => { setShowAdd(p => !p); setForm(EMPTY_FORM) }}
-                        style={{ ...S.btnPrimary, background: showAdd ? '#334155' : 'var(--admin-primary)' }}
+                        style={{ ...S.btnPrimary, background: showAdd ? 'var(--admin-border-strong)' : 'var(--admin-primary)' }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>
                             {showAdd ? 'close' : 'add'}
@@ -294,9 +294,9 @@ export default function CategoriesTable() {
                 <form
                     onSubmit={handleAdd}
                     style={{
-                        background: '#161b2e',
+                        background: 'var(--admin-card)',
                         border: '1px solid rgba(13,70,242,0.35)',
-                        borderRadius: '2px', padding: '1.5rem', marginBottom: '1.5rem',
+                        borderRadius: '10px', padding: '1.5rem', marginBottom: '1.5rem',
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
                         gap: '1rem', alignItems: 'end',
@@ -327,7 +327,7 @@ export default function CategoriesTable() {
                         <label style={S.label}>Slug (auto)</label>
                         <input
                             disabled value={slugify(form.name)}
-                            style={{ ...S.input, color: '#64748b', cursor: 'not-allowed' }}
+                            style={{ ...S.input, color: 'var(--admin-text-faint)', cursor: 'not-allowed' }}
                         />
                     </div>
                     <button type="submit" disabled={saving} style={{ ...S.btnPrimary, opacity: saving ? 0.6 : 1 }}>
@@ -343,8 +343,8 @@ export default function CategoriesTable() {
             {error && (
                 <div role="alert" style={{
                     background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-                    borderRadius: '2px', padding: '0.75rem 1rem', marginBottom: '1rem',
-                    color: '#ef4444', fontFamily: 'monospace', fontSize: '0.8rem',
+                    borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem',
+                    color: 'var(--admin-red)', fontFamily: 'monospace', fontSize: '0.8rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
@@ -356,12 +356,12 @@ export default function CategoriesTable() {
             <div className="admin-orders">
                 <div className="admin-orders__table-wrap">
                     {loading ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: 'var(--admin-text-faint)' }}>
                             <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
-                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading categories…</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Cargando categorías…</span>
                         </div>
                     ) : categories.length === 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: 'var(--admin-border-strong)' }}>
                             <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>category</span>
                             <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No categories — add one above</p>
                         </div>
@@ -369,7 +369,7 @@ export default function CategoriesTable() {
                         <table className="admin-orders__table">
                             <thead>
                                 <tr>
-                                    {['Name', 'Slug', 'Actions'].map((h, i) => (
+                                    {['Nombre', 'Slug', 'Acciones'].map((h, i) => (
                                         <th
                                             key={h}
                                             className={`admin-orders__th${i === 2 ? ' admin-orders__th--right' : ''}`}
@@ -461,7 +461,7 @@ function CategoryRow({
             <td className="admin-orders__td admin-orders__td--white" style={{ fontWeight: depth === 0 ? 500 : 400 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', paddingLeft: depth ? '1.5rem' : 0 }}>
                     {depth > 0 && (
-                        <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: '#475569' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: 'var(--admin-text-subtle)' }}>
                             subdirectory_arrow_right
                         </span>
                     )}
@@ -469,7 +469,7 @@ function CategoryRow({
                         <button
                             onClick={onToggleExpand}
                             aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                            style={{ display: 'flex', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0 }}
+                            style={{ display: 'flex', background: 'transparent', border: 'none', color: 'var(--admin-text-faint)', cursor: 'pointer', padding: 0 }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>
                                 {isExpanded ? 'expand_more' : 'chevron_right'}
@@ -481,7 +481,7 @@ function CategoryRow({
                             value={editVals.name}
                             onChange={e => setEditVals(v => ({ ...v, name: e.target.value }))}
                             style={{ ...S.inlineInput, width: '160px' }}
-                            aria-label="Edit name"
+                            aria-label="Editar nombre"
                         />
                     ) : (
                         category.name
@@ -490,13 +490,13 @@ function CategoryRow({
             </td>
 
             {/* Slug — editable */}
-            <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#64748b', fontSize: '0.8rem' }}>
+            <td className="admin-orders__td admin-orders__td--mono" style={{ color: 'var(--admin-text-faint)', fontSize: '0.8rem' }}>
                 {isEditing ? (
                     <input
                         value={editVals.slug}
                         onChange={e => setEditVals(v => ({ ...v, slug: e.target.value }))}
                         style={{ ...S.inlineInput, width: '160px' }}
-                        aria-label="Edit slug"
+                        aria-label="Editar slug"
                     />
                 ) : (
                     category.slug
@@ -513,7 +513,7 @@ function CategoryRow({
                                     value={editVals.parent_id}
                                     onChange={e => setEditVals(v => ({ ...v, parent_id: e.target.value }))}
                                     style={{ ...S.inlineInput, marginRight: '0.5rem' }}
-                                    aria-label="Edit parent category"
+                                    aria-label="Editar categoría padre"
                                 >
                                     <option value="">— Sin categoría padre —</option>
                                     {roots.filter(r => r.id !== category.id).map(r => (
@@ -521,16 +521,16 @@ function CategoryRow({
                                     ))}
                                 </select>
                             )}
-                            <ActionBtn icon="check" color="#10b981" title="Save changes" onClick={onSaveEdit} disabled={editSaving} />
-                            <ActionBtn icon="close" color="#94a3b8" title="Cancel edit" onClick={onCancelEdit} />
+                            <ActionBtn icon="check" color="var(--admin-green)" title="Guardar cambios" onClick={onSaveEdit} disabled={editSaving} />
+                            <ActionBtn icon="close" color="var(--admin-text-muted)" title="Cancelar edición" onClick={onCancelEdit} />
                         </>
                     ) : (
                         <>
                             {depth === 0 && (
-                                <ActionBtn icon="add" color="#10b981" title="Add subcategory" onClick={onAddSub} />
+                                <ActionBtn icon="add" color="var(--admin-green)" title="Agregar subcategoría" onClick={onAddSub} />
                             )}
-                            <ActionBtn icon="edit" color="var(--admin-primary)" title="Edit name / slug" onClick={onStartEdit} />
-                            <ActionBtn icon="delete" color="#ef4444" title="Delete category" onClick={onDelete} />
+                            <ActionBtn icon="edit" color="var(--admin-primary)" title="Editar nombre / slug" onClick={onStartEdit} />
+                            <ActionBtn icon="delete" color="var(--admin-red)" title="Eliminar categoría" onClick={onDelete} />
                         </>
                     )}
                 </div>

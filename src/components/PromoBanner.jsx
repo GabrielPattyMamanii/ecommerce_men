@@ -4,13 +4,17 @@
  * Lee el único cupón con show_in_banner = true y status = 'publicado'
  * (RLS ya restringe la lectura anónima a solo cupones publicados) y muestra
  * su `message` (HTML autorizado desde el panel admin) + countdown si tiene
- * contador. Se re-consulta cada 30s para reflejar cambios hechos desde el
- * panel sin requerir que el visitante recargue la página.
+ * contador, en un ticker continuo que se desplaza de izquierda a derecha.
+ * Se re-consulta cada 30s para reflejar cambios hechos desde el panel sin
+ * requerir que el visitante recargue la página.
  */
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
 
 const POLL_INTERVAL_MS = 30_000
+// Repeticiones del mensaje en el ticker — suficientes para cubrir pantallas
+// ultra-anchas sin que se note un hueco durante el loop.
+const TICKER_REPEATS = 10
 
 function formatCountdown(ms) {
     if (ms <= 0) return null
@@ -64,24 +68,22 @@ export default function PromoBanner() {
     // (el admin sigue viendo la tarjeta en el panel para reiniciarla o apagarla).
     if (remainingMs !== null && countdownLabel === null) return null
 
-    const fallbackMessage = `${coupon.discount_percentage}% OFF con el código ${coupon.code}`
-
-    return (
-        <div
-            role="region"
-            aria-label="Promoción activa"
-            className="relative w-full bg-background border-b border-border text-muted"
-        >
-            <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-                <span
-                    className="font-body text-xs sm:text-sm text-primary [&_strong]:text-primary [&_strong]:font-bold [&_a]:text-primary [&_a]:underline"
-                    dangerouslySetInnerHTML={coupon.message ? { __html: coupon.message } : undefined}
-                >
-                    {!coupon.message ? fallbackMessage : undefined}
-                </span>
+    function PromoContent() {
+        return (
+            <>
+                {coupon.message ? (
+                    <span
+                        className="font-body text-xs sm:text-sm text-primary [&_strong]:font-bold [&_a]:text-primary [&_a]:underline"
+                        dangerouslySetInnerHTML={{ __html: coupon.message }}
+                    />
+                ) : (
+                    <span className="font-body text-xs sm:text-sm text-primary">
+                        <strong>{coupon.discount_percentage}% OFF</strong> con el código <strong>{coupon.code}</strong>
+                    </span>
+                )}
 
                 {coupon.applies_to !== 'ambos' && (
-                    <span className={`font-mono text-xs sm:text-sm font-semibold tabular-nums px-2 py-0.5 rounded-sm border ${
+                    <span className={`font-mono text-xs sm:text-sm font-semibold tabular-nums px-2 py-0.5 rounded-full border ${
                         coupon.applies_to === 'wholesale'
                             ? 'text-amber-600 border-amber-600/40'
                             : 'text-primary border-primary/40'
@@ -91,10 +93,33 @@ export default function PromoBanner() {
                 )}
 
                 {countdownLabel && (
-                    <span className="font-mono text-xs sm:text-sm font-semibold text-primary tabular-nums px-2 py-0.5 rounded-sm border border-primary/40">
+                    <span className="font-mono text-xs sm:text-sm font-semibold text-primary tabular-nums px-2 py-0.5 rounded-full border border-primary/40">
                         {countdownLabel}
                     </span>
                 )}
+            </>
+        )
+    }
+
+    return (
+        <div
+            role="region"
+            aria-label="Promoción activa"
+            className="relative w-full bg-white border-b border-border text-muted overflow-hidden promo-ticker"
+        >
+            {/* Versión accesible — una sola lectura para lectores de pantalla */}
+            <div className="sr-only">
+                <PromoContent />
+            </div>
+
+            {/* Ticker visual — se repite varias veces para que el loop sea continuo */}
+            <div className="promo-ticker__track py-2" aria-hidden="true">
+                {Array.from({ length: TICKER_REPEATS }).map((_, i) => (
+                    <div key={i} className="promo-ticker__item">
+                        <PromoContent />
+                        <span className="promo-ticker__sep">✦</span>
+                    </div>
+                ))}
             </div>
         </div>
     )

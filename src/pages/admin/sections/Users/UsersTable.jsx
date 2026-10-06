@@ -17,7 +17,7 @@ import { SECTION_LABELS } from './sections'
 
 function PermissionBadges({ permissions }) {
     if (!permissions?.length) {
-        return <span style={{ color: '#475569' }}>— sin permisos —</span>
+        return <span style={{ color: 'var(--admin-text-subtle)' }}>— sin permisos —</span>
     }
     return (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
@@ -159,23 +159,20 @@ export default function UsersTable() {
             <div style={{
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end',
                 justifyContent: 'space-between', gap: '1rem',
-                borderBottom: '1px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '1.5rem',
+                borderBottom: '1px solid var(--admin-border)', paddingBottom: '1.5rem', marginBottom: '1.5rem',
             }}>
                 <div>
-                    <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--admin-primary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>
-                        // Access Management
-                    </p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--admin-text)', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
                         Usuarios
-                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#64748b', letterSpacing: 0, textTransform: 'none' }}>
+                        <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--admin-text-faint)', letterSpacing: 0, textTransform: 'none' }}>
                             ({users.length})
                         </span>
                     </h2>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={load} style={S.btnGhost} title="Refresh">
+                    <button onClick={load} style={S.btnGhost} title="Actualizar">
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
-                        Refresh
+                        Actualizar
                     </button>
                     <button onClick={openAddModal} style={S.btnPrimary}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
@@ -216,7 +213,7 @@ export default function UsersTable() {
                 <div role="alert" style={{
                     background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
                     borderRadius: '2px', padding: '0.75rem 1rem', marginBottom: '1rem',
-                    color: '#ef4444', fontFamily: 'monospace', fontSize: '0.8rem',
+                    color: 'var(--admin-red)', fontFamily: 'monospace', fontSize: '0.8rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
@@ -227,12 +224,12 @@ export default function UsersTable() {
             <div className="admin-orders">
                 <div className="admin-orders__table-wrap">
                     {loading ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: '#64748b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '0.75rem', color: 'var(--admin-text-faint)' }}>
                             <span className="material-symbols-outlined animate-spin" style={{ color: 'var(--admin-primary)', fontSize: '1.5rem' }}>progress_activity</span>
-                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Loading users…</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Cargando usuarios…</span>
                         </div>
                     ) : users.length === 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: '#334155' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: 'var(--admin-border-strong)' }}>
                             <span className="material-symbols-outlined" style={{ fontSize: '3rem' }}>group_off</span>
                             <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>No hay usuarios de staff — agrega uno arriba</p>
                         </div>
@@ -240,7 +237,7 @@ export default function UsersTable() {
                         <table className="admin-orders__table">
                             <thead>
                                 <tr>
-                                    {['Usuario', 'Email', 'Permisos', 'Creado', 'Actions'].map((h, i) => (
+                                    {['Usuario', 'Email', 'Permisos', 'Creado', 'Acciones'].map((h, i) => (
                                         <th key={h} className={`admin-orders__th${i === 4 ? ' admin-orders__th--right' : ''}`}>
                                             {h}
                                         </th>
@@ -253,13 +250,13 @@ export default function UsersTable() {
                                         <td className="admin-orders__td admin-orders__td--white" style={{ fontWeight: 500 }}>
                                             {user.username || '—'}
                                         </td>
-                                        <td className="admin-orders__td" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                                        <td className="admin-orders__td" style={{ color: 'var(--admin-text-muted)', fontSize: '0.8rem' }}>
                                             {user.email || '—'}
                                         </td>
                                         <td className="admin-orders__td">
                                             <PermissionBadges permissions={user.permissions} />
                                         </td>
-                                        <td className="admin-orders__td admin-orders__td--mono" style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                        <td className="admin-orders__td admin-orders__td--mono" style={{ color: 'var(--admin-text-faint)', fontSize: '0.75rem' }}>
                                             {new Date(user.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="admin-orders__td admin-orders__td--right">
@@ -273,7 +270,7 @@ export default function UsersTable() {
                                                     onClick={() => setResettingUser(user)}
                                                 />
                                                 <ActionBtn
-                                                    icon="delete" color="#ef4444" title="Eliminar usuario"
+                                                    icon="delete" color="var(--admin-red)" title="Eliminar usuario"
                                                     onClick={() => setDeletingUser(user)}
                                                 />
                                             </div>

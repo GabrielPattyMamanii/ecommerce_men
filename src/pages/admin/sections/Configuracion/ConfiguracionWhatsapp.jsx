@@ -111,7 +111,7 @@ export default function ConfiguracionWhatsapp() {
 
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // NÚMERO DE WHATSAPP
+          Número de WhatsApp
         </h2>
         <label style={S.label}>WhatsApp (URL wa.me)</label>
         <input
@@ -127,7 +127,7 @@ export default function ConfiguracionWhatsapp() {
 
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // MENSAJE DE BIENVENIDA
+          Mensaje de bienvenida
         </h2>
         <label style={S.label}>Mensaje que recibe el cliente al presionar "Consultar"</label>
         <textarea
@@ -143,9 +143,9 @@ export default function ConfiguracionWhatsapp() {
 
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: 'var(--admin-primary)', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
-          // VISTA PREVIA
+          Vista previa
         </h2>
-        <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '2px', padding: '1rem', color: '#e2e8f0', fontSize: '0.85rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+        <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '1rem', color: '#e2e8f0', fontSize: '0.85rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
           {previewMessage}
         </div>
       </div>

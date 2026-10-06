@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
-import { useCart } from '../context/CartContext'
-import { formatPrice } from '../lib/productPricing'
 import { useHomeBannerSettings } from '../hooks/useHomeBannerSettings'
-import { useContactSettings } from '../hooks/useContactSettings'
 import ProductCard from '../components/ProductCard'
+import PriceTag from '../components/PriceTag'
 
 export default function Home() {
     const [products, setProducts] = useState([])
     const [novedades, setNovedades] = useState([])
     const [loading, setLoading] = useState(true)
-    const { addItem } = useCart()
     const banner = useHomeBannerSettings()
-    const contactSettings = useContactSettings()
 
 
     useEffect(() => {
@@ -83,7 +79,7 @@ export default function Home() {
                         <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
                             <Link
                                 to={banner.cta_primary_link}
-                                className="inline-flex items-center gap-2 bg-on-primary text-primary px-6 py-3.5 sm:px-10 sm:py-4 font-display font-bold uppercase tracking-widest transition-all hover:bg-surface-container text-sm sm:text-base"
+                                className="inline-flex items-center gap-2 bg-on-primary text-primary rounded-full px-6 py-3.5 sm:px-10 sm:py-4 font-display font-bold uppercase tracking-widest transition-all hover:bg-accent hover:text-on-primary hover:-translate-y-0.5 hover:shadow-[0_12px_24px_-8px_rgba(59,91,253,0.45)] text-sm sm:text-base"
                             >
                                 {banner.cta_primary_text}
                                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -91,7 +87,7 @@ export default function Home() {
                             {banner.cta_secondary_text && (
                                 <Link
                                     to={banner.cta_secondary_link || '/catalogo'}
-                                    className="inline-flex items-center border border-on-primary text-on-primary px-6 py-3.5 sm:px-10 sm:py-4 font-display font-bold uppercase tracking-widest transition-all hover:bg-on-primary hover:text-primary text-sm sm:text-base"
+                                    className="inline-flex items-center border border-on-primary text-on-primary rounded-full px-6 py-3.5 sm:px-10 sm:py-4 font-display font-bold uppercase tracking-widest transition-all hover:bg-on-primary hover:text-primary hover:-translate-y-0.5 text-sm sm:text-base"
                                 >
                                     {banner.cta_secondary_text}
                                 </Link>
@@ -108,14 +104,13 @@ export default function Home() {
                     {/* Encabezado */}
                     <div className="px-4 md:px-10 lg:px-40 flex items-end justify-between border-b border-border pb-4">
                         <div className="flex flex-col gap-1">
-                            <span className="text-primary font-mono text-xs uppercase tracking-widest">// NUEVAS ENTRADAS</span>
                             <h2 className="text-primary font-display uppercase tracking-wider text-3xl font-bold leading-tight">
                                 Novedades
                             </h2>
                         </div>
                         <Link
                             to="/catalogo"
-                            className="text-muted hover:text-primary text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-colors"
+                            className="text-muted hover:text-accent hover:bg-accent/10 text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-all rounded-full px-3 py-1.5"
                         >
                             Ver todo
                             <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">
@@ -137,21 +132,14 @@ export default function Home() {
                         <div
                             className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth pl-4 md:pl-10 lg:pl-40 pr-4 md:pr-10 lg:pr-40 pb-2"
                         >
-                            {novedades.map((product, i) => {
+                            {novedades.map((product) => {
                                 const imgUrl = product.images?.[0] || null
                                 return (
                                     <Link
                                         key={product.id}
                                         to={`/producto/${product.id}`}
-                                        className="group flex-shrink-0 w-40 sm:w-44 snap-start flex flex-col bg-surface border border-border hover:border-primary/50 transition-all duration-300 relative"
+                                        className="group flex-shrink-0 w-40 sm:w-44 snap-start flex flex-col bg-surface rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.3)] relative"
                                     >
-                                        {/* Badge NEW en los primeros 3 */}
-                                        {i < 3 && (
-                                            <div className="absolute top-0 left-0 bg-primary text-white text-[9px] font-bold font-mono px-2 py-0.5 z-20 uppercase">
-                                                NEW
-                                            </div>
-                                        )}
-
                                         {/* Imagen */}
                                         <div className="relative w-full aspect-[3/4] overflow-hidden bg-surface-container">
                                             {imgUrl ? (
@@ -164,20 +152,15 @@ export default function Home() {
                                                     <span className="material-symbols-outlined text-outline text-4xl">image_not_supported</span>
                                                 </div>
                                             )}
-                                            {/* Esquinas hover */}
-                                            <div className="absolute top-2 right-2 w-2 h-2 border-t border-r border-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="absolute bottom-2 left-2 w-2 h-2 border-b border-l border-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
 
                                         {/* Info */}
                                         <div className="p-3 flex flex-col gap-1">
-                                            <h3 className="text-primary text-sm font-display font-bold uppercase leading-tight tracking-wide group-hover:text-primary transition-colors truncate">
+                                            <h3 className="text-primary text-sm font-display font-bold uppercase leading-tight tracking-wide group-hover:text-accent transition-colors truncate">
                                                 {product.name}
                                             </h3>
 
-                                            <p className="text-primary font-display font-bold text-sm mt-1">
-                                                {formatPrice(product)}
-                                            </p>
+                                            <PriceTag product={product} className="text-primary font-display font-bold text-sm mt-1" size="sm" />
                                         </div>
                                     </Link>
                                 )
@@ -196,7 +179,7 @@ export default function Home() {
                         </div>
                         <Link
                             to="/catalogo"
-                            className="text-muted hover:text-primary text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-colors"
+                            className="text-muted hover:text-accent hover:bg-accent/10 text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-all rounded-full px-3 py-1.5"
                         >
                             Ver todo
                             <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">
@@ -216,8 +199,8 @@ export default function Home() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {products.slice(0, 4).map((product, i) => (
-                                <ProductCard key={product.id} product={product} onAdd={addItem} contactSettings={contactSettings} badge={i === 0 ? 'NEW' : null} />
+                            {products.slice(0, 4).map((product) => (
+                                <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
                     )}
@@ -237,7 +220,7 @@ export default function Home() {
                             </div>
                             <Link
                                 to="/catalogo"
-                                className="text-muted hover:text-primary text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-colors"
+                                className="text-muted hover:text-accent hover:bg-accent/10 text-xs font-mono uppercase tracking-widest flex items-center gap-2 group transition-all rounded-full px-3 py-1.5"
                             >
                                 Ver todo
                                 <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">
@@ -246,8 +229,8 @@ export default function Home() {
                             </Link>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {products.slice(4, 8).map((product, i) => (
-                                <ProductCard key={product.id} product={product} onAdd={addItem} contactSettings={contactSettings} badge={i === 1 ? 'LIMITED' : null} />
+                            {products.slice(4, 8).map((product) => (
+                                <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
                     </section>

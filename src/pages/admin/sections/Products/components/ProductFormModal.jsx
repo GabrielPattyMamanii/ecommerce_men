@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react'
-import { S, ToggleSwitch } from '../../../../../components/admin/AdminKit'
+import { useState, useEffect, useContext } from 'react'
+import { createPortal } from 'react-dom'
+import { ToggleSwitch } from '../../../../../components/admin/AdminKit'
+import { AdminThemeContext } from '../../../layout/AdminLayout'
+import { PF, pfStyles, PF_UPLOADER_THEME, getPfVars } from './productFormTheme'
 import ProductImageUploader from './ProductImageUploader'
 import ProductSizeManager from './ProductSizeManager'
 import ProductColorManager from './ProductColorManager'
+import ProductSizeGuideEditor from './ProductSizeGuideEditor'
+import { sizeGuideFromDb, sizeGuideToDb } from './sizeGuideUtils'
+import './ProductFormModal.css'
 
 const EMPTY_FORM = {
   name: '',
@@ -23,6 +29,35 @@ const EMPTY_FORM = {
   price_on_request: false,
 }
 
+/* Grupo de 4 campos de dimensiones (alto/ancho/largo/peso), reutilizado para
+   la unidad y la docena — ambos comparten exactamente los mismos campos. */
+function DimensionsGrid({ prefix, form, setForm }) {
+  const fields = [
+    ['height', 'Alto (cm)'],
+    ['width', 'Ancho (cm)'],
+    ['length', 'Largo (cm)'],
+    ['weight', 'Peso (kg)'],
+  ]
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+      {fields.map(([suffix, label]) => {
+        const key = `${prefix}_${suffix}`
+        return (
+          <div key={key} style={{ background: PF.color.surfaceContainer, padding: '0.6rem 0.7rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.border}` }}>
+            <label style={{ ...pfStyles.label, marginBottom: '0.3rem', fontSize: '0.62rem' }}>{label}</label>
+            <input
+              type="number" min="0" step="0.01" value={form[key]}
+              onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+              placeholder="0.00"
+              style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '0.85rem', fontWeight: 600, padding: '0.15rem 0', outline: 'none' }}
+            />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 /**
  * El padre le pasa un `key` distinto cada vez que abre el popup (ver
  * ProductsTable), por lo que este componente se remonta en cada apertura y
@@ -30,6 +65,8 @@ const EMPTY_FORM = {
  * necesidad de sincronizarlo luego con un efecto.
  */
 export default function ProductFormModal({ isOpen, initialProduct = null, onClose, categories, onSave, saving, error }) {
+    const theme = useContext(AdminThemeContext)
+    const pfVars = getPfVars(theme)
     const isEditMode = Boolean(initialProduct)
     const [form, setForm] = useState(() => (
         initialProduct
@@ -56,6 +93,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
     const [images, setImages] = useState(() => (initialProduct?.images ? [...initialProduct.images] : []))
     const [sizes, setSizes] = useState(() => (initialProduct?.sizes ? [...initialProduct.sizes] : []))
     const [colors, setColors] = useState(() => (initialProduct?.colors ? [...initialProduct.colors] : []))
+    const [sizeGuide, setSizeGuide] = useState(() => sizeGuideFromDb(initialProduct?.size_guide))
     const [imageError, setImageError] = useState(null)
     const [validationError, setValidationError] = useState(null)
 
@@ -90,274 +128,271 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
             return
         }
 
-        onSave({ ...form, images, sizes, colors }, resetAndClose)
+        onSave({ ...form, images, sizes, colors, size_guide: sizeGuideToDb(sizeGuide, sizes) }, resetAndClose)
     }
 
-    return (
+    return createPortal((
         <div
+            className="pfm"
             onClick={saving ? undefined : resetAndClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1150, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            style={{ ...pfVars, position: 'fixed', inset: 0, background: 'var(--pf-overlay)', zIndex: 1150, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
         >
             <div
                 onClick={e => e.stopPropagation()}
                 role="dialog" aria-modal="true" aria-label={isEditMode ? 'Editar producto' : 'Nuevo producto'}
-                style={{ background: '#161b2e', border: '1px solid #334155', borderRadius: '4px', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}
+                style={{
+                    background: PF.color.bg, border: `1px solid ${PF.color.border}`, borderRadius: PF.radius.xl,
+                    width: '100%', maxWidth: '1180px', maxHeight: '92vh', overflowY: 'auto',
+                    fontFamily: PF.font.body, color: PF.color.text,
+                    boxShadow: '0 20px 60px var(--pf-modal-shadow)',
+                }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, background: '#161b2e' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                        <span className="material-symbols-outlined" style={{ color: 'var(--admin-primary)', flexShrink: 0 }}>{isEditMode ? 'edit' : 'add_box'}</span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {isEditMode ? 'Editar producto' : 'Nuevo producto'}
-                        </span>
-                    </h2>
-                    <button onClick={resetAndClose} disabled={saving} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', flexShrink: 0 }}>
+                {/* Header */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
+                    padding: '1.1rem 1.5rem', borderBottom: `1px solid ${PF.color.border}`,
+                    position: 'sticky', top: 0, background: 'var(--pf-header-bg)', backdropFilter: 'blur(8px)', zIndex: 1,
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                        <span className="material-symbols-outlined" style={{ color: PF.color.accent, flexShrink: 0 }}>{isEditMode ? 'edit' : 'add_box'}</span>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: PF.color.text, fontFamily: PF.font.headline, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {isEditMode ? `Editar Producto${form.name ? `: ${form.name}` : ''}` : 'Nuevo Producto'}
+                        </h2>
+                    </div>
+                    <button onClick={resetAndClose} disabled={saving} style={{ background: 'transparent', border: 'none', color: PF.color.textMuted, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', flexShrink: 0 }}>
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ padding: '1.5rem' }}>
 
                         {(error || validationError) && (
                             <div role="alert" style={{
-                                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-                                borderRadius: '2px', padding: '0.75rem 1rem', color: '#ef4444',
-                                fontFamily: 'monospace', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                background: PF.color.dangerSoft, border: `1px solid ${PF.color.danger}55`,
+                                borderRadius: PF.radius.md, padding: '0.75rem 1rem', color: PF.color.danger,
+                                fontFamily: PF.font.body, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                marginBottom: '1.25rem',
                             }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
                                 {error || validationError}
                             </div>
                         )}
 
-                        <div>
-                            <label style={S.label}>Nombre *</label>
-                            <input
-                                required value={form.name}
-                                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                                placeholder="Nombre del producto" style={S.input}
-                            />
-                        </div>
+                        <div className="pfm-grid">
+                            {/* COLUMNA PRINCIPAL */}
+                            <div className="pfm-col">
+                                {/* Detalles Generales */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Detalles Generales</h3>
+                                    <p style={pfStyles.cardSubtitle}>Nombre comercial y descripción pública visible para clientes.</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.1rem' }}>
+                                        <div>
+                                            <label style={pfStyles.label}>Nombre del Producto <span style={{ color: PF.color.accent }}>*</span></label>
+                                            <input
+                                                required value={form.name}
+                                                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                                                placeholder="Ej. Remera Básica de Algodón Orgánico" style={pfStyles.input}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={pfStyles.label}>Descripción</label>
+                                            <textarea
+                                                value={form.description}
+                                                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                                                placeholder="Opcional" rows={4}
+                                                style={{ ...pfStyles.input, resize: 'vertical', lineHeight: 1.5 }}
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
 
-                        <div>
-                            <label style={S.label}>Descripción</label>
-                            <textarea
-                                value={form.description}
-                                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                                placeholder="Opcional" rows={3}
-                                style={{ ...S.input, resize: 'vertical', fontFamily: 'inherit' }}
-                            />
-                        </div>
+                                {/* Multimedia */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Multimedia</h3>
+                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Sube y organiza las fotografías de catálogo de tu producto.</p>
+                                    <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} productName={form.name} theme={PF_UPLOADER_THEME} />
+                                    {imageError && (
+                                        <p style={{ margin: '0.5rem 0 0', color: '#eab308', fontFamily: PF.font.body, fontSize: '0.75rem' }}>{imageError}</p>
+                                    )}
+                                </section>
 
-                        {/* Precio a consultar */}
-                        <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                                <ToggleSwitch
-                                    checked={form.price_on_request}
-                                    onChange={() => setForm(p => ({ ...p, price_on_request: !p.price_on_request }))}
-                                    label="Precio a consultar"
-                                    disabled={saving}
-                                />
-                                <div>
-                                    <div style={{ ...S.label, marginBottom: '0.25rem', cursor: 'pointer' }} onClick={() => setForm(p => ({ ...p, price_on_request: !p.price_on_request }))}>
-                                        Precio "A Consultar"
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', lineHeight: 1.4 }}>
-                                        Se muestra "Consultar precio" en el catálogo en lugar del precio fijo
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                {/* Precios y Descuentos */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Precios y Descuentos</h3>
+                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Configura el precio regular, mayorista y reglas comerciales.</p>
 
-                        {/* Precios y stock - deshabilitados si price_on_request */}
-                        <div style={{ opacity: form.price_on_request ? 0.4 : 1, pointerEvents: form.price_on_request ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-                            <div className="admin-form-grid-2" style={{ marginBottom: '1rem' }}>
-                                <div>
-                                    <label style={S.label}>Precio Minorista ($) *</label>
-                                    <input
-                                        type="number" min="0" step="0.01" value={form.retail_price}
-                                        onChange={e => setForm(p => ({ ...p, retail_price: e.target.value }))}
-                                        placeholder="0.00" style={S.input}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={S.label}>Precio Mayorista ($)</label>
-                                    <input
-                                        type="number" min="0" step="0.01" value={form.wholesale_price}
-                                        onChange={e => setForm(p => ({ ...p, wholesale_price: e.target.value }))}
-                                        placeholder="0.00" style={{ ...S.input, opacity: applyDiscount ? 0.6 : 1 }}
-                                        readOnly={applyDiscount}
-                                    />
-                                </div>
-                            </div>
+                                    {/* Precio a consultar */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: PF.color.surfaceContainer, border: `1px solid ${PF.color.border}`, borderRadius: PF.radius.md, marginBottom: '1rem' }}>
+                                        <ToggleSwitch
+                                            checked={form.price_on_request}
+                                            onChange={() => setForm(p => ({ ...p, price_on_request: !p.price_on_request }))}
+                                            label="Precio a consultar"
+                                            disabled={saving}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: PF.color.text, cursor: 'pointer' }} onClick={() => setForm(p => ({ ...p, price_on_request: !p.price_on_request }))}>
+                                                Precio &quot;A Consultar&quot;
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: PF.color.textMuted, lineHeight: 1.4 }}>
+                                                Se muestra &quot;Consultar precio&quot; en el catálogo en lugar del precio fijo
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            {/* Dimensiones de la unidad (retail) — opcional pero necesarias para envío */}
-                            <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
-                                <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la unidad (obligatoria para envío)</div>
-                                <div className="admin-form-grid-2" style={{ marginBottom: '0.75rem' }}>
-                                    <div>
-                                        <label style={S.label}>Alto (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.unit_height}
-                                            onChange={e => setForm(p => ({ ...p, unit_height: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={S.label}>Ancho (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.unit_width}
-                                            onChange={e => setForm(p => ({ ...p, unit_width: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="admin-form-grid-2">
-                                    <div>
-                                        <label style={S.label}>Largo (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.unit_length}
-                                            onChange={e => setForm(p => ({ ...p, unit_length: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={S.label}>Peso (kg)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.unit_weight}
-                                            onChange={e => setForm(p => ({ ...p, unit_weight: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                                    <div style={{ opacity: form.price_on_request ? 0.4 : 1, pointerEvents: form.price_on_request ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem', marginBottom: '1rem' }}>
+                                            <div style={{ background: PF.color.surfaceContainer, padding: '0.75rem 0.85rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.border}` }}>
+                                                <label style={pfStyles.label}>Precio Normal (PVP) *</label>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <span style={{ position: 'absolute', left: 0, color: PF.color.accent, fontFamily: PF.font.headline, fontWeight: 600 }}>$</span>
+                                                    <input
+                                                        type="number" min="0" step="0.01" value={form.retail_price}
+                                                        onChange={e => setForm(p => ({ ...p, retail_price: e.target.value }))}
+                                                        placeholder="0.00"
+                                                        style={{ width: '100%', paddingLeft: '1.1rem', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '1rem', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ background: PF.color.surfaceContainer, padding: '0.75rem 0.85rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.border}` }}>
+                                                <label style={pfStyles.label}>Precio Mayorista</label>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <span style={{ position: 'absolute', left: 0, color: PF.color.textMuted, fontFamily: PF.font.headline, fontWeight: 600 }}>$</span>
+                                                    <input
+                                                        type="number" min="0" step="0.01" value={form.wholesale_price}
+                                                        onChange={e => setForm(p => ({ ...p, wholesale_price: e.target.value }))}
+                                                        placeholder="0.00" readOnly={applyDiscount}
+                                                        style={{ width: '100%', paddingLeft: '1.1rem', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '1rem', fontWeight: 600, outline: 'none', boxSizing: 'border-box', opacity: applyDiscount ? 0.6 : 1 }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
 
-                            {/* Dimensiones de la docena — opcional, solo relevante si hay precio mayorista */}
-                            <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
-                                <div style={{ ...S.label, marginBottom: '0.75rem' }}>Dimensiones de la docena (opcional)</div>
-                                <div className="admin-form-grid-2" style={{ marginBottom: '0.75rem' }}>
-                                    <div>
-                                        <label style={S.label}>Alto (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.dozen_height}
-                                            onChange={e => setForm(p => ({ ...p, dozen_height: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
+                                        {/* Descuento automático */}
+                                        <div style={{ padding: '0.85rem', background: PF.color.surfaceContainer, border: `1px solid ${PF.color.border}`, borderRadius: PF.radius.md, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                                                <input
+                                                    type="checkbox" checked={applyDiscount}
+                                                    onChange={e => setApplyDiscount(e.target.checked)}
+                                                    style={{ accentColor: PF.color.accent, width: '15px', height: '15px', cursor: 'pointer' }}
+                                                />
+                                                <span>
+                                                    <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: PF.color.text }}>Descuento Promocional Automático</span>
+                                                    <span style={{ fontSize: '0.7rem', color: PF.color.textMuted }}>Calcula el precio mayorista aplicando un % sobre el minorista.</span>
+                                                </span>
+                                            </label>
+                                            {applyDiscount && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: PF.color.surfaceLowest, padding: '0.4rem 0.7rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.borderStrong}` }}>
+                                                    <input
+                                                        type="number" min="0" max="100" value={discountPercent}
+                                                        onChange={e => setDiscountPercent(parseFloat(e.target.value) || 0)}
+                                                        style={{ width: '44px', background: 'transparent', border: 'none', textAlign: 'center', color: PF.color.text, fontFamily: PF.font.body, fontWeight: 600, fontSize: '0.85rem', outline: 'none' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.75rem', color: PF.color.accent, fontWeight: 600 }}>% OFF</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={S.label}>Ancho (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.dozen_width}
-                                            onChange={e => setForm(p => ({ ...p, dozen_width: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
+                                </section>
+
+                                {/* Guía de talles (opcional) */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Guía de Talles</h3>
+                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Tabla de medidas opcional. Cada talle cargado en &quot;Talles y Colores&quot; es una fila.</p>
+                                    <ProductSizeGuideEditor guide={sizeGuide} onGuideChange={setSizeGuide} sizes={sizes} disabled={saving} />
+                                </section>
+
+                                {/* Envíos y Paquetería */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Envíos y Paquetería</h3>
+                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Dimensiones físicas y peso para el cálculo automático de tarifas de entrega.</p>
+
+                                    <div style={{ marginBottom: '1.1rem' }}>
+                                        <div style={{ ...pfStyles.label, marginBottom: '0.6rem' }}>Dimensiones de la unidad (obligatoria para envío)</div>
+                                        <DimensionsGrid prefix="unit" form={form} setForm={setForm} />
                                     </div>
-                                </div>
-                                <div className="admin-form-grid-2">
+
                                     <div>
-                                        <label style={S.label}>Largo (cm)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.dozen_length}
-                                            onChange={e => setForm(p => ({ ...p, dozen_length: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
+                                        <div style={{ ...pfStyles.label, marginBottom: '0.6rem' }}>Dimensiones de la docena (opcional, solo mayorista)</div>
+                                        <DimensionsGrid prefix="dozen" form={form} setForm={setForm} />
                                     </div>
-                                    <div>
-                                        <label style={S.label}>Peso (kg)</label>
-                                        <input
-                                            type="number" min="0" step="0.01" value={form.dozen_weight}
-                                            onChange={e => setForm(p => ({ ...p, dozen_weight: e.target.value }))}
-                                            placeholder="0.00" style={S.input}
-                                        />
-                                    </div>
-                                </div>
+                                </section>
                             </div>
 
-                            {/* Descuento automático */}
-                            <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: applyDiscount ? '0.875rem' : 0 }}>
-                                    <input
-                                        type="checkbox" checked={applyDiscount}
-                                        onChange={e => setApplyDiscount(e.target.checked)}
-                                    />
-                                    <span style={{ ...S.label, marginBottom: 0, cursor: 'pointer' }}>Aplicar descuento automático</span>
-                                </label>
-                                {applyDiscount && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <input
-                                            type="number" min="0" max="100" value={discountPercent}
-                                            onChange={e => setDiscountPercent(parseFloat(e.target.value) || 0)}
-                                            style={{ ...S.inlineInput, width: '60px' }}
-                                        />
-                                        <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'monospace' }}>% de descuento</span>
+                            {/* COLUMNA LATERAL */}
+                            <div className="pfm-col">
+                                {/* Organización */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.sidebarCardTitle}>Organización</h3>
+                                    <div>
+                                        <label style={pfStyles.label}>Categoría</label>
+                                        <select
+                                            value={form.category_id}
+                                            onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
+                                            style={pfStyles.input}
+                                        >
+                                            <option value="">— Sin categoría —</option>
+                                            {categories.map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
+                                </section>
+
+                                {/* Inventario */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.sidebarCardTitle}>Inventario</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div>
+                                            <label style={pfStyles.label}>Stock</label>
+                                            <input
+                                                type="number" min="0" value={form.stock}
+                                                onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
+                                                placeholder="0" style={pfStyles.input}
+                                            />
+                                            <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
+                                                {form.unlimited_stock
+                                                    ? 'No se muestra al público mientras "Continuar vendiendo sin stock" esté activo.'
+                                                    : 'Opcional — si lo dejás vacío, el producto se crea sin stock (0).'}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${PF.color.border}` }}>
+                                            <div style={{ paddingRight: '0.5rem' }}>
+                                                <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: PF.color.text }}>Continuar vendiendo sin stock</span>
+                                                <span style={{ fontSize: '0.7rem', color: PF.color.textMuted }}>Se muestra &quot;Disponible&quot; sin importar el stock cargado.</span>
+                                            </div>
+                                            <ToggleSwitch
+                                                checked={form.unlimited_stock}
+                                                onChange={() => setForm(p => ({ ...p, unlimited_stock: !p.unlimited_stock }))}
+                                                label="Disponible sin control de stock"
+                                                disabled={saving}
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Talles y Colores */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.sidebarCardTitle}>Talles y Colores</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                        <ProductSizeManager sizes={sizes} onSizesChange={setSizes} />
+                                        <ProductColorManager colors={colors} onColorsChange={setColors} images={images} />
+                                    </div>
+                                </section>
                             </div>
                         </div>
-
-                        {/* Disponible sin control de stock */}
-                        <div style={{ border: '1px solid #1e293b', borderRadius: '2px', padding: '0.875rem', marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                                <ToggleSwitch
-                                    checked={form.unlimited_stock}
-                                    onChange={() => setForm(p => ({ ...p, unlimited_stock: !p.unlimited_stock }))}
-                                    label="Disponible sin control de stock"
-                                    disabled={saving}
-                                />
-                                <div>
-                                    <div style={{ ...S.label, marginBottom: '0.25rem', cursor: 'pointer' }} onClick={() => setForm(p => ({ ...p, unlimited_stock: !p.unlimited_stock }))}>
-                                        Disponible sin stock
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', lineHeight: 1.4 }}>
-                                        En el catálogo público se muestra "Disponible" sin importar el número de stock (incluso en 0). Podés cargar el stock real más adelante sin afectar esto.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Stock - siempre editable, opcional al crear (se puede cargar después) */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={S.label}>Stock</label>
-                            <input
-                                type="number" min="0" value={form.stock}
-                                onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
-                                placeholder="0" style={S.input}
-                            />
-                            <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', marginTop: '0.35rem' }}>
-                                {form.unlimited_stock
-                                    ? 'Este número no se muestra al público mientras "Disponible sin control de stock" esté activo.'
-                                    : 'Opcional — si lo dejás vacío, el producto se crea sin stock (0) y podés cargarlo más adelante.'}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style={S.label}>Categoría</label>
-                            <select
-                                value={form.category_id}
-                                onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
-                                style={S.input}
-                            >
-                                <option value="">— Sin categoría —</option>
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <ProductSizeManager sizes={sizes} onSizesChange={setSizes} />
-
-                        <ProductColorManager colors={colors} onColorsChange={setColors} images={images} />
-
-                        <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} productName={form.name} />
-                        {imageError && (
-                            <p style={{ margin: 0, color: '#eab308', fontFamily: 'monospace', fontSize: '0.75rem' }}>{imageError}</p>
-                        )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', padding: '1.25rem 1.5rem', borderTop: '1px solid #1e293b', position: 'sticky', bottom: 0, background: '#161b2e' }}>
-                        <button type="button" onClick={resetAndClose} disabled={saving} style={S.btnGhost}>Cancelar</button>
-                        <button type="submit" disabled={saving} style={{ ...S.btnPrimary, opacity: saving ? 0.6 : 1 }}>
+                    {/* Footer */}
+                    <div style={{
+                        display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', padding: '1.1rem 1.5rem',
+                        borderTop: `1px solid ${PF.color.border}`, position: 'sticky', bottom: 0,
+                        background: 'var(--pf-header-bg)', backdropFilter: 'blur(8px)',
+                    }}>
+                        <button type="button" onClick={resetAndClose} disabled={saving} style={pfStyles.btnGhost}>Cancelar</button>
+                        <button type="submit" disabled={saving} style={{ ...pfStyles.btnPrimary, opacity: saving ? 0.6 : 1 }}>
                             <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>
-                                {saving ? 'progress_activity' : 'save'}
+                                {saving ? 'progress_activity' : 'check'}
                             </span>
                             {saving ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Guardar producto'}
                         </button>
@@ -365,5 +400,5 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 </form>
             </div>
         </div>
-    )
+    ), document.querySelector('.admin-layout') || document.body)
 }

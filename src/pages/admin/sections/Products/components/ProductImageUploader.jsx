@@ -1,13 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import { convertToWebP, validateImageFile } from '../../../../../lib/imageUtils'
 
+/* Paleta TEKGEAR por defecto — la usan Config. de Logo y Config. de Banner.
+   ProductFormModal le pasa PF_UPLOADER_THEME (productFormTheme.js) para
+   verse consistente con el diseño Stitch sin tocar estos otros usos. */
+const DEFAULT_THEME = {
+    accent: 'var(--admin-primary)',
+    accentSoft: 'rgba(13,70,242,0.15)',
+    border: '#334155',
+    surfaceLowest: 'rgba(15,23,42,0.4)',
+    surfaceContainer: '#1e293b',
+    text: 'white',
+    textMuted: '#64748b',
+    radius: '2px',
+    radiusSm: '2px',
+    font: 'monospace',
+}
+
 /**
  * Sección de adjuntar imágenes para el formulario de producto.
  * Acepta clic-para-explorar y arrastrar-y-soltar. Convierte cada imagen
  * a WebP antes de agregarla (mismo patrón que BrandPhotoUploader).
  * Hacer clic sobre una miniatura abre un lightbox para verla en grande.
  */
-export default function ProductImageUploader({ images = [], onImagesChange, maxImages = 6, onError, productName = '' }) {
+export default function ProductImageUploader({ images = [], onImagesChange, maxImages = 6, onError, productName = '', theme }) {
+    const t = { ...DEFAULT_THEME, ...theme }
     const fileInputRef = useRef(null)
     const [isDragging, setIsDragging] = useState(false)
     const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -90,12 +107,12 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
     return (
         <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.65rem', fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: t.font }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>photo_camera</span>
                     Imágenes del producto
                     <span style={{ opacity: 0.6, fontWeight: 400 }}>(opcional)</span>
                 </label>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(13,70,242,0.15)', color: 'var(--admin-primary)' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.5rem', borderRadius: '999px', background: t.accentSoft, color: t.accent }}>
                     {images.length}/{maxImages}
                 </span>
             </div>
@@ -105,9 +122,9 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 style={{
-                    position: 'relative', overflow: 'hidden', borderRadius: '2px',
-                    border: `2px dashed ${isDragging ? 'var(--admin-primary)' : '#334155'}`,
-                    background: isDragging ? 'rgba(13,70,242,0.08)' : 'rgba(15,23,42,0.4)',
+                    position: 'relative', overflow: 'hidden', borderRadius: t.radius,
+                    border: `2px dashed ${isDragging ? t.accent : t.border}`,
+                    background: isDragging ? t.accentSoft : t.surfaceLowest,
                     opacity: atLimit ? 0.5 : 1, transition: 'all 0.15s',
                 }}
             >
@@ -120,12 +137,12 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
                         background: 'transparent', border: 'none', cursor: atLimit ? 'not-allowed' : 'pointer',
                     }}
                 >
-                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: 'var(--admin-primary)' }}>upload</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem', color: t.accent }}>upload</span>
                     <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: t.text, fontFamily: t.font }}>
                             {images.length === 0 ? 'Adjuntar imágenes del producto' : 'Agregar más imágenes'}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Arrastra archivos aquí o hacé clic — JPG, PNG, WebP (máx. 10MB)</div>
+                        <div style={{ fontSize: '0.7rem', color: t.textMuted, fontFamily: t.font }}>Arrastra archivos aquí o hacé clic — JPG, PNG, WebP (máx. 10MB)</div>
                     </div>
                 </button>
                 <input
@@ -137,7 +154,7 @@ export default function ProductImageUploader({ images = [], onImagesChange, maxI
             {images.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.625rem', marginTop: '0.75rem' }}>
                     {images.map((image, index) => (
-                        <div key={index} style={{ position: 'relative', aspectRatio: '1', borderRadius: '2px', overflow: 'hidden', border: '1px solid #334155', background: '#1e293b' }}>
+                        <div key={index} style={{ position: 'relative', aspectRatio: '1', borderRadius: t.radiusSm, overflow: 'hidden', border: `1px solid ${t.border}`, background: t.surfaceContainer }}>
                             <img
                                 src={typeof image === 'string' ? image : URL.createObjectURL(image)}
                                 alt={`Producto - imagen ${index + 1}`}

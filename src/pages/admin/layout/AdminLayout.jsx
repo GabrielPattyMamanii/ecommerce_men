@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
+import { createContext, useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import './AdminLayout.css'
+
+/* Expone el tema activo ('dark' | 'light') a cualquier componente admin que
+   necesite elegir entre paletas propias (ej. el popup de producto, que tiene
+   su propio tema aislado en vez de las variables --admin-*). */
+export const AdminThemeContext = createContext('dark')
 
 /* ── Navegación del sidebar ──
    `section` es null para Dashboard (siempre visible) y para 'usuarios',
@@ -47,7 +52,7 @@ function Sidebar({ collapsed, mobileOpen, onClose }) {
                         <span className="material-symbols-outlined">hexagon</span>
                     </div>
                     {!iconOnly && (
-                        <span className="admin-sidebar__logo-text">TECH_ADMIN</span>
+                        <span className="admin-sidebar__logo-text">PANEL_ADMIN</span>
                     )}
                     <button
                         className="admin-sidebar__close-btn"
@@ -59,9 +64,9 @@ function Sidebar({ collapsed, mobileOpen, onClose }) {
                 </div>
 
                 {/* Nav links */}
-                <nav className="admin-sidebar__nav" aria-label="Admin navigation">
+                <nav className="admin-sidebar__nav" aria-label="Navegación del admin">
                     {!iconOnly && (
-                        <p className="admin-sidebar__section-label">Main Menu</p>
+                        <p className="admin-sidebar__section-label">Menú Principal</p>
                     )}
 
                     {visibleLinks.map(({ label, icon, to, badge, end }) => (
@@ -87,19 +92,19 @@ function Sidebar({ collapsed, mobileOpen, onClose }) {
                 {!iconOnly && (
                     <div className="admin-sidebar__footer">
                         <div className="admin-sidebar__user-card">
-                            <div className="admin-sidebar__avatar" role="img" aria-label="Admin avatar" />
+                            <div className="admin-sidebar__avatar" role="img" aria-label="Avatar del administrador" />
                             <div>
                                 <p className="admin-sidebar__user-name">SYS_ADMIN_01</p>
-                                <p className="admin-sidebar__user-status">ONLINE • V.2.4</p>
+                                <p className="admin-sidebar__user-status">EN LÍNEA • V.2.4</p>
                             </div>
                         </div>
                         <button
                             className="admin-sidebar__logout"
                             onClick={() => navigate('/')}
-                            aria-label="Logout"
+                            aria-label="Cerrar sesión"
                         >
                             <span className="material-symbols-outlined" aria-hidden="true">logout</span>
-                            LOGOUT
+                            CERRAR SESIÓN
                         </button>
                     </div>
                 )}
@@ -118,19 +123,30 @@ function Sidebar({ collapsed, mobileOpen, onClose }) {
 /* ────────────────────────────────────────────────
    HEADER
 ──────────────────────────────────────────────── */
-function AdminHeader({ onMenuToggle, title = 'Performance Overview' }) {
+function AdminHeader({ onMenuToggle, theme, onToggleTheme, title = 'Resumen General' }) {
     return (
         <header className="admin-header">
             <div className="admin-header__left">
                 <button
                     className="admin-header__menu-btn"
                     onClick={onMenuToggle}
-                    aria-label="Toggle sidebar"
+                    aria-label="Alternar menú lateral"
                 >
                     <span className="material-symbols-outlined">menu</span>
                 </button>
                 <h1 className="admin-header__title">{title}</h1>
             </div>
+
+            <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="admin-header__store-link"
+            >
+                <span className="material-symbols-outlined" aria-hidden="true">storefront</span>
+                Ver tienda
+                <span className="material-symbols-outlined admin-header__store-link-icon" aria-hidden="true">open_in_new</span>
+            </a>
 
             <div className="admin-header__right">
                 {/* Búsqueda */}
@@ -141,21 +157,33 @@ function AdminHeader({ onMenuToggle, title = 'Performance Overview' }) {
                     <input
                         type="search"
                         className="admin-header__search"
-                        placeholder="SEARCH DATABASE..."
-                        aria-label="Search database"
+                        placeholder="BUSCAR EN LA BASE DE DATOS..."
+                        aria-label="Buscar en la base de datos"
                     />
                 </div>
 
                 {/* Notificaciones */}
-                <button className="admin-header__notif" aria-label="Notifications">
+                <button className="admin-header__notif" aria-label="Notificaciones">
                     <span className="material-symbols-outlined">notifications</span>
                     <span className="admin-header__notif-dot" aria-hidden="true" />
+                </button>
+
+                {/* Tema oscuro / claro — solo afecta al admin, nunca al sitio público */}
+                <button
+                    className="admin-header__theme-toggle"
+                    onClick={onToggleTheme}
+                    aria-label={theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+                    title={theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+                >
+                    <span className="material-symbols-outlined">
+                        {theme === 'light' ? 'dark_mode' : 'light_mode'}
+                    </span>
                 </button>
 
                 <div className="admin-header__divider" aria-hidden="true" />
 
                 {/* Avatar */}
-                <div className="admin-header__avatar" role="img" aria-label="Admin user" />
+                <div className="admin-header__avatar" role="img" aria-label="Usuario administrador" />
             </div>
         </header>
     )
@@ -165,12 +193,34 @@ function AdminHeader({ onMenuToggle, title = 'Performance Overview' }) {
    el sidebar deja de ser un rail fijo y pasa a ser un drawer off-canvas. */
 const MOBILE_QUERY = '(max-width: 1023px)'
 
+/* Tema del admin — persistido en localStorage, nunca toca el tema del sitio
+   público (clave y atributo exclusivos de .admin-layout). */
+const THEME_KEY = 'admin-theme'
+
+function getInitialTheme() {
+    try {
+        const stored = localStorage.getItem(THEME_KEY)
+        return stored === 'light' ? 'light' : 'dark'
+    } catch {
+        return 'dark'
+    }
+}
+
 /* ────────────────────────────────────────────────
    LAYOUT — shell puro: sidebar + header + outlet
 ──────────────────────────────────────────────── */
 export default function AdminLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
+    const [theme, setTheme] = useState(getInitialTheme)
+
+    useEffect(() => {
+        try { localStorage.setItem(THEME_KEY, theme) } catch { /* localStorage no disponible */ }
+    }, [theme])
+
+    function toggleTheme() {
+        setTheme(prev => (prev === 'light' ? 'dark' : 'light'))
+    }
 
     // Si la ventana crece de mobile → desktop con el drawer abierto,
     // lo cerramos para no dejar el backdrop/estado colgado.
@@ -198,7 +248,7 @@ export default function AdminLayout() {
     }
 
     return (
-        <div className="admin-layout">
+        <div className="admin-layout" data-theme={theme}>
             <Sidebar
                 collapsed={sidebarCollapsed}
                 mobileOpen={mobileNavOpen}
@@ -211,6 +261,8 @@ export default function AdminLayout() {
 
                 <AdminHeader
                     onMenuToggle={handleMenuToggle}
+                    theme={theme}
+                    onToggleTheme={toggleTheme}
                 />
 
                 {/*
@@ -220,7 +272,9 @@ export default function AdminLayout() {
                      /admin/ordenes   → OrdersTable   (Task 5.2)
                 */}
                 <div className="admin-main__content">
-                    <Outlet />
+                    <AdminThemeContext.Provider value={theme}>
+                        <Outlet />
+                    </AdminThemeContext.Provider>
                 </div>
             </div>
         </div>

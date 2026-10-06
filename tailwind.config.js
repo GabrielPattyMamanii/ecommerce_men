@@ -18,9 +18,10 @@ export default {
         "border": "#e2e2e4",
         "muted": "#45474a",
         "outline": "#76777b",
+        "accent": "#3b5bfd",
 
-        // Admin dashboard tokens (Space Grotesk theme)
-        "admin-primary": "#0d46f2",
+        // Admin dashboard tokens (Space Grotesk theme) — mismo azul que el acento público
+        "admin-primary": "#3b5bfd",
         "admin-bg": "#101422",
         "admin-surface": "#1a1f30",
         "admin-card": "#161b2e",

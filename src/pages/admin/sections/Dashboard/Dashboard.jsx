@@ -2,7 +2,7 @@
  * Dashboard.jsx — Panel Admin - Introducción
  *
  * Página de bienvenida con diseño coherente al tema oscuro del admin.
- * Paleta: fondo oscuro (#161b2e), textos claros (#f1f5f9), accents azul (#0d46f2)
+ * Paleta: fondo oscuro (#161b2e), textos claros (#f1f5f9), accents azul (#3b5bfd)
  * Mantiene la identidad visual del admin TEKGEAR.
  */
 
@@ -13,7 +13,7 @@ const ADMIN_SECTIONS = [
         title: 'Gestión de Productos',
         description: 'Crea, edita y elimina productos del catálogo. Maneja precios, colores y tamaños.',
         icon: 'shopping_bag',
-        accentColor: '#0d46f2', // Azul principal
+        accentColor: '#3b5bfd', // Azul principal
     },
     {
         id: 'ordenes',
@@ -56,7 +56,7 @@ const ADMIN_SECTIONS = [
 function SectionCard({ title, description, icon, accentColor }) {
     return (
         <div
-            className="group relative rounded border border-slate-800 bg-slate-900/50 p-6 transition-all hover:border-slate-700 hover:bg-slate-800/50 cursor-pointer"
+            className="group relative rounded border border-[var(--admin-border)] bg-[var(--admin-card)] p-6 transition-all hover:border-[var(--admin-border-strong)] hover:bg-[var(--admin-field-bg-soft)] cursor-pointer"
             style={{
                 borderLeftColor: accentColor,
                 borderLeftWidth: '3px',
@@ -76,11 +76,11 @@ function SectionCard({ title, description, icon, accentColor }) {
                     </span>
                 </div>
                 <div className="flex-1">
-                    <h3 className="text-base font-bold text-slate-100 mb-1">{title}</h3>
-                    <p className="text-sm text-slate-400">{description}</p>
+                    <h3 className="text-base font-bold text-[var(--admin-text)] mb-1">{title}</h3>
+                    <p className="text-sm text-[var(--admin-text-muted)]">{description}</p>
                 </div>
             </div>
-            <div className="absolute top-3 right-3 text-slate-600 group-hover:text-slate-400 transition-colors">
+            <div className="absolute top-3 right-3 text-[var(--admin-text-subtle)] group-hover:text-[var(--admin-text-muted)] transition-colors">
                 <span className="material-symbols-outlined">arrow_outward</span>
             </div>
         </div>
@@ -90,7 +90,7 @@ function SectionCard({ title, description, icon, accentColor }) {
 /* ── Card de Característica ────────────────── */
 function FeatureCard({ icon, title, description, accentColor }) {
     return (
-        <div className="rounded border border-slate-800 bg-slate-900/30 p-5 flex flex-col items-center text-center">
+        <div className="rounded border border-[var(--admin-border)] bg-[var(--admin-card)] p-5 flex flex-col items-center text-center">
             <div
                 className="flex h-10 w-10 items-center justify-center rounded mb-3"
                 style={{ background: `${accentColor}15` }}
@@ -103,8 +103,8 @@ function FeatureCard({ icon, title, description, accentColor }) {
                     {icon}
                 </span>
             </div>
-            <h4 className="font-bold text-slate-100 mb-2 text-sm">{title}</h4>
-            <p className="text-xs text-slate-500">{description}</p>
+            <h4 className="font-bold text-[var(--admin-text)] mb-2 text-sm">{title}</h4>
+            <p className="text-xs text-[var(--admin-text-faint)]">{description}</p>
         </div>
     )
 }
@@ -115,26 +115,23 @@ export default function Dashboard() {
         <section aria-label="Dashboard del Panel Admin" className="space-y-8">
 
             {/* ─ Encabezado Principal ─ */}
-            <div className="border-b border-slate-800 pb-8">
-                <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
-                    // Admin Dashboard
-                </p>
+            <div className="border-b border-[var(--admin-border)] pb-8">
                 <div className="flex items-end justify-between gap-4 flex-wrap">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-100 mb-2 uppercase tracking-tight">
+                        <h1 className="text-3xl font-bold text-[var(--admin-text)] mb-2 uppercase tracking-tight">
                             Panel de Control
                         </h1>
-                        <p className="text-sm text-slate-400 max-w-2xl">
+                        <p className="text-sm text-[var(--admin-text-muted)] max-w-2xl">
                             Gestiona todos los aspectos de tu tienda online desde este panel centralizado.
                             Accede a productos, órdenes, usuarios, inventario, promociones y configuración.
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 rounded border border-slate-800 bg-slate-900/50 px-4 py-2">
+                    <div className="flex items-center gap-2 rounded border border-[var(--admin-border)] bg-[var(--admin-card)] px-4 py-2">
                         <span
                             className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
                             aria-hidden="true"
                         />
-                        <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">System Active</span>
+                        <span className="text-xs text-[var(--admin-text-muted)] font-mono uppercase tracking-widest">Sistema activo</span>
                     </div>
                 </div>
             </div>
@@ -145,7 +142,7 @@ export default function Dashboard() {
                     icon="dashboard"
                     title="Acceso Centralizado"
                     description="Todas tus herramientas en un único lugar"
-                    accentColor="#0d46f2"
+                    accentColor="#3b5bfd"
                 />
                 <FeatureCard
                     icon="lock"
@@ -164,10 +161,7 @@ export default function Dashboard() {
             {/* ─ Secciones Disponibles ─ */}
             <div>
                 <div className="mb-6">
-                    <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
-                        // Secciones
-                    </p>
-                    <h2 className="text-xl font-bold text-slate-100 uppercase tracking-tight">
+                    <h2 className="text-xl font-bold text-[var(--admin-text)] uppercase tracking-tight">
                         Herramientas Disponibles
                     </h2>
                 </div>
@@ -185,12 +179,9 @@ export default function Dashboard() {
             </div>
 
             {/* ─ Información de Funcionalidades ─ */}
-            <div className="rounded border border-slate-800 bg-slate-900/30 p-8 mt-12">
+            <div className="rounded border border-[var(--admin-border)] bg-[var(--admin-card)] p-8 mt-12">
                 <div className="mb-6">
-                    <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
-                        // Guía rápida
-                    </p>
-                    <h3 className="text-lg font-bold text-slate-100 uppercase tracking-tight">¿Qué puedes hacer aquí?</h3>
+                    <h3 className="text-lg font-bold text-[var(--admin-text)] uppercase tracking-tight">¿Qué puedes hacer aquí?</h3>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
@@ -198,16 +189,16 @@ export default function Dashboard() {
                         <div className="flex-shrink-0">
                             <span
                                 className="flex h-8 w-8 items-center justify-center rounded"
-                                style={{ background: '#0d46f215' }}
+                                style={{ background: '#3b5bfd15' }}
                             >
-                                <span className="material-symbols-outlined text-sm" style={{ color: '#0d46f2' }}>
+                                <span className="material-symbols-outlined text-sm" style={{ color: '#3b5bfd' }}>
                                     shopping_bag
                                 </span>
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Productos</p>
-                            <p className="text-xs text-slate-500">Crea nuevos artículos, edita precios, colores, tamaños e imágenes del catálogo.</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Productos</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Crea nuevos artículos, edita precios, colores, tamaños e imágenes del catálogo.</p>
                         </div>
                     </div>
 
@@ -223,8 +214,8 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Órdenes</p>
-                            <p className="text-xs text-slate-500">Revisa las compras de tus clientes y actualiza estados de entrega.</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Órdenes</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Revisa las compras de tus clientes y actualiza estados de entrega.</p>
                         </div>
                     </div>
 
@@ -240,8 +231,8 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Usuarios Staff</p>
-                            <p className="text-xs text-slate-500">Crea y gestiona cuentas de personal con permisos específicos por sección.</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Usuarios Staff</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Crea y gestiona cuentas de personal con permisos específicos por sección.</p>
                         </div>
                     </div>
 
@@ -257,8 +248,8 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Inventario</p>
-                            <p className="text-xs text-slate-500">Organiza tandas de productos, marcas y control de stock en tiempo real.</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Inventario</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Organiza tandas de productos, marcas y control de stock en tiempo real.</p>
                         </div>
                     </div>
 
@@ -274,8 +265,8 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Cupones</p>
-                            <p className="text-xs text-slate-500">Crea códigos de descuento con restricciones por tipo de cliente (mayorista/minorista).</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Cupones</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Crea códigos de descuento con restricciones por tipo de cliente (mayorista/minorista).</p>
                         </div>
                     </div>
 
@@ -291,8 +282,8 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <div>
-                            <p className="font-bold text-slate-200 text-sm mb-1">Configuración</p>
-                            <p className="text-xs text-slate-500">Personaliza el banner principal, logo, navegación y datos de contacto.</p>
+                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Configuración</p>
+                            <p className="text-xs text-[var(--admin-text-faint)]">Personaliza el banner principal, logo, navegación y datos de contacto.</p>
                         </div>
                     </div>
                 </div>
