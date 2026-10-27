@@ -30,13 +30,6 @@ const ADMIN_SECTIONS = [
         accentColor: '#8b5cf6', // Púrpura
     },
     {
-        id: 'inventario',
-        title: 'Inventario',
-        description: 'Controla tandas, marcas y stock de productos en tiempo real.',
-        icon: 'inventory_2',
-        accentColor: '#f59e0b', // Ámbar
-    },
-    {
         id: 'cupones',
         title: 'Cupones',
         description: 'Crea y gestiona códigos de descuento con restricciones por tipo de cliente.',
@@ -233,23 +226,6 @@ export default function Dashboard() {
                         <div>
                             <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Usuarios Staff</p>
                             <p className="text-xs text-[var(--admin-text-faint)]">Crea y gestiona cuentas de personal con permisos específicos por sección.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <div className="flex-shrink-0">
-                            <span
-                                className="flex h-8 w-8 items-center justify-center rounded"
-                                style={{ background: '#f59e0b15' }}
-                            >
-                                <span className="material-symbols-outlined text-sm" style={{ color: '#f59e0b' }}>
-                                    inventory_2
-                                </span>
-                            </span>
-                        </div>
-                        <div>
-                            <p className="font-bold text-[var(--admin-text)] text-sm mb-1">Inventario</p>
-                            <p className="text-xs text-[var(--admin-text-faint)]">Organiza tandas de productos, marcas y control de stock en tiempo real.</p>
                         </div>
                     </div>
 

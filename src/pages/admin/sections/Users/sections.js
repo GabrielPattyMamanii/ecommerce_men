@@ -3,7 +3,7 @@
 // 'usuarios' queda deliberadamente afuera: nunca es delegable.
 export const ASSIGNABLE_SECTIONS = [
     { key: 'productos', label: 'Productos' },
-    { key: 'inventario', label: 'Inventario' },
+    { key: 'stock', label: 'Stock' },
     { key: 'categorias', label: 'Categorías' },
     { key: 'cupones', label: 'Cupones' },
     { key: 'ordenes', label: 'Pedidos' },

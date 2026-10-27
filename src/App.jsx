@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import PromoBanner from './components/PromoBanner'
 import MiniCart from './components/MiniCart'
@@ -27,13 +27,10 @@ const ProductsTable   = lazy(() => import('./pages/admin/sections/Products/Produ
 const CategoriesTable = lazy(() => import('./pages/admin/sections/Categories/CategoriesTable'))
 const OrdersTable     = lazy(() => import('./pages/admin/sections/Orders/OrdersTable'))
 const CouponsTable    = lazy(() => import('./pages/admin/sections/Coupons/CouponsTable'))
-const InventarioTandas            = lazy(() => import('./pages/admin/sections/Inventario/InventarioTandas'))
-const TandaForm                   = lazy(() => import('./pages/admin/sections/Inventario/TandaForm'))
-const TandaDetalle                = lazy(() => import('./pages/admin/sections/Inventario/TandaDetalle'))
-const InventarioPropietarios      = lazy(() => import('./pages/admin/sections/Inventario/InventarioPropietarios'))
-const InventarioPropietariosTanda = lazy(() => import('./pages/admin/sections/Inventario/InventarioPropietariosTanda'))
-const ControlInventarioTandas     = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTandas'))
-const ControlInventarioTanda      = lazy(() => import('./pages/admin/sections/ControlInventario/ControlInventarioTanda'))
+const StockLayout     = lazy(() => import('./pages/admin/sections/Stock/StockLayout'))
+const StockEntradas   = lazy(() => import('./pages/admin/sections/Stock/StockEntradas'))
+const StockSalidas    = lazy(() => import('./pages/admin/sections/Stock/StockSalidas'))
+const StockControl    = lazy(() => import('./pages/admin/sections/Stock/StockControl'))
 const UsersTable      = lazy(() => import('./pages/admin/sections/Users/UsersTable'))
 const ConfiguracionContacto = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionContacto'))
 const ConfiguracionWhatsapp = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionWhatsapp'))
@@ -110,14 +107,12 @@ export default function App() {
               <Route path="/admin" element={<Suspense fallback={null}><AdminLayout /></Suspense>}>
                 <Route index element={<Suspense fallback={null}><Dashboard /></Suspense>} />
                 <Route path="productos" element={<RequirePermission section="productos"><Suspense fallback={null}><ProductsTable /></Suspense></RequirePermission>} />
-                <Route path="inventario" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioTandas /></Suspense></RequirePermission>} />
-                <Route path="inventario/nueva" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaForm /></Suspense></RequirePermission>} />
-                <Route path="inventario/editar/:tandaNombre" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaForm /></Suspense></RequirePermission>} />
-                <Route path="inventario/detalle/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><TandaDetalle /></Suspense></RequirePermission>} />
-                <Route path="inventario/propietarios" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioPropietarios /></Suspense></RequirePermission>} />
-                <Route path="inventario/propietarios/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><InventarioPropietariosTanda /></Suspense></RequirePermission>} />
-                <Route path="control-inventario" element={<RequirePermission section="inventario"><Suspense fallback={null}><ControlInventarioTandas /></Suspense></RequirePermission>} />
-                <Route path="control-inventario/:tanda" element={<RequirePermission section="inventario"><Suspense fallback={null}><ControlInventarioTanda /></Suspense></RequirePermission>} />
+                <Route path="stock" element={<RequirePermission section="stock"><Suspense fallback={null}><StockLayout /></Suspense></RequirePermission>}>
+                  <Route index element={<Navigate to="control" replace />} />
+                  <Route path="entradas" element={<Suspense fallback={null}><StockEntradas /></Suspense>} />
+                  <Route path="salidas" element={<Suspense fallback={null}><StockSalidas /></Suspense>} />
+                  <Route path="control" element={<Suspense fallback={null}><StockControl /></Suspense>} />
+                </Route>
                 <Route path="categorias" element={<RequirePermission section="categorias"><Suspense fallback={null}><CategoriesTable /></Suspense></RequirePermission>} />
                 <Route path="ordenes" element={<RequirePermission section="ordenes"><Suspense fallback={null}><OrdersTable /></Suspense></RequirePermission>} />
                 <Route path="clientes" element={<RequirePermission section="clientes"><ComingSoon title="Clientes" /></RequirePermission>} />

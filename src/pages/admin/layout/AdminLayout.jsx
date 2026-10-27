@@ -14,7 +14,7 @@ export const AdminThemeContext = createContext('dark')
 const SIDEBAR_LINKS = [
     { label: 'Dashboard', icon: 'dashboard', to: '/admin', badge: null, end: true, section: null },
     { label: 'Productos', icon: 'inventory_2', to: '/admin/productos', badge: null, end: false, section: 'productos' },
-    { label: 'Inventario', icon: 'warehouse', to: '/admin/inventario', badge: null, end: false, section: 'inventario' },
+    { label: 'Stock', icon: 'inventory', to: '/admin/stock', badge: null, end: false, section: 'stock' },
     { label: 'Categorías', icon: 'category', to: '/admin/categorias', badge: null, end: false, section: 'categorias' },
     { label: 'Cupones', icon: 'redeem', to: '/admin/cupones', badge: null, end: false, section: 'cupones' },
     { label: 'Compras', icon: 'shopping_bag', to: '/admin/compras', badge: null, end: false, section: 'compras' },

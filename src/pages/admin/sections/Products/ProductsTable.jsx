@@ -15,6 +15,11 @@ import { S, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ProductFormModal from './components/ProductFormModal'
 import { formatCurrency } from '../../../../lib/productPricing'
 
+/* Minúsculas y sin tildes, para comparar texto de búsqueda. */
+function normalizeSearch(value) {
+    return String(value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
 /* ── Cuadros de color del producto (nunca texto/hex visible) ── */
 function ColorSwatches({ colors }) {
     if (!colors?.length) {
@@ -51,7 +56,7 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
     return (
         <article className={`admin-pcard${product.visible ? '' : ' admin-pcard--hidden'}`}>
             <div className="admin-pcard__head">
-                <span className="admin-pcard__id">#{product.id.slice(0, 8)}</span>
+                <span className="admin-pcard__id" title={product.code ? `ID #${product.id.slice(0, 8)}` : undefined}>{product.code || `#${product.id.slice(0, 8)}`}</span>
                 <ToggleSwitch
                     checked={product.visible}
                     onChange={() => onToggleVisibility(product)}
@@ -141,6 +146,7 @@ export default function ProductsTable() {
     const [saving, setSaving]   = useState(false)
     const [togglingId, setTogglingId] = useState(null)
     const [categoryFilter, setCategoryFilter] = useState('all')
+    const [search, setSearch] = useState('')
 
     /* ─ Chips de categoría con conteo + lista filtrada ─ */
     const categoryChips = useMemo(() => {
@@ -153,9 +159,12 @@ export default function ProductsTable() {
         }
         return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
     }, [products])
-    const filteredProducts = categoryFilter === 'all'
-        ? products
-        : products.filter(p => (p.category_id || 'none') === categoryFilter)
+    // Búsqueda por nombre o código: sin distinguir mayúsculas ni tildes.
+    const searchTerm = normalizeSearch(search)
+    const filteredProducts = products.filter(p =>
+        (categoryFilter === 'all' || (p.category_id || 'none') === categoryFilter)
+        && (!searchTerm || normalizeSearch(p.name).includes(searchTerm) || normalizeSearch(p.code).includes(searchTerm))
+    )
     const visibleCount = products.filter(p => p.visible).length
 
     /* ─ Fetch ─ */
@@ -164,7 +173,7 @@ export default function ProductsTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('products')
-            .select('id, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide, visible, created_at, category_id, categories(name)')
+            .select('id, code, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide, visible, created_at, category_id, categories(name)')
             .order('created_at', { ascending: false })
         if (err) setError(err.message)
         else setProducts(data ?? [])
@@ -197,6 +206,7 @@ export default function ProductsTable() {
             }
 
             const payload = {
+                code:              values.code?.trim().toUpperCase() || null,
                 name:              values.name.trim(),
                 description:       values.description.trim() || null,
                 retail_price:      values.price_on_request ? null : parseFloat(values.retail_price),
@@ -229,7 +239,9 @@ export default function ProductsTable() {
             setEditingProduct(null)
             load()
         } catch (err) {
-            setModalError(err.message)
+            setModalError(err.code === '23505' && /code/i.test(err.message ?? '')
+                ? 'Ya existe otro producto con ese código. Usá uno distinto.'
+                : err.message)
         } finally {
             setSaving(false)
         }
@@ -291,7 +303,7 @@ export default function ProductsTable() {
 
     /* ════════════════ RENDER ════════════════ */
     return (
-        <section aria-label="Inventario de productos">
+        <section aria-label="Stock de productos">
 
             {/* ── Encabezado de sección ── */}
             <div style={{
@@ -360,6 +372,23 @@ export default function ProductsTable() {
                 </div>
             ) : (
                 <>
+                    <div style={{ position: 'relative', maxWidth: '420px', marginBottom: '1rem' }}>
+                        <span className="material-symbols-outlined" aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', color: 'var(--admin-text-faint)', pointerEvents: 'none' }}>search</span>
+                        <input
+                            type="search" value={search} onChange={e => setSearch(e.target.value)}
+                            placeholder="Buscar por nombre o código…" aria-label="Buscar productos por nombre o código"
+                            style={{ ...S.input, paddingLeft: '2.4rem', paddingRight: search ? '2.4rem' : undefined }}
+                        />
+                        {search && (
+                            <button
+                                type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda"
+                                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--admin-text-faint)', display: 'flex', padding: '0.2rem' }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>close</span>
+                            </button>
+                        )}
+                    </div>
+
                     <div className="admin-products-toolbar">
                         <div className="admin-products-chips" role="group" aria-label="Filtrar por categoría">
                             <button type="button" className="admin-products-chip" aria-pressed={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
@@ -376,6 +405,36 @@ export default function ProductsTable() {
                             <span><i style={{ background: 'var(--admin-text-subtle)' }} />Ocultos: <b>{products.length - visibleCount}</b></span>
                         </div>
                     </div>
+
+                    {searchTerm && (
+                        <p aria-live="polite" style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: 'var(--admin-text-faint)', fontFamily: 'monospace' }}>
+                            {filteredProducts.length} {filteredProducts.length === 1 ? 'resultado' : 'resultados'} para &ldquo;{search.trim()}&rdquo;
+                        </p>
+                    )}
+
+                    {filteredProducts.length === 0 && (
+                        <div role="status" style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center',
+                            padding: '2.5rem 1rem', border: '1px solid rgba(234,179,8,0.35)', background: 'rgba(234,179,8,0.08)',
+                            borderRadius: '12px', color: 'var(--admin-text)',
+                        }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: '#eab308' }}>search_off</span>
+                            <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>
+                                {searchTerm
+                                    ? `No existe ningún producto con el nombre o código “${search.trim()}”.`
+                                    : 'No hay productos en esta categoría.'}
+                            </p>
+                            {searchTerm && categoryFilter !== 'all' && (
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--admin-text-faint)' }}>
+                                    La búsqueda se aplica solo a la categoría elegida. Probá con &ldquo;Todos&rdquo;.
+                                </p>
+                            )}
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                {searchTerm && <button type="button" onClick={() => setSearch('')} style={S.btnGhost}>Limpiar búsqueda</button>}
+                                {searchTerm && categoryFilter !== 'all' && <button type="button" onClick={() => setCategoryFilter('all')} style={S.btnGhost}>Ver todas las categorías</button>}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="admin-products-grid">
                         {filteredProducts.map(product => (

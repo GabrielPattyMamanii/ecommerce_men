@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
 import { useHomeBannerSettings } from '../hooks/useHomeBannerSettings'
@@ -10,6 +10,31 @@ export default function Home() {
     const [novedades, setNovedades] = useState([])
     const [loading, setLoading] = useState(true)
     const banner = useHomeBannerSettings()
+    const trackRef = useRef(null)
+    const [canPrev, setCanPrev] = useState(false)
+    const [canNext, setCanNext] = useState(false)
+
+    // Habilita/deshabilita las flechas según la posición del carrusel
+    const updateArrows = useCallback(() => {
+        const el = trackRef.current
+        if (!el) return
+        setCanPrev(el.scrollLeft > 4)
+        setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+    }, [])
+
+    useEffect(() => {
+        const el = trackRef.current
+        if (!el) return
+        updateArrows()
+        const ro = new ResizeObserver(updateArrows)
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [novedades, loading, updateArrows])
+
+    function scrollCarousel(dir) {
+        const el = trackRef.current
+        if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' })
+    }
 
 
     useEffect(() => {
@@ -60,10 +85,10 @@ export default function Home() {
             >
                 <div className="absolute inset-0 z-0">
                     <div
-                        className="w-full h-full opacity-60 bg-cover bg-center"
+                        className="w-full h-full opacity-90 bg-cover bg-center"
                         style={{ backgroundImage: `url("${banner.image_url}")` }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/30 to-transparent" />
                 </div>
                 <div className="relative z-10 px-4 md:px-10 lg:px-16 w-full max-w-[1600px] mx-auto py-12 md:py-0">
                     {/* En mobile el texto va centrado (título, descripción y botones);
@@ -133,7 +158,10 @@ export default function Home() {
                             <p className="text-sm font-mono text-muted uppercase">Sin novedades disponibles</p>
                         </div>
                     ) : (
+                        <div className="relative group/carousel">
                         <div
+                            ref={trackRef}
+                            onScroll={updateArrows}
                             className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth pl-4 md:pl-10 lg:pl-40 pr-4 md:pr-10 lg:pr-40 pb-2"
                         >
                             {novedades.map((product) => {
@@ -169,6 +197,28 @@ export default function Home() {
                                     </Link>
                                 )
                             })}
+                        </div>
+                        {/* Degradados laterales: sugieren que hay más contenido */}
+                        <div className={`hidden md:block pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent transition-opacity ${canPrev ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
+                        <div className={`hidden md:block pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent transition-opacity ${canNext ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
+                            <button
+                                type="button"
+                                onClick={() => scrollCarousel(-1)}
+                                disabled={!canPrev}
+                                aria-label="Ver productos anteriores"
+                                className="hidden md:flex absolute left-4 lg:left-24 top-[38%] -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-white text-primary border border-border shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)] transition-all duration-200 hover:bg-accent hover:text-white hover:border-accent hover:scale-110 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+                            >
+                                <span className="material-symbols-outlined text-[26px]">chevron_left</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => scrollCarousel(1)}
+                                disabled={!canNext}
+                                aria-label="Ver más productos"
+                                className="hidden md:flex absolute right-4 lg:right-24 top-[38%] -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-white text-primary border border-border shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)] transition-all duration-200 hover:bg-accent hover:text-white hover:border-accent hover:scale-110 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+                            >
+                                <span className="material-symbols-outlined text-[26px]">chevron_right</span>
+                            </button>
                         </div>
                     )}
                 </div>

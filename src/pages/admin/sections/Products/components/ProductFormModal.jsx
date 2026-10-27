@@ -11,6 +11,7 @@ import { sizeGuideFromDb, sizeGuideToDb } from './sizeGuideUtils'
 import './ProductFormModal.css'
 
 const EMPTY_FORM = {
+  code: '',
   name: '',
   description: '',
   retail_price: '',
@@ -71,6 +72,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
     const [form, setForm] = useState(() => (
         initialProduct
             ? {
+                code:              initialProduct.code || '',
                 name:              initialProduct.name || '',
                 description:       initialProduct.description || '',
                 retail_price:      initialProduct.retail_price ?? '',
@@ -187,6 +189,17 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                     <h3 style={pfStyles.cardTitle}>Detalles Generales</h3>
                                     <p style={pfStyles.cardSubtitle}>Nombre comercial y descripción pública visible para clientes.</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.1rem' }}>
+                                        <div>
+                                            <label style={pfStyles.label}>Código del Producto</label>
+                                            <input
+                                                value={form.code}
+                                                onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                                                placeholder="Ej. REM-001 (opcional, único)" maxLength={40} style={pfStyles.input}
+                                            />
+                                            <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
+                                                Identifica el producto en Stock y en la importación por JSON. No se repite entre productos.
+                                            </div>
+                                        </div>
                                         <div>
                                             <label style={pfStyles.label}>Nombre del Producto <span style={{ color: PF.color.accent }}>*</span></label>
                                             <input
@@ -339,14 +352,14 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                     </div>
                                 </section>
 
-                                {/* Inventario */}
+                                {/* Stock */}
                                 <section style={pfStyles.card}>
-                                    <h3 style={pfStyles.sidebarCardTitle}>Inventario</h3>
+                                    <h3 style={pfStyles.sidebarCardTitle}>Stock</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         <div>
-                                            <label style={pfStyles.label}>Stock</label>
+                                            <label style={pfStyles.label}>Stock (docenas)</label>
                                             <input
-                                                type="number" min="0" value={form.stock}
+                                                type="number" min="0" step="1" value={form.stock}
                                                 onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
                                                 placeholder="0" style={pfStyles.input}
                                             />

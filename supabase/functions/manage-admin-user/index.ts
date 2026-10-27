@@ -11,7 +11,7 @@ import { SITE_URL, buildCorsHeaders } from '../_shared/cors.ts'
 // en migration-admin-users.sql. 'usuarios' queda deliberadamente afuera: la
 // gestión de staff nunca es delegable.
 const VALID_SECTIONS = [
-  'productos', 'inventario', 'categorias', 'cupones', 'ordenes',
+  'productos', 'categorias', 'cupones', 'ordenes',
   'clientes', 'compras', 'configuracion',
 ]
 
