@@ -51,7 +51,7 @@
 **Implementado y probado en Postgres local; falta correr en Supabase real y probar en navegador.**
 
 - `supabase/migration-stock-productos.sql` — elimina el módulo viejo; crea `product_costs`, `stock_movimientos`, triggers, guard sobre `products.stock`, vista `stock_control_productos`, RLS. Idempotente.
-- `supabase/tests/stock/` — 44 pruebas, 44 PASS (stock negativo, concurrencia, anulación, vista, seguridad).
+- `supabase/tests/stock/` — 50 pruebas, 50 PASS (stock negativo, concurrencia, anulación, vista, seguridad).
 - Front: `src/pages/admin/sections/Stock/` (Control, Entradas, Salidas, modal de registro), `src/services/stockService.js`, `src/lib/stockUtils.js`.
 - Código de producto: `products.code` (migración incluida en `migration-stock-productos.sql`, sección 2b). Se carga en el popup de Productos; se normaliza solo (mayúsculas, sin espacios, vacío = NULL); índice único parcial `products_code_key`.
 - Productos: el popup tiene el stock **editable** (se quitó el bloqueo de la base); `ProductsTable.jsx` envía `stock` al guardar.
@@ -72,12 +72,12 @@
 - [x] A3. Costos: tabla `product_costs` (`cost_price`, `cost_price_rounded`) — ver desviación en sección 2.
 - [x] A4. Tabla `stock_movimientos` + triggers que mueven `products.stock` sin permitir negativo, con saldo y usuario.
 - [x] A5. RLS: movimientos (admin/`stock`), costos (admin/`stock`/`productos`), `anon` sin acceso.
-- [x] A6. Pruebas SQL (44/44).
+- [x] A6. Pruebas SQL (50/50).
 - [ ] A7. **Correr la migración en Supabase real** (usuario).
 
 ### Fase B — Productos y costos
 - [x] B1. ~~Stock fuera del payload~~ REVERTIDO (2026-10-27, pedido del usuario): `ProductsTable.jsx` vuelve a enviar `stock`.
-- [x] B2. Costos: `cost_price` (solo lectura, automático a futuro) y `cost_price_rounded` (editable) en la pantalla de Control, no en el popup.
+- [x] B2. Costos: `cost_price` y `cost_price_rounded` se cargan en el popup de Productos (2026-10-27, pedido del usuario) y `cost_price_rounded` además es editable en la pantalla de Control. Se guardan en `product_costs` (1:1 con `products.id`, fila creada por trigger). La función automática de `cost_price` sigue PENDIENTE (P3) y podría sobrescribir el valor manual.
 - [x] B3. ~~Stock en solo lectura~~ REVERTIDO: el stock del popup es editable. Se quitó el bloqueo en la base (`products_guard_stock`). Una edición manual no deja movimiento en el historial.
 
 ### Fase C — Pantalla de control de mercancía

@@ -4,7 +4,7 @@
 export const ASSIGNABLE_SECTIONS = [
     { key: 'productos', label: 'Productos' },
     { key: 'stock', label: 'Stock' },
-    { key: 'categorias', label: 'Categorías' },
+    { key: 'categorias', label: 'Categorías y Marcas' },
     { key: 'cupones', label: 'Cupones' },
     { key: 'ordenes', label: 'Pedidos' },
     { key: 'clientes', label: 'Usuarios registrados' },

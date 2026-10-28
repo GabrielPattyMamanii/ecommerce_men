@@ -145,6 +145,28 @@ CREATE TRIGGER trg_product_costs_touch
   BEFORE INSERT OR UPDATE ON public.product_costs
   FOR EACH ROW EXECUTE FUNCTION public.product_costs_touch();
 
+-- Sincronía con products: cada producto tiene SIEMPRE su fila en product_costs
+-- (misma clave: product_costs.product_id = products.id). Se crea sola al crear el
+-- producto y se borra sola con él (ON DELETE CASCADE).
+CREATE OR REPLACE FUNCTION public.products_create_cost_row()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.product_costs (product_id) VALUES (NEW.id) ON CONFLICT (product_id) DO NOTHING;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_products_create_cost_row ON public.products;
+CREATE TRIGGER trg_products_create_cost_row
+  AFTER INSERT ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.products_create_cost_row();
+
+-- Productos que ya existían: fila de costos vacía (no modifica products).
+INSERT INTO public.product_costs (product_id)
+SELECT id FROM public.products
+ON CONFLICT (product_id) DO NOTHING;
+
 -- ------------------------------------------------------------
 -- 4. Movimientos
 -- ------------------------------------------------------------

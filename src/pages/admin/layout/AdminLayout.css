@@ -1366,6 +1366,11 @@
 /* ════════════════════════════════
    PRODUCTOS — grilla de cards (reemplaza tabla + cards mobile)
    ════════════════════════════════ */
+/* Buscador de Productos: ya tiene su propia X para limpiar; se oculta la X nativa del navegador. */
+.admin-products-search::-webkit-search-cancel-button,
+.admin-products-search::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.admin-products-search::-ms-clear { display: none; width: 0; height: 0; }
+
 .admin-products-toolbar {
     display: flex;
     flex-wrap: wrap;

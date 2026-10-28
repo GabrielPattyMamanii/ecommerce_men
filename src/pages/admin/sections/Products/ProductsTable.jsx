@@ -13,6 +13,7 @@ import { supabase } from '../../../../services/supabaseClient'
 import { convertToWebP } from '../../../../lib/imageUtils'
 import { S, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ProductFormModal from './components/ProductFormModal'
+import { matchesCodeSearch } from './components/productCodeUtils'
 import { formatCurrency } from '../../../../lib/productPricing'
 
 /* Minúsculas y sin tildes, para comparar texto de búsqueda. */
@@ -135,6 +136,7 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
 export default function ProductsTable() {
     const [products, setProducts]     = useState([])
     const [categories, setCategories] = useState([])
+    const [brands, setBrands] = useState([])
     const [loading, setLoading]   = useState(true)
     const [error, setError]       = useState(null)
 
@@ -163,7 +165,7 @@ export default function ProductsTable() {
     const searchTerm = normalizeSearch(search)
     const filteredProducts = products.filter(p =>
         (categoryFilter === 'all' || (p.category_id || 'none') === categoryFilter)
-        && (!searchTerm || normalizeSearch(p.name).includes(searchTerm) || normalizeSearch(p.code).includes(searchTerm))
+        && (!searchTerm || normalizeSearch(p.name).includes(searchTerm) || matchesCodeSearch(p.code, search))
     )
     const visibleCount = products.filter(p => p.visible).length
 
@@ -173,10 +175,21 @@ export default function ProductsTable() {
         setError(null)
         const { data, error: err } = await supabase
             .from('products')
-            .select('id, code, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide, visible, created_at, category_id, categories(name)')
+            .select('id, code, name, description, retail_price, wholesale_price, weight_kg, height_cm, width_cm, length_cm, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide, visible, created_at, category_id, brand_id, categories(name)')
             .order('created_at', { ascending: false })
-        if (err) setError(err.message)
-        else setProducts(data ?? [])
+        if (err) {
+            setError(err.message)
+        } else {
+            // Costos: tabla relacionada product_costs (1 fila por producto, misma clave que products.id).
+            // Si falla (sin permiso o migración pendiente) el listado sigue funcionando sin costos.
+            const { data: costs } = await supabase.from('product_costs').select('product_id, cost_price, cost_price_rounded')
+            const costById = new Map((costs ?? []).map(c => [c.product_id, c]))
+            setProducts((data ?? []).map(p => ({
+                ...p,
+                cost_price: costById.get(p.id)?.cost_price ?? null,
+                cost_price_rounded: costById.get(p.id)?.cost_price_rounded ?? null,
+            })))
+        }
         setLoading(false)
     }
 
@@ -185,7 +198,12 @@ export default function ProductsTable() {
         setCategories(data ?? [])
     }
 
-    useEffect(() => { load(); loadCategories() }, [])
+    async function loadBrands() {
+        const { data } = await supabase.from('brands').select('id, name').order('name', { ascending: true })
+        setBrands(data ?? [])
+    }
+
+    useEffect(() => { load(); loadCategories(); loadBrands() }, [])
 
     /* ─ Guardar producto: alta o edición, con subida de imágenes nuevas a Storage ─ */
     async function handleSave(values, onSuccess) {
@@ -223,16 +241,35 @@ export default function ProductsTable() {
                 stock:             values.stock !== '' ? parseInt(values.stock, 10) : 0,
                 unlimited_stock:   Boolean(values.unlimited_stock),
                 category_id:       values.category_id || null,
+                brand_id:          values.brand_id || null,
                 images:            [...existingUrls, ...uploadedUrls],
                 sizes:             Array.isArray(values.sizes) ? values.sizes : [],
                 colors:            Array.isArray(values.colors) ? values.colors : [],
                 size_guide:        values.size_guide ?? null,
             }
 
-            const { error: err } = editingProduct
-                ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
-                : await supabase.from('products').insert(payload)
-            if (err) throw err
+            let productId = editingProduct?.id
+            if (editingProduct) {
+                const { error: err } = await supabase.from('products').update(payload).eq('id', productId)
+                if (err) throw err
+            } else {
+                const { data: created, error: err } = await supabase.from('products').insert(payload).select('id').single()
+                if (err) throw err
+                productId = created.id
+            }
+
+            // Costos → product_costs (misma clave: product_id = products.id).
+            // El producto ya quedó guardado; si solo falla el costo se avisa sin repetir el alta.
+            const toCost = v => (v === '' || v == null ? null : parseFloat(v))
+            const cost = { cost_price: toCost(values.cost_price), cost_price_rounded: toCost(values.cost_price_rounded) }
+            const hadCost = editingProduct && (editingProduct.cost_price != null || editingProduct.cost_price_rounded != null)
+            if (cost.cost_price !== null || cost.cost_price_rounded !== null || hadCost) {
+                const { error: costErr } = await supabase.from('product_costs').upsert({ product_id: productId, ...cost }, { onConflict: 'product_id' })
+                if (costErr) {
+                    setError(`El producto se guardó, pero no se pudo guardar el costo: ${costErr.message}`)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
+            }
 
             onSuccess()
             setShowModal(false)
@@ -337,6 +374,9 @@ export default function ProductsTable() {
                 initialProduct={editingProduct}
                 onClose={() => setShowModal(false)}
                 categories={categories}
+                brands={brands}
+                existingProducts={products}
+                onSwitchToProduct={openEditModal}
                 onSave={handleSave}
                 saving={saving}
                 error={modalError}
@@ -375,7 +415,7 @@ export default function ProductsTable() {
                     <div style={{ position: 'relative', maxWidth: '420px', marginBottom: '1rem' }}>
                         <span className="material-symbols-outlined" aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', color: 'var(--admin-text-faint)', pointerEvents: 'none' }}>search</span>
                         <input
-                            type="search" value={search} onChange={e => setSearch(e.target.value)}
+                            type="search" className="admin-products-search" value={search} onChange={e => setSearch(e.target.value)}
                             placeholder="Buscar por nombre o código…" aria-label="Buscar productos por nombre o código"
                             style={{ ...S.input, paddingLeft: '2.4rem', paddingRight: search ? '2.4rem' : undefined }}
                         />

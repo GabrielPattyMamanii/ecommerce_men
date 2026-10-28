@@ -73,7 +73,7 @@ expect_err "anular entrada que dejaría stock negativo rechazado (5 - 10)" "$OUT
 [ "$(val "SELECT entradas||'/'||salidas FROM stock_control_productos WHERE product_id='$PA'")" = "10/5" ]; res "vista ignora anulados (10/5)" $?
 
 echo "--- 6. Vista: costo, margen, nivel (precio por docena = retail_price)"
-AS $ADMIN "INSERT INTO product_costs(product_id,cost_price,cost_price_rounded) VALUES ('$PA',60.4,60)" >/dev/null
+AS $ADMIN "UPDATE product_costs SET cost_price=60.4, cost_price_rounded=60 WHERE product_id='$PA'" >/dev/null
 [ "$(val "SELECT margen||'/'||margen_pct||'/'||valor_costo||'/'||valor_venta FROM stock_control_productos WHERE product_id='$PA'")" = "40/40.0/300/500" ]; res "margen 40 (40%), valor costo 300, valor venta 500 (stock 5)" $?
 AS $ADMIN "UPDATE product_costs SET cost_price_rounded=NULL WHERE product_id='$PA'" >/dev/null
 [ "$(val "SELECT costo_efectivo FROM stock_control_productos WHERE product_id='$PA'")" = "60.4" ]; res "sin redondeado usa cost_price" $?
@@ -94,7 +94,7 @@ OUT=$(AS $CUSTOMER "INSERT INTO stock_movimientos(product_id,tipo,cantidad) VALU
 expect_err "cliente no registra movimientos" "$OUT" "row-level security"
 OUT=$(AS $STAFF_NONE "INSERT INTO stock_movimientos(product_id,tipo,cantidad) VALUES ('$PA','entrada',1)")
 expect_err "staff sin permiso no registra movimientos" "$OUT" "row-level security"
-[ "$(AS $STAFF_PROD "SELECT count(*) FROM product_costs")" = "1" ]; res "staff con 'productos' ve costos" $?
+[ "$(AS $STAFF_PROD "SELECT count(*) FROM product_costs")" = "$(val "SELECT count(*) FROM product_costs")" ]; res "staff con 'productos' ve todos los costos" $?
 OUT=$(AS $STAFF_PROD "INSERT INTO stock_movimientos(product_id,tipo,cantidad) VALUES ('$PA','entrada',1)")
 expect_err "staff con 'productos' (sin 'stock') no mueve stock" "$OUT" "row-level security"
 SQL -c "INSERT INTO admin_permissions VALUES ('$STAFF_NONE','stock')" >/dev/null
@@ -112,3 +112,16 @@ SQL -c "UPDATE products SET code=NULL WHERE name='Nuevo'" >/dev/null
 AS $ADMIN "INSERT INTO products(name,code) VALUES ('Otro1',NULL),('Otro2','')" >/dev/null
 [ "$(val "SELECT count(*) FROM products WHERE name LIKE 'Otro%' AND code IS NULL")" = "2" ]; res "varios productos sin código conviven" $?
 [ "$(val "SELECT codigo FROM stock_control_productos WHERE product_id='$PA'")" = "REM-001" ]; res "la vista de Control expone el código" $?
+
+echo "--- 9. Sincronía products <-> product_costs"
+[ "$(val "SELECT count(*) FROM products p WHERE NOT EXISTS (SELECT 1 FROM product_costs c WHERE c.product_id=p.id)")" = "0" ]; res "todo producto existente tiene su fila de costos (backfill)" $?
+AS $ADMIN "INSERT INTO products(name) VALUES ('Sincro')" >/dev/null
+[ "$(val "SELECT count(*) FROM product_costs c JOIN products p ON p.id=c.product_id WHERE p.name='Sincro' AND c.cost_price IS NULL AND c.cost_price_rounded IS NULL")" = "1" ]; res "producto nuevo crea su fila de costos vacía" $?
+SID=$(val "SELECT id FROM products WHERE name='Sincro'")
+AS $ADMIN "INSERT INTO product_costs(product_id,cost_price,cost_price_rounded) VALUES ('$SID',50,60) ON CONFLICT (product_id) DO UPDATE SET cost_price=EXCLUDED.cost_price, cost_price_rounded=EXCLUDED.cost_price_rounded" >/dev/null
+[ "$(val "SELECT cost_price||'/'||cost_price_rounded FROM product_costs WHERE product_id='$SID'")" = "50/60" ]; res "upsert guarda el costo sobre la misma fila (50/60)" $?
+[ "$(val "SELECT count(*) FROM product_costs WHERE product_id='$SID'")" = "1" ]; res "sigue habiendo una sola fila por producto" $?
+OUT=$(AS $ADMIN "INSERT INTO product_costs(product_id) VALUES ('99999999-9999-9999-9999-999999999999')")
+expect_err "no se puede crear costo de un producto inexistente" "$OUT" "foreign key"
+SQL -c "DELETE FROM products WHERE id='$SID'" >/dev/null
+[ "$(val "SELECT count(*) FROM product_costs WHERE product_id='$SID'")" = "0" ]; res "al borrar el producto se borra su costo" $?

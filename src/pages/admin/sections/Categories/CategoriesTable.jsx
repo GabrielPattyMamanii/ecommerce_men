@@ -14,7 +14,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../../../../services/supabaseClient'
 
 /* ── Estilos reutilizables (inline, mismo patrón que ProductsTable) ── */
-const S = {
+export const S = {
     label: {
         display: 'block', fontSize: '0.65rem', fontWeight: 600,
         color: 'var(--admin-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em',
@@ -51,7 +51,7 @@ const ACCENT_MAP = {
     á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n',
     Á: 'a', É: 'e', Í: 'i', Ó: 'o', Ú: 'u', Ü: 'u', Ñ: 'n',
 }
-function slugify(text) {
+export function slugify(text) {
     return text
         .split('').map(ch => ACCENT_MAP[ch] ?? ch).join('')
         .toLowerCase()
@@ -61,7 +61,7 @@ function slugify(text) {
 }
 
 /* ── Botón de acción por fila (edit / delete / save / cancel / add-sub) ── */
-function ActionBtn({ icon, color, title, onClick, disabled = false }) {
+export function ActionBtn({ icon, color, title, onClick, disabled = false }) {
     return (
         <button
             onClick={onClick}
@@ -95,7 +95,7 @@ function friendlyDeleteError(err) {
 /* ── Modal de confirmación (eliminar) — mismo patrón que CouponsTable ──
    Portado fuera de .admin-main__content: ese contenedor crea un stacking
    context local que capea el z-index del modal por debajo del header. */
-function ConfirmModal({ title, message, busy, onConfirm, onCancel }) {
+export function ConfirmModal({ title, message, busy, onConfirm, onCancel }) {
     return createPortal((
         <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}

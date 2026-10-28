@@ -8,7 +8,7 @@ Admin → **Stock** (`/admin/stock/{control,entradas,salidas}`). Permiso delegab
 ## Estado
 - Base: `supabase/migration-stock-productos.sql` — **pendiente de correr en Supabase real** (SQL Editor). Idempotente; borra las tablas del módulo viejo si existieran.
 - Front implementado; build OK. **No probado en navegador** (sin browser tool).
-- Pruebas SQL: `supabase/tests/stock/` — **44/44 PASS** (Postgres 15 en Docker).
+- Pruebas SQL: `supabase/tests/stock/` — **50/50 PASS** (Postgres 15 en Docker).
   Ejecutar: contenedor `postgres:15-alpine` llamado `stocktest`, cargar `tests/stock/base.sql`, luego `migration-stock-productos.sql`, luego `bash supabase/tests/stock/tests.sh`.
 
 ## Modelo
@@ -19,6 +19,8 @@ Admin → **Stock** (`/admin/stock/{control,entradas,salidas}`). Permiso delegab
 | Costos | `product_costs` (`cost_price` automático a futuro, `cost_price_rounded` a mano) |
 | Pantalla de Control | vista `stock_control_productos` (única fuente de nivel, margen y valores) |
 
+- **Relación products ↔ product_costs:** `product_costs.product_id` es a la vez clave primaria y clave foránea hacia `products.id` (uno a uno, `ON DELETE CASCADE`). Un trigger crea la fila de costos vacía al crear cada producto (y la migración rellena los existentes), así siempre están sincronizadas; al borrar un producto se borra su costo.
+- **Costos desde Productos:** el popup tiene "Precio de costo" y "Costo redondeado" (opcionales, por docena). Al guardar, `ProductsTable.jsx` hace upsert en `product_costs` con el `id` del producto. Si el producto se guarda y solo falla el costo, se avisa en el banner de la página sin repetir el alta.
 - **Código** = `products.code` (opcional, único, MAYÚSCULAS, normalizado por trigger; índice `products_code_key`). Se carga en el popup de Productos y se muestra en Control. Es el identificador previsto para la importación por JSON.
 - **Precio** = `products.retail_price` (único precio; se vende por docena). `null` (precio a consultar) → se muestra "—", nunca 0.
 - **Costo efectivo** = `cost_price_rounded` si existe, si no `cost_price`. Margen, valor a costo y valor a venta se calculan en la vista.

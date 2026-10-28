@@ -8,6 +8,9 @@ import ProductSizeManager from './ProductSizeManager'
 import ProductColorManager from './ProductColorManager'
 import ProductSizeGuideEditor from './ProductSizeGuideEditor'
 import { sizeGuideFromDb, sizeGuideToDb } from './sizeGuideUtils'
+import { findCodeMatches } from './productCodeUtils'
+import NumberInput from '../../../../../components/admin/NumberInput'
+import { formatRaw } from '../../../../../lib/numberFormat'
 import './ProductFormModal.css'
 
 const EMPTY_FORM = {
@@ -16,6 +19,8 @@ const EMPTY_FORM = {
   description: '',
   retail_price: '',
   wholesale_price: '',
+  cost_price: '',
+  cost_price_rounded: '',
   unit_height: '',
   unit_width: '',
   unit_length: '',
@@ -27,6 +32,7 @@ const EMPTY_FORM = {
   stock: '',
   unlimited_stock: false,
   category_id: '',
+  brand_id: '',
   price_on_request: false,
 }
 
@@ -46,9 +52,9 @@ function DimensionsGrid({ prefix, form, setForm }) {
         return (
           <div key={key} style={{ background: PF.color.surfaceContainer, padding: '0.6rem 0.7rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.border}` }}>
             <label style={{ ...pfStyles.label, marginBottom: '0.3rem', fontSize: '0.62rem' }}>{label}</label>
-            <input
-              type="number" min="0" step="0.01" value={form[key]}
-              onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+            <NumberInput
+              value={form[key]}
+              onChange={v => setForm(p => ({ ...p, [key]: v }))}
               placeholder="0.00"
               style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '0.85rem', fontWeight: 600, padding: '0.15rem 0', outline: 'none' }}
             />
@@ -65,7 +71,7 @@ function DimensionsGrid({ prefix, form, setForm }) {
  * el estado inicial de abajo se recalcula desde `initialProduct` sin
  * necesidad de sincronizarlo luego con un efecto.
  */
-export default function ProductFormModal({ isOpen, initialProduct = null, onClose, categories, onSave, saving, error }) {
+export default function ProductFormModal({ isOpen, initialProduct = null, onClose, categories, brands = [], existingProducts = [], onSwitchToProduct, onSave, saving, error }) {
     const theme = useContext(AdminThemeContext)
     const pfVars = getPfVars(theme)
     const isEditMode = Boolean(initialProduct)
@@ -77,6 +83,8 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 description:       initialProduct.description || '',
                 retail_price:      initialProduct.retail_price ?? '',
                 wholesale_price:   initialProduct.wholesale_price ?? '',
+                cost_price:        initialProduct.cost_price ?? '',
+                cost_price_rounded: initialProduct.cost_price_rounded ?? '',
                 unit_height:       initialProduct.unit_height ?? '',
                 unit_width:        initialProduct.unit_width ?? '',
                 unit_length:       initialProduct.unit_length ?? '',
@@ -88,6 +96,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                 stock:             initialProduct.stock ?? '',
                 unlimited_stock:   initialProduct.unlimited_stock ?? false,
                 category_id:       initialProduct.category_id || '',
+                brand_id:          initialProduct.brand_id || '',
                 price_on_request:  initialProduct.price_on_request ?? false,
             }
             : EMPTY_FORM
@@ -98,6 +107,7 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
     const [sizeGuide, setSizeGuide] = useState(() => sizeGuideFromDb(initialProduct?.size_guide))
     const [imageError, setImageError] = useState(null)
     const [validationError, setValidationError] = useState(null)
+    const [similarAck, setSimilarAck] = useState(null) // código similar que el usuario marcó como "producto distinto"
 
     const [applyDiscount, setApplyDiscount] = useState(false)
     const [discountPercent, setDiscountPercent] = useState(20)
@@ -121,9 +131,35 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
         onClose()
     }
 
+    // Precio normal sugerido: el mayorista (por docena) dividido por 12. Solo se muestra como
+    // placeholder; el usuario decide si lo escribe o pone otro precio.
+    const wholesaleNumber = parseFloat(form.wholesale_price)
+    const suggestedRetailText = wholesaleNumber > 0 ? formatRaw((wholesaleNumber / 12).toFixed(2)) : null
+
+    // Código: EXACTO repetido (bloquea) o SIMILAR a otro (pregunta si es el mismo producto).
+    const codeValue = form.code.trim().toUpperCase()
+    const { exact: codeConflict, similar: similarCodes } = findCodeMatches(codeValue, existingProducts, initialProduct?.id)
+    // La respuesta "es un producto distinto" vale solo para el código tipeado; si cambia, se vuelve a preguntar.
+    const needsSimilarAnswer = !codeConflict && similarCodes.length > 0 && similarAck !== codeValue
+
+    function switchToExisting(product) {
+        const hasWork = form.name.trim() || images.length > 0
+        if (hasWork && !window.confirm(`Se descartará lo cargado en este formulario y se abrirá "${product.name}" para editarlo. ¿Continuar?`)) return
+        onSwitchToProduct?.(product)
+    }
+
     function handleSubmit(e) {
         e.preventDefault()
         setValidationError(null)
+
+        if (codeConflict) {
+            setValidationError(`El código "${codeValue}" ya existe en el producto "${codeConflict.name}". Usá un código distinto.`)
+            return
+        }
+        if (needsSimilarAnswer) {
+            setValidationError('Hay productos con un código parecido al que escribiste. Indicá si es el mismo producto o uno distinto antes de guardar.')
+            return
+        }
 
         if (!form.price_on_request && !form.retail_price) {
             setValidationError('Precio minorista es obligatorio o activa "Precio a consultar"')
@@ -136,7 +172,6 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
     return createPortal((
         <div
             className="pfm"
-            onClick={saving ? undefined : resetAndClose}
             style={{ ...pfVars, position: 'fixed', inset: 0, background: 'var(--pf-overlay)', zIndex: 1150, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
         >
             <div
@@ -194,11 +229,56 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                             <input
                                                 value={form.code}
                                                 onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                                                placeholder="Ej. REM-001 (opcional, único)" maxLength={40} style={pfStyles.input}
+                                                placeholder="Ej. REM-001 (opcional, único)" maxLength={40}
+                                                aria-invalid={Boolean(codeConflict)}
+                                                style={{ ...pfStyles.input, ...(codeConflict ? { borderColor: PF.color.danger } : {}) }}
                                             />
-                                            <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
-                                                Identifica el producto en Stock y en la importación por JSON. No se repite entre productos.
-                                            </div>
+                                            {codeConflict ? (
+                                                <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', fontSize: '0.75rem', color: PF.color.danger, marginTop: '0.4rem', lineHeight: 1.4, fontWeight: 600 }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '1rem', flexShrink: 0 }}>warning</span>
+                                                    <span>Este código ya existe: lo usa el producto &quot;{codeConflict.name}&quot;. Usá uno distinto para poder guardar.</span>
+                                                </div>
+                                            ) : similarCodes.length > 0 ? (
+                                                <div role="alert" style={{ marginTop: '0.5rem', padding: '0.7rem 0.8rem', borderRadius: PF.radius.md, border: '1px solid #eab30866', background: '#eab30814' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 600, color: PF.color.text, lineHeight: 1.4 }}>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '1rem', flexShrink: 0, color: '#eab308' }}>help</span>
+                                                        <span>
+                                                            {similarCodes.length === 1 ? 'Existe un código parecido. ¿Es este producto?' : 'Existen códigos parecidos. ¿Es alguno de estos productos?'}
+                                                        </span>
+                                                    </div>
+                                                    <ul style={{ listStyle: 'none', margin: '0.5rem 0 0', padding: 0, display: 'grid', gap: '0.4rem' }}>
+                                                        {similarCodes.map(sp => (
+                                                            <li key={sp.id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.78rem', color: PF.color.text }}>
+                                                                <span><b style={{ fontFamily: 'monospace' }}>{sp.code}</b> · {sp.name}</span>
+                                                                {!isEditMode && onSwitchToProduct && (
+                                                                    <button type="button" onClick={() => switchToExisting(sp)} style={{ ...pfStyles.btnGhost, padding: '0.25rem 0.7rem', fontSize: '0.72rem' }}>
+                                                                        Sí, es este: editarlo
+                                                                    </button>
+                                                                )}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                                        {similarAck === codeValue ? (
+                                                            <span style={{ fontSize: '0.72rem', color: PF.color.textMuted }}>Marcado como producto distinto. Podés guardar.</span>
+                                                        ) : (
+                                                            <button type="button" onClick={() => setSimilarAck(codeValue)} style={{ ...pfStyles.btnGhost, padding: '0.25rem 0.7rem', fontSize: '0.72rem' }}>
+                                                                No, es un producto distinto
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
+                                                    Identifica el producto en Stock y en la importación por JSON. No se repite entre productos.
+                                                    {codeValue && (() => {
+                                                        const withCode = existingProducts.filter(p => p.code && p.id !== initialProduct?.id).length
+                                                        return withCode === 0
+                                                            ? ' Ningún otro producto tiene código cargado todavía, así que no hay con qué compararlo.'
+                                                            : ` Sin coincidencias ni códigos parecidos entre los ${withCode} productos con código.`
+                                                    })()}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <label style={pfStyles.label}>Nombre del Producto <span style={{ color: PF.color.accent }}>*</span></label>
@@ -218,16 +298,6 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                             />
                                         </div>
                                     </div>
-                                </section>
-
-                                {/* Multimedia */}
-                                <section style={pfStyles.card}>
-                                    <h3 style={pfStyles.cardTitle}>Multimedia</h3>
-                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Sube y organiza las fotografías de catálogo de tu producto.</p>
-                                    <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} productName={form.name} theme={PF_UPLOADER_THEME} />
-                                    {imageError && (
-                                        <p style={{ margin: '0.5rem 0 0', color: '#eab308', fontFamily: PF.font.body, fontSize: '0.75rem' }}>{imageError}</p>
-                                    )}
                                 </section>
 
                                 {/* Precios y Descuentos */}
@@ -259,10 +329,10 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                                 <label style={pfStyles.label}>Precio Normal (PVP) *</label>
                                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                                     <span style={{ position: 'absolute', left: 0, color: PF.color.accent, fontFamily: PF.font.headline, fontWeight: 600 }}>$</span>
-                                                    <input
-                                                        type="number" min="0" step="0.01" value={form.retail_price}
-                                                        onChange={e => setForm(p => ({ ...p, retail_price: e.target.value }))}
-                                                        placeholder="0.00"
+                                                    <NumberInput
+                                                        value={form.retail_price}
+                                                        onChange={v => setForm(p => ({ ...p, retail_price: v }))}
+                                                        placeholder={suggestedRetailText ? `Sugerido: ${suggestedRetailText}` : '0.00'}
                                                         style={{ width: '100%', paddingLeft: '1.1rem', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '1rem', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
                                                     />
                                                 </div>
@@ -271,9 +341,9 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                                 <label style={pfStyles.label}>Precio Mayorista</label>
                                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                                     <span style={{ position: 'absolute', left: 0, color: PF.color.textMuted, fontFamily: PF.font.headline, fontWeight: 600 }}>$</span>
-                                                    <input
-                                                        type="number" min="0" step="0.01" value={form.wholesale_price}
-                                                        onChange={e => setForm(p => ({ ...p, wholesale_price: e.target.value }))}
+                                                    <NumberInput
+                                                        value={form.wholesale_price}
+                                                        onChange={v => setForm(p => ({ ...p, wholesale_price: v }))}
                                                         placeholder="0.00" readOnly={applyDiscount}
                                                         style={{ width: '100%', paddingLeft: '1.1rem', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '1rem', fontWeight: 600, outline: 'none', boxSizing: 'border-box', opacity: applyDiscount ? 0.6 : 1 }}
                                                     />
@@ -306,6 +376,51 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Costos: se guardan en product_costs (tabla relacionada), no son públicos */}
+                                    <div style={{ marginTop: '1.25rem', paddingTop: '1.1rem', borderTop: `1px solid ${PF.color.border}` }}>
+                                        <div style={{ ...pfStyles.label, marginBottom: '0.6rem' }}>Costo (por docena, opcional, solo visible en el panel)</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
+                                            {[
+                                                { key: 'cost_price', label: 'Precio de costo' },
+                                                { key: 'cost_price_rounded', label: 'Costo redondeado' },
+                                            ].map(f => (
+                                                <div key={f.key} style={{ background: PF.color.surfaceContainer, padding: '0.75rem 0.85rem', borderRadius: PF.radius.md, border: `1px solid ${PF.color.border}` }}>
+                                                    <label style={pfStyles.label}>{f.label}</label>
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                        <span style={{ position: 'absolute', left: 0, color: PF.color.textMuted, fontFamily: PF.font.headline, fontWeight: 600 }}>$</span>
+                                                        <NumberInput
+                                                            value={form[f.key]}
+                                                            onChange={v => setForm(p => ({ ...p, [f.key]: v }))}
+                                                            placeholder="0.00"
+                                                            style={{ width: '100%', paddingLeft: '1.1rem', background: 'transparent', border: 'none', borderBottom: `1px solid ${PF.color.borderStrong}`, color: PF.color.text, fontFamily: PF.font.body, fontSize: '1rem', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {(() => {
+                                            const costo = parseFloat(form.cost_price_rounded !== '' ? form.cost_price_rounded : form.cost_price)
+                                            const precio = parseFloat(form.retail_price)
+                                            if (form.price_on_request || !(precio > 0) || !Number.isFinite(costo)) return null
+                                            const margen = precio - costo
+                                            return (
+                                                <div style={{ fontSize: '0.72rem', color: margen < 0 ? PF.color.danger : PF.color.textMuted, marginTop: '0.6rem' }}>
+                                                    Margen: ${margen.toFixed(2)} ({((margen / precio) * 100).toFixed(1)}%) sobre el precio normal
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+                                </section>
+
+                                {/* Multimedia */}
+                                <section style={pfStyles.card}>
+                                    <h3 style={pfStyles.cardTitle}>Multimedia</h3>
+                                    <p style={{ ...pfStyles.cardSubtitle, marginBottom: '1.1rem' }}>Sube y organiza las fotografías de catálogo de tu producto.</p>
+                                    <ProductImageUploader images={images} onImagesChange={setImages} onError={setImageError} productName={form.name} theme={PF_UPLOADER_THEME} />
+                                    {imageError && (
+                                        <p style={{ margin: '0.5rem 0 0', color: '#eab308', fontFamily: PF.font.body, fontSize: '0.75rem' }}>{imageError}</p>
+                                    )}
                                 </section>
 
                                 {/* Guía de talles (opcional) */}
@@ -350,6 +465,19 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                             ))}
                                         </select>
                                     </div>
+                                    <div style={{ marginTop: '1rem' }}>
+                                        <label style={pfStyles.label}>Marca</label>
+                                        <select
+                                            value={form.brand_id}
+                                            onChange={e => setForm(p => ({ ...p, brand_id: e.target.value }))}
+                                            style={pfStyles.input}
+                                        >
+                                            <option value="">— Sin marca —</option>
+                                            {brands.map(b => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </section>
 
                                 {/* Stock */}
@@ -358,9 +486,9 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         <div>
                                             <label style={pfStyles.label}>Stock (docenas)</label>
-                                            <input
-                                                type="number" min="0" step="1" value={form.stock}
-                                                onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
+                                            <NumberInput
+                                                value={form.stock} decimals={0}
+                                                onChange={v => setForm(p => ({ ...p, stock: v }))}
                                                 placeholder="0" style={pfStyles.input}
                                             />
                                             <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
