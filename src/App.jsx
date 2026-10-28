@@ -17,6 +17,7 @@ import Catalogo from './pages/Catalogo'
 import Contacto from './pages/Contacto'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { usePriceVisibility } from './hooks/usePriceVisibility'
 import './index.css'
 
 /* Admin pages lazy-loaded — keeps admin-only authorization fields out of the
@@ -36,6 +37,7 @@ const ConfiguracionContacto = lazy(() => import('./pages/admin/sections/Configur
 const ConfiguracionWhatsapp = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionWhatsapp'))
 const ConfiguracionBanner   = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionBanner'))
 const ConfiguracionLogo     = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionLogo'))
+const ConfiguracionTienda   = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionTienda'))
 
 // Placeholder pages — serán reemplazadas en Tareas posteriores
 function ComingSoon({ title }) {
@@ -60,12 +62,13 @@ function ComingSoon({ title }) {
 
 // Layout público: incluye Navbar + MiniCart drawer
 function PublicLayout() {
+  const { purchasesEnabled } = usePriceVisibility()
   return (
     <div className="min-h-screen flex flex-col">
       <PromoBanner />
       <Navbar />
-      {/* MiniCart vive fuera del flujo de página para ser un overlay global */}
-      <MiniCart />
+      {/* MiniCart vive fuera del flujo de página para ser un overlay global (no existe en modo catálogo) */}
+      {purchasesEnabled && <MiniCart />}
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -73,7 +76,7 @@ function PublicLayout() {
           <Route path="/producto/:id" element={<ProductDetail />} />
           <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/contacto" element={<Contacto />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout" element={purchasesEnabled ? <Checkout /> : <Navigate to="/catalogo" replace />} />
           <Route path="/pago-resultado" element={<PaymentResult />} />
           <Route path="/cuenta" element={<Cuenta />} />
           <Route path="*" element={<ComingSoon title="404 — Not Found" />} />
@@ -122,6 +125,8 @@ export default function App() {
                 <Route path="configuracion/whatsapp" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionWhatsapp /></Suspense></RequirePermission>} />
                 <Route path="configuracion/banner" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionBanner /></Suspense></RequirePermission>} />
                 <Route path="configuracion/logo" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionLogo /></Suspense></RequirePermission>} />
+                <Route path="configuracion/tienda" element={<RequirePermission section="configuracion"><Suspense fallback={null}><ConfiguracionTienda /></Suspense></RequirePermission>} />
+                <Route path="configuracion/precios" element={<Navigate to="/admin/configuracion/tienda" replace />} />
                 <Route path="compras" element={<RequirePermission section="compras"><ComingSoon title="Compras" /></RequirePermission>} />
                 <Route path="analytics" element={<ComingSoon title="Analytics" />} />
               </Route>

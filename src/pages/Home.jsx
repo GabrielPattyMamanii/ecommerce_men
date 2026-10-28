@@ -42,13 +42,13 @@ export default function Home() {
             const [mainRes, novRes] = await Promise.all([
                 supabase
                     .from('products')
-                    .select('id, name, description, retail_price, price_on_request, stock, unlimited_stock, images')
+                    .select('id, name, description, retail_price, wholesale_price, price_on_request, stock, unlimited_stock, images')
                     .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(8),
                 supabase
                     .from('products')
-                    .select('id, name, retail_price, price_on_request, images')
+                    .select('id, name, retail_price, wholesale_price, price_on_request, images')
                     .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(12),

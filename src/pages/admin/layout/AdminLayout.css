@@ -1569,6 +1569,28 @@
     text-overflow: ellipsis;
 }
 
+.admin-pcard__brand-row {
+    display: flex;
+    padding: 0 0.25rem;
+    min-width: 0;
+}
+
+.admin-pcard__brand {
+    max-width: 100%;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(var(--admin-primary-rgb), 0.12);
+    border: 1px solid rgba(var(--admin-primary-rgb), 0.3);
+    color: var(--admin-text);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .admin-pcard__sizes {
     color: var(--admin-text-faint);
     font-weight: 500;

@@ -5,6 +5,7 @@ import { supabase } from '../services/supabaseClient'
 import { formatPrice, isPurchasable, hasWholesale, formatWholesalePrice, isWholesalePurchasable, hasDozenDimensions, formatDozenDimensions, getDozenDimensionEntries, isAvailable, formatCurrency } from '../lib/productPricing'
 import { buildConsultWhatsappUrl } from '../lib/whatsappConsult'
 import { useContactSettings } from '../hooks/useContactSettings'
+import { usePriceVisibility } from '../hooks/usePriceVisibility'
 
 /* ── Componente Stars ── */
 function Stars({ rating, size = 'text-[16px]' }) {
@@ -37,12 +38,16 @@ export default function ProductDetail() {
     const [activeSize, setActiveSize] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeTab, setActiveTab] = useState('specs')
     const [added, setAdded] = useState(false)
-    const [mode, setMode] = useState('retail') // 'retail' | 'wholesale'
+    const [chosenMode, setMode] = useState('retail') // elección manual: 'retail' | 'wholesale'
     const [dozens, setDozens] = useState(1)
     const [qty, setQty] = useState(1)
 
-    const { addItem, addWholesaleItem } = useCart()
+    const [stockMsg, setStockMsg] = useState(null)
+    const [checkingStock, setCheckingStock] = useState(false)
+
+    const { items: cartItems, addItem, addWholesaleItem } = useCart()
     const contactSettings = useContactSettings()
+    const { showRetail, showWholesale, purchasesEnabled } = usePriceVisibility()
 
     useEffect(() => {
         async function fetchProduct() {
@@ -94,6 +99,11 @@ export default function ProductDetail() {
         )
     }
 
+    // Modo efectivo según la visibilidad de precios configurada en el admin:
+    // si un tipo está desactivado, se fuerza el otro y no se muestra el toggle.
+    const mode = !showRetail ? 'wholesale' : !showWholesale ? 'retail' : chosenMode
+    const showModeToggle = showRetail && showWholesale && hasWholesale(product)
+
     const images = product.images?.length > 0 ? product.images : []
     const activeImg = images[activeImage] || null
     const sizes = product.sizes?.length > 0 ? product.sizes : []
@@ -111,8 +121,52 @@ export default function ProductDetail() {
         setTimeout(() => setAdded(false), 2000)
     }
 
-    function handleAddWholesaleToCart() {
-        addWholesaleItem(product, dozens)
+    // Docenas de este producto que ya están en el carrito (cuentan contra el stock)
+    const dozensInCart = cartItems.find(i => i.id === `${product.id}-wholesale`)?.qty ?? 0
+    const maxDozens = product.unlimited_stock ? Infinity : Math.max(0, (product.stock ?? 0) - dozensInCart)
+
+    function changeDozens(next) {
+        setStockMsg(null)
+        if (next > maxDozens) {
+            setStockMsg(maxDozens === 0
+                ? 'Ya tenés en el carrito todas las docenas disponibles.'
+                : `Solo hay ${maxDozens} docena${maxDozens === 1 ? '' : 's'} disponible${maxDozens === 1 ? '' : 's'}.`)
+            next = maxDozens
+        }
+        setDozens(Math.max(1, next))
+    }
+
+    async function handleAddWholesaleToCart() {
+        setStockMsg(null)
+        let current = product
+        if (!product.unlimited_stock) {
+            // Revalidar contra la tabla products: el stock pudo cambiar desde que se cargó la página
+            setCheckingStock(true)
+            const { data, error: err } = await supabase
+                .from('products')
+                .select('stock, unlimited_stock')
+                .eq('id', product.id)
+                .single()
+            setCheckingStock(false)
+            if (err) {
+                setStockMsg('No pudimos verificar el stock. Intentá de nuevo.')
+                return
+            }
+            current = { ...product, ...data }
+            setProduct(current)
+            if (!data.unlimited_stock) {
+                const available = Math.max(0, (data.stock ?? 0) - dozensInCart)
+                if (dozens > available) {
+                    setDozens(Math.max(1, available))
+                    setStockMsg(available === 0
+                        ? 'No quedan docenas disponibles para agregar.'
+                        : `Solo hay ${available} docena${available === 1 ? '' : 's'} disponible${available === 1 ? '' : 's'}.`)
+                    return
+                }
+            }
+        }
+        addWholesaleItem(current, dozens)
+        setDozens(1)
         setAdded(true)
         setTimeout(() => setAdded(false), 2000)
     }
@@ -233,7 +287,7 @@ export default function ProductDetail() {
                             </h1>
 
                             {/* Toggle Por Menor / Por Mayor (solo si el producto tiene precio mayorista) */}
-                            {hasWholesale(product) && (
+                            {showModeToggle && (
                                 <div className="flex mt-4 p-1 rounded-full bg-surface-container w-fit" role="tablist" aria-label="Modalidad de compra">
                                     {[
                                         { id: 'retail', label: 'Por Menor' },
@@ -260,7 +314,7 @@ export default function ProductDetail() {
                                 <div className="flex items-end gap-6">
                                     <p className="text-3xl font-display font-medium text-primary">
                                         {mode === 'wholesale'
-                                            ? formatWholesalePrice(product)
+                                            ? (hasWholesale(product) ? formatWholesalePrice(product) : 'Consultar precio')
                                             : formatPrice(product)}
                                     </p>
                                     <div className="flex items-center gap-2 mb-1">
@@ -269,7 +323,7 @@ export default function ProductDetail() {
                                         </span>
                                     </div>
                                 </div>
-                                {mode === 'wholesale' && (
+                                {mode === 'wholesale' && hasWholesale(product) && (
                                     <p className="text-[11px] text-muted font-mono uppercase tracking-wide mt-1">
                                         Precio por docena · 12 unidades
                                     </p>
@@ -394,7 +448,7 @@ export default function ProductDetail() {
                             )}
 
                             {/* ── Cantidad (modo Por Menor) ── */}
-                            {mode === 'retail' && (
+                            {purchasesEnabled && mode === 'retail' && (
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
@@ -424,22 +478,40 @@ export default function ProductDetail() {
                             )}
 
                             {/* ── Cantidad de docenas (modo Por Mayor) ── */}
-                            {mode === 'wholesale' && (
+                            {purchasesEnabled && mode === 'wholesale' && (
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-xs font-display font-bold text-muted uppercase tracking-widest">
                                             Cantidad de docenas
                                         </span>
                                     </div>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        value={dozens}
-                                        onChange={e => setDozens(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                                        aria-label="Cantidad de docenas"
-                                        className="w-28 h-10 px-3 rounded-full bg-surface-container border-2 border-transparent text-primary font-mono text-sm focus:outline-none focus:border-accent"
-                                    />
+                                    <div className="flex items-center rounded-full bg-surface-container w-fit">
+                                        <button
+                                            onClick={() => changeDozens(dozens - 1)}
+                                            disabled={dozens <= 1}
+                                            aria-label="Reducir docenas"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full text-muted hover:text-accent hover:bg-accent/10 transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            −
+                                        </button>
+                                        <span className="px-2 text-sm font-bold text-primary font-mono min-w-10 text-center" aria-live="polite">{dozens}</span>
+                                        <button
+                                            onClick={() => changeDozens(dozens + 1)}
+                                            disabled={dozens >= maxDozens}
+                                            aria-label="Aumentar docenas"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full text-muted hover:text-accent hover:bg-accent/10 transition-colors text-sm font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    {dozensInCart > 0 && !product.unlimited_stock && (
+                                        <p className="mt-2 text-[11px] font-mono text-muted uppercase tracking-wide">
+                                            {dozensInCart} en el carrito
+                                        </p>
+                                    )}
+                                    {stockMsg && (
+                                        <p role="alert" className="mt-2 text-xs font-mono text-red-600">{stockMsg}</p>
+                                    )}
                                 </div>
                             )}
 
@@ -473,11 +545,22 @@ export default function ProductDetail() {
                             {/* ── CTAs ── */}
                             <div className="flex flex-col gap-4 mb-8">
 
-                                {/* Botón principal — Add to Cart */}
-                                {mode === 'wholesale' ? (
+                                {/* Botón principal — Add to Cart (en modo catálogo: consulta por WhatsApp) */}
+                                {!purchasesEnabled ? (
+                                    consultUrl || buildConsultWhatsappUrl(contactSettings, product.name) ? (
+                                        <button
+                                            onClick={handleConsult}
+                                            id="consult-btn"
+                                            className="w-full h-14 rounded-full font-display font-bold text-base sm:text-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 bg-accent text-white hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.6)]"
+                                        >
+                                            CONSULTAR POR WHATSAPP
+                                            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                        </button>
+                                    ) : null
+                                ) : mode === 'wholesale' ? (
                                     <button
                                         onClick={handleAddWholesaleToCart}
-                                        disabled={!isWholesalePurchasable(product) || dozens < 1}
+                                        disabled={!isWholesalePurchasable(product) || dozens < 1 || checkingStock || maxDozens < 1}
                                         id="add-to-cart-wholesale-btn"
                                         className={`w-full h-14 rounded-full font-display font-bold text-base sm:text-lg transition-all active:scale-[0.99] flex items-center justify-between px-5 sm:px-8 group relative overflow-hidden
                                             ${!isWholesalePurchasable(product) || dozens < 1

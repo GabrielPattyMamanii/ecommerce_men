@@ -5,6 +5,7 @@ const LINKS = [
   { to: '/admin/configuracion/whatsapp', label: 'WhatsApp', end: false },
   { to: '/admin/configuracion/banner', label: 'Banner de Inicio', end: false },
   { to: '/admin/configuracion/logo', label: 'Logo', end: false },
+  { to: '/admin/configuracion/tienda', label: 'Tienda', end: false },
 ]
 
 export default function ConfiguracionNav() {

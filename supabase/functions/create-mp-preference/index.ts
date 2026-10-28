@@ -112,6 +112,35 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // ── Visibilidad de precios (Configuración → Tienda): bloquear tipos desactivados ──
+    // Si la tabla aún no existe o falla la lectura, no se bloquea nada (comportamiento previo).
+    const { data: priceSettings } = await supabaseAdmin
+      .from('site_price_settings')
+      .select('show_retail, show_wholesale, purchases_enabled')
+      .eq('id', 1)
+      .maybeSingle()
+    if (priceSettings?.purchases_enabled === false) {
+      // Modo catálogo (Configuración → Tienda): no se generan preferencias de pago.
+      return new Response(
+        JSON.stringify({ error: 'Las compras están deshabilitadas por el momento. Consultanos por WhatsApp.' }),
+        { status: 403, headers: { ...CORS, 'Content-Type': 'application/json' } },
+      )
+    }
+    if (priceSettings) {
+      const blocked = items.find((i) => {
+        const t = i.type ?? 'retail'
+        return (t === 'retail' && priceSettings.show_retail === false) ||
+          (t === 'wholesale' && priceSettings.show_wholesale === false)
+      })
+      if (blocked) {
+        const label = (blocked.type ?? 'retail') === 'wholesale' ? 'por docena' : 'por unidad'
+        return new Response(
+          JSON.stringify({ error: `La compra ${label} ya no está disponible. Quitá "${blocked.name}" del carrito.` }),
+          { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     // ── Extract user_id from Authorization header (if logged in) ──
     let userId: string | null = null
     const authHeader = req.headers.get('Authorization')

@@ -43,7 +43,7 @@ function ColorSwatches({ colors }) {
 }
 
 /* ── Card de producto — grilla responsive (misma card en desktop y mobile) ── */
-function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }) {
+function ProductCard({ product, brandName, onEdit, onDelete, onToggleVisibility, toggling }) {
     const stock = product.stock
     const badge = product.unlimited_stock
         ? { text: 'Disponible', dot: 'var(--admin-green)' }
@@ -89,6 +89,12 @@ function ProductCard({ product, onEdit, onDelete, onToggleVisibility, toggling }
                     </span>
                 )}
             </div>
+
+            {brandName && (
+                <div className="admin-pcard__brand-row">
+                    <span className="admin-pcard__brand" title={`Marca: ${brandName}`}>{brandName}</span>
+                </div>
+            )}
 
             <h3 className="admin-pcard__name">{product.name}</h3>
 
@@ -148,6 +154,7 @@ export default function ProductsTable() {
     const [saving, setSaving]   = useState(false)
     const [togglingId, setTogglingId] = useState(null)
     const [categoryFilter, setCategoryFilter] = useState('all')
+    const [brandFilter, setBrandFilter] = useState('all')
     const [search, setSearch] = useState('')
 
     /* ─ Chips de categoría con conteo + lista filtrada ─ */
@@ -161,10 +168,26 @@ export default function ProductsTable() {
         }
         return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
     }, [products])
+    const brandNames = useMemo(() => new Map(brands.map(b => [b.id, b.name])), [brands])
+    // Chips de marca: solo las marcas que tienen productos (+ "Sin marca" si hay productos sin marca).
+    const brandChips = useMemo(() => {
+        const map = new Map()
+        for (const p of products) {
+            const key = p.brand_id && brandNames.has(p.brand_id) ? p.brand_id : 'none'
+            const entry = map.get(key) ?? { key, name: key === 'none' ? 'Sin marca' : brandNames.get(key), count: 0 }
+            entry.count += 1
+            map.set(key, entry)
+        }
+        return [...map.values()].sort((a, b) =>
+            a.key === 'none' ? 1 : b.key === 'none' ? -1 : a.name.localeCompare(b.name))
+    }, [products, brandNames])
+    // Si la marca elegida ya no tiene productos (ej. se borró el último), volver a "Todas".
+    const activeBrandFilter = brandFilter === 'all' || brandChips.some(c => c.key === brandFilter) ? brandFilter : 'all'
     // Búsqueda por nombre o código: sin distinguir mayúsculas ni tildes.
     const searchTerm = normalizeSearch(search)
     const filteredProducts = products.filter(p =>
         (categoryFilter === 'all' || (p.category_id || 'none') === categoryFilter)
+        && (activeBrandFilter === 'all' || (brandNames.has(p.brand_id) ? p.brand_id : 'none') === activeBrandFilter)
         && (!searchTerm || normalizeSearch(p.name).includes(searchTerm) || matchesCodeSearch(p.code, search))
     )
     const visibleCount = products.filter(p => p.visible).length
@@ -446,6 +469,19 @@ export default function ProductsTable() {
                         </div>
                     </div>
 
+                    {brandChips.length > 0 && (
+                        <div className="admin-products-chips" role="group" aria-label="Filtrar por marca" style={{ margin: '-0.5rem 0 1.25rem' }}>
+                            <button type="button" className="admin-products-chip" aria-pressed={activeBrandFilter === 'all'} onClick={() => setBrandFilter('all')}>
+                                Todas las marcas<span>{products.length}</span>
+                            </button>
+                            {brandChips.map(c => (
+                                <button key={c.key} type="button" className="admin-products-chip" aria-pressed={activeBrandFilter === c.key} onClick={() => setBrandFilter(c.key)}>
+                                    {c.name}<span>{c.count}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {searchTerm && (
                         <p aria-live="polite" style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: 'var(--admin-text-faint)', fontFamily: 'monospace' }}>
                             {filteredProducts.length} {filteredProducts.length === 1 ? 'resultado' : 'resultados'} para &ldquo;{search.trim()}&rdquo;
@@ -462,16 +498,18 @@ export default function ProductsTable() {
                             <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>
                                 {searchTerm
                                     ? `No existe ningún producto con el nombre o código “${search.trim()}”.`
-                                    : 'No hay productos en esta categoría.'}
+                                    : 'No hay productos con los filtros elegidos.'}
                             </p>
-                            {searchTerm && categoryFilter !== 'all' && (
+                            {searchTerm && (categoryFilter !== 'all' || activeBrandFilter !== 'all') && (
                                 <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--admin-text-faint)' }}>
-                                    La búsqueda se aplica solo a la categoría elegida. Probá con &ldquo;Todos&rdquo;.
+                                    La búsqueda se aplica solo dentro de la categoría y la marca elegidas.
                                 </p>
                             )}
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                                 {searchTerm && <button type="button" onClick={() => setSearch('')} style={S.btnGhost}>Limpiar búsqueda</button>}
-                                {searchTerm && categoryFilter !== 'all' && <button type="button" onClick={() => setCategoryFilter('all')} style={S.btnGhost}>Ver todas las categorías</button>}
+                                {(categoryFilter !== 'all' || activeBrandFilter !== 'all') && (
+                                    <button type="button" onClick={() => { setCategoryFilter('all'); setBrandFilter('all') }} style={S.btnGhost}>Quitar filtros</button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -481,6 +519,7 @@ export default function ProductsTable() {
                             <ProductCard
                                 key={product.id}
                                 product={product}
+                                brandName={brandNames.get(product.brand_id)}
                                 onEdit={openEditModal}
                                 onDelete={handleDelete}
                                 onToggleVisibility={toggleVisibility}

@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useSiteLogo } from '../hooks/useSiteLogo'
+import { usePriceVisibility } from '../hooks/usePriceVisibility'
 import { supabase } from '../services/supabaseClient'
 import './Navbar.css'
 
@@ -18,6 +19,7 @@ export default function Navbar() {
     const [categories, setCategories] = useState([])
     const { totalCount, toggleCart } = useCart()
     const { user } = useAuth()
+    const { purchasesEnabled } = usePriceVisibility()
     const { logoUrl, logoType } = useSiteLogo()
     const stacked = logoType === 'stacked'
     const navigate = useNavigate()
@@ -133,17 +135,19 @@ export default function Navbar() {
                         <span className="navbar__account-label">{user ? 'Mi Cuenta' : 'Ingresar'}</span>
                     </Link>
 
-                    <button
-                        onClick={toggleCart}
-                        className="navbar__icon-btn"
-                        aria-label="Ver carrito"
-                        id="navbar-cart-btn"
-                    >
-                        <span className="material-symbols-outlined">shopping_cart</span>
-                        {totalCount > 0 && (
-                            <span className="navbar__cart-badge">{totalCount}</span>
-                        )}
-                    </button>
+                    {purchasesEnabled && (
+                        <button
+                            onClick={toggleCart}
+                            className="navbar__icon-btn"
+                            aria-label="Ver carrito"
+                            id="navbar-cart-btn"
+                        >
+                            <span className="material-symbols-outlined">shopping_cart</span>
+                            {totalCount > 0 && (
+                                <span className="navbar__cart-badge">{totalCount}</span>
+                            )}
+                        </button>
+                    )}
 
                     <button
                         className={`navbar__hamburger${menuOpen ? ' navbar__hamburger--open' : ''}`}
@@ -247,9 +251,11 @@ export default function Navbar() {
                     </Link>
                 ))}
 
-                <Link to="/checkout" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>
-                    Carrito
-                </Link>
+                {purchasesEnabled && (
+                    <Link to="/checkout" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>
+                        Carrito
+                    </Link>
+                )}
                 <Link to="/cuenta" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>
                     {user ? 'Mi cuenta' : 'Ingresar'}
                 </Link>
