@@ -13,8 +13,12 @@ import { supabase } from '../../../../services/supabaseClient'
 import { convertToWebP } from '../../../../lib/imageUtils'
 import { S, ToggleSwitch } from '../../../../components/admin/AdminKit'
 import ProductFormModal from './components/ProductFormModal'
+import { NuevoLoteModal, AgregarProductoModal } from './components/LoteModals'
+import { listTandas, agregarATanda, eliminarTanda } from '../../../../services/stockService'
 import { matchesCodeSearch } from './components/productCodeUtils'
 import { formatCurrency } from '../../../../lib/productPricing'
+import { agruparLotes, rangoFechas, CODIGO_VARIOS } from '../../../../lib/lotesUtils'
+import { LoteCard, Barra } from '../../../../components/admin/LoteCards'
 
 /* Minúsculas y sin tildes, para comparar texto de búsqueda. */
 function normalizeSearch(value) {
@@ -43,7 +47,7 @@ function ColorSwatches({ colors }) {
 }
 
 /* ── Card de producto — grilla responsive (misma card en desktop y mobile) ── */
-function ProductCard({ product, brandName, onEdit, onDelete, onToggleVisibility, toggling }) {
+function ProductCard({ product, brandName, lote, onEdit, onDelete, onToggleVisibility, toggling }) {
     const stock = product.stock
     const badge = product.unlimited_stock
         ? { text: 'Disponible', dot: 'var(--admin-green)' }
@@ -119,6 +123,16 @@ function ProductCard({ product, brandName, onEdit, onDelete, onToggleVisibility,
                 )}
             </div>
 
+            {lote && (
+                <div style={{ display: 'grid', gap: '0.35rem', margin: '0.25rem 0 0.75rem', padding: '0.6rem 0.75rem', border: '1px solid var(--admin-border-strong)', borderRadius: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                        <b style={{ color: 'var(--admin-text)' }}>{lote.codigo}</b>
+                        <span style={{ color: 'var(--admin-text-muted)' }}>{lote.cantidad_actual} de {lote.cantidad_inicial} doc.</span>
+                    </div>
+                    <Barra actual={lote.cantidad_actual} inicial={lote.cantidad_inicial} />
+                </div>
+            )}
+
             <div className="admin-pcard__actions">
                 <button type="button" className="admin-pcard__btn admin-pcard__btn--edit" onClick={() => onEdit(product)}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1.05rem' }}>edit</span>
@@ -157,22 +171,47 @@ export default function ProductsTable() {
     const [brandFilter, setBrandFilter] = useState('all')
     const [search, setSearch] = useState('')
 
+    /* ─ Vista: todos los productos, o agrupados por lote (tarjetas de lote → productos del lote) ─ */
+    const [viewMode, setViewMode] = useState('todos') // 'todos' | 'lotes'
+    const [lotesRows, setLotesRows] = useState([])
+    const [tandasRows, setTandasRows] = useState([])
+    const [soloConStock, setSoloConStock] = useState(true)
+    const [selectedLote, setSelectedLote] = useState(null) // nombre del lote abierto
+    const [newLoteOpen, setNewLoteOpen] = useState(false)
+    const [addExistingOpen, setAddExistingOpen] = useState(false)
+    const [creatingInTanda, setCreatingInTanda] = useState(null) // lote al que entra el producto NUEVO que se está creando
+    const loteGroups = useMemo(() => agruparLotes(lotesRows, { soloConStock, tandas: tandasRows, productos: products }), [lotesRows, tandasRows, soloConStock, products])
+    const loteGroup = viewMode === 'lotes' && selectedLote ? loteGroups.find(g => g.codigo === selectedLote) ?? null : null
+    const loteByProduct = useMemo(() => new Map((loteGroup?.items ?? []).map(i => [i.product_id, i])), [loteGroup])
+    // Productos sobre los que trabajan chips, búsqueda y grilla: todos, o solo los del lote abierto.
+    const baseProducts = useMemo(
+        () => (loteGroup ? products.filter(p => loteByProduct.has(p.id)) : products),
+        [products, loteGroup, loteByProduct]
+    )
+    const showingLoteGrid = viewMode === 'lotes' && !loteGroup
+    // Productos sin lote (los creados fuera de lotes: viven en VARIOS): son los que "Agregar producto existente" ofrece.
+    // Se calcula sobre TODAS las filas de stock_lotes, incluidas las que ya quedaron en 0.
+    const productosSinLote = useMemo(() => {
+        const conLote = new Set(lotesRows.filter(r => r.codigo !== CODIGO_VARIOS).map(r => r.product_id))
+        return products.filter(p => !conLote.has(p.id))
+    }, [products, lotesRows])
+
     /* ─ Chips de categoría con conteo + lista filtrada ─ */
     const categoryChips = useMemo(() => {
         const map = new Map()
-        for (const p of products) {
+        for (const p of baseProducts) {
             const key = p.category_id || 'none'
             const entry = map.get(key) ?? { key, name: p.categories?.name || 'Sin categoría', count: 0 }
             entry.count += 1
             map.set(key, entry)
         }
         return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
+    }, [baseProducts])
     const brandNames = useMemo(() => new Map(brands.map(b => [b.id, b.name])), [brands])
     // Chips de marca: solo las marcas que tienen productos (+ "Sin marca" si hay productos sin marca).
     const brandChips = useMemo(() => {
         const map = new Map()
-        for (const p of products) {
+        for (const p of baseProducts) {
             const key = p.brand_id && brandNames.has(p.brand_id) ? p.brand_id : 'none'
             const entry = map.get(key) ?? { key, name: key === 'none' ? 'Sin marca' : brandNames.get(key), count: 0 }
             entry.count += 1
@@ -180,17 +219,17 @@ export default function ProductsTable() {
         }
         return [...map.values()].sort((a, b) =>
             a.key === 'none' ? 1 : b.key === 'none' ? -1 : a.name.localeCompare(b.name))
-    }, [products, brandNames])
+    }, [baseProducts, brandNames])
     // Si la marca elegida ya no tiene productos (ej. se borró el último), volver a "Todas".
     const activeBrandFilter = brandFilter === 'all' || brandChips.some(c => c.key === brandFilter) ? brandFilter : 'all'
     // Búsqueda por nombre o código: sin distinguir mayúsculas ni tildes.
     const searchTerm = normalizeSearch(search)
-    const filteredProducts = products.filter(p =>
+    const filteredProducts = baseProducts.filter(p =>
         (categoryFilter === 'all' || (p.category_id || 'none') === categoryFilter)
         && (activeBrandFilter === 'all' || (brandNames.has(p.brand_id) ? p.brand_id : 'none') === activeBrandFilter)
         && (!searchTerm || normalizeSearch(p.name).includes(searchTerm) || matchesCodeSearch(p.code, search))
     )
-    const visibleCount = products.filter(p => p.visible).length
+    const visibleCount = baseProducts.filter(p => p.visible).length
 
     /* ─ Fetch ─ */
     async function load() {
@@ -214,6 +253,16 @@ export default function ProductsTable() {
             })))
         }
         setLoading(false)
+        loadLotes()
+    }
+
+    // Lotes (tandas): solo los ve quien tenga acceso a Stock. Si falla o no hay acceso, la vista por lotes queda vacía.
+    async function loadLotes() {
+        const { data } = await supabase
+            .from('stock_lotes')
+            .select('id, product_id, codigo, fecha_ingreso, cantidad_inicial, cantidad_actual, created_at')
+        setLotesRows(data ?? [])
+        try { setTandasRows(await listTandas()) } catch { setTandasRows([]) }
     }
 
     async function loadCategories() {
@@ -233,6 +282,13 @@ export default function ProductsTable() {
         setSaving(true)
         setModalError(null)
         try {
+            // Producto NUEVO dentro de un lote: nace con stock 0 y entra por el lote (ingreso en el Kardex).
+            const tandaCodigo = editingProduct ? null : creatingInTanda
+            const tandaQty = tandaCodigo ? parseInt(values.stock, 10) : 0
+            if (tandaCodigo && !(tandaQty > 0)) {
+                throw new Error(`Indica cuántas docenas de este producto entran al lote ${tandaCodigo}.`)
+            }
+
             const existingUrls = values.images.filter(img => typeof img === 'string')
             const newFiles     = values.images.filter(img => typeof img !== 'string')
 
@@ -261,7 +317,7 @@ export default function ProductsTable() {
                 dozen_length:      values.price_on_request ? null : (values.dozen_length !== '' ? parseFloat(values.dozen_length) : null),
                 dozen_weight:      values.price_on_request ? null : (values.dozen_weight !== '' ? parseFloat(values.dozen_weight) : null),
                 price_on_request:  values.price_on_request,
-                stock:             values.stock !== '' ? parseInt(values.stock, 10) : 0,
+                stock:             tandaCodigo ? 0 : (values.stock !== '' ? parseInt(values.stock, 10) : 0),
                 unlimited_stock:   Boolean(values.unlimited_stock),
                 category_id:       values.category_id || null,
                 brand_id:          values.brand_id || null,
@@ -279,6 +335,16 @@ export default function ProductsTable() {
                 const { data: created, error: err } = await supabase.from('products').insert(payload).select('id').single()
                 if (err) throw err
                 productId = created.id
+            }
+
+            // Carga al lote (después del alta). Si falla, el producto ya existe: se avisa sin repetir el alta.
+            if (tandaCodigo) {
+                try {
+                    await agregarATanda({ codigo: tandaCodigo, productId, cantidad: tandaQty })
+                } catch (tandaErr) {
+                    setError(`El producto se creó, pero no se pudo cargar al lote ${tandaCodigo}: ${tandaErr.message}. Agrégalo desde "Agregar producto existente".`)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
             }
 
             // Costos → product_costs (misma clave: product_id = products.id).
@@ -349,16 +415,43 @@ export default function ProductsTable() {
 
     /* ─ Abrir popup en modo alta / edición ─ */
     function openAddModal() {
+        setCreatingInTanda(null)
+        setEditingProduct(null)
+        setModalError(null)
+        setModalKey(k => k + 1)
+        setShowModal(true)
+    }
+    function openAddInLote() {
+        // En VARIOS (lote del sistema) se crea igual que fuera de lotes: el stock inicial, si hay, entra a VARIOS.
+        setCreatingInTanda(loteGroup && !loteGroup.sistema ? loteGroup.codigo : null)
         setEditingProduct(null)
         setModalError(null)
         setModalKey(k => k + 1)
         setShowModal(true)
     }
     function openEditModal(product) {
+        setCreatingInTanda(null)
         setEditingProduct(product)
         setModalError(null)
         setModalKey(k => k + 1)
         setShowModal(true)
+    }
+
+    /* ─ Eliminar un lote vacío (la base rechaza si ya tiene productos) ─ */
+    async function handleDeleteLote(codigo, cantProductos) {
+        const aviso = cantProductos > 0
+            ? `Los ${cantProductos} ${cantProductos === 1 ? 'producto pasará' : 'productos pasarán'} a ${CODIGO_VARIOS} con sus cantidades y su historial. El stock total de cada producto no cambia.`
+            : 'Está vacío.'
+        if (!window.confirm(`¿Eliminar el lote "${codigo}"? ${aviso} Esta acción no se puede deshacer.`)) return
+        setError(null)
+        try {
+            await eliminarTanda(codigo)
+            setSelectedLote(null)
+            load()
+        } catch (err) {
+            setError(err.message)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
     }
 
     /* ════════════════ RENDER ════════════════ */
@@ -395,6 +488,7 @@ export default function ProductsTable() {
                 key={modalKey}
                 isOpen={showModal}
                 initialProduct={editingProduct}
+                tandaCodigo={!editingProduct ? creatingInTanda : null}
                 onClose={() => setShowModal(false)}
                 categories={categories}
                 brands={brands}
@@ -435,6 +529,88 @@ export default function ProductsTable() {
                 </div>
             ) : (
                 <>
+                    <div className="admin-products-chips" role="group" aria-label="Forma de mostrar los productos" style={{ marginBottom: '1.25rem' }}>
+                        <button type="button" className="admin-products-chip" aria-pressed={viewMode === 'todos'}
+                            onClick={() => { setViewMode('todos'); setSelectedLote(null) }}>
+                            Todos los productos<span>{products.length}</span>
+                        </button>
+                        <button type="button" className="admin-products-chip" aria-pressed={viewMode === 'lotes'}
+                            onClick={() => { setViewMode('lotes'); setSelectedLote(null) }}>
+                            Por lotes<span>{loteGroups.length}</span>
+                        </button>
+                    </div>
+
+                    {showingLoteGrid ? (
+                        <>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <button type="button" onClick={() => setNewLoteOpen(true)} style={S.btnPrimary}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
+                                    Nuevo lote
+                                </button>
+                                <button type="button" onClick={() => setSoloConStock(v => !v)}
+                                    style={{ ...S.btnGhost, ...(soloConStock ? { background: 'var(--admin-primary)', color: 'white' } : {}) }}>
+                                    Solo con stock
+                                </button>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-faint)' }}>
+                                    Cada lote agrupa los productos que ingresaron juntos. {CODIGO_VARIOS} reúne los productos sin lote (los creados fuera de los lotes) y no se puede eliminar; LOTE-000 es la "tanda vieja" (stock previo al sistema de lotes).
+                                </span>
+                            </div>
+                            {loteGroups.length === 0 ? (
+                                <p role="status" style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--admin-text-faint)' }}>
+                                    No hay lotes para mostrar{soloConStock ? ' con stock (prueba desactivar "Solo con stock")' : ''}. Crea uno con &ldquo;Nuevo lote&rdquo;.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
+                                    {loteGroups.map(g => <LoteCard key={g.codigo} lote={g} onOpen={setSelectedLote} />)}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                    <>
+                    {loteGroup && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                            <button type="button" onClick={() => { setSelectedLote(null); setSearch(''); setCategoryFilter('all'); setBrandFilter('all') }} style={S.btnGhost}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>arrow_back</span>
+                                Lotes
+                            </button>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--admin-text)' }}>{loteGroup.codigo}</h3>
+                            <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--admin-text-faint)' }}>
+                                {rangoFechas(loteGroup)} · {loteGroup.actual} de {loteGroup.inicial} docenas · {loteGroup.items.length} {loteGroup.items.length === 1 ? 'producto' : 'productos'}
+                            </span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginLeft: 'auto' }}>
+                                {!loteGroup.sistema && (
+                                    <button type="button" onClick={() => handleDeleteLote(loteGroup.codigo, loteGroup.items.length)} style={S.btnGhost}
+                                        title={loteGroup.items.length ? `Eliminar el lote (sus productos pasan a ${CODIGO_VARIOS})` : 'Eliminar este lote vacío'}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>delete</span>
+                                        Eliminar lote
+                                    </button>
+                                )}
+                                {!loteGroup.sistema && (
+                                    <button type="button" onClick={() => setAddExistingOpen(true)} style={S.btnGhost}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>playlist_add</span>
+                                        Agregar producto sin lote
+                                    </button>
+                                )}
+                                <button type="button" onClick={openAddInLote} style={S.btnPrimary}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
+                                    Nuevo producto
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {loteGroup && loteGroup.sistema && (
+                        <p style={{ margin: '-0.5rem 0 1.25rem', fontSize: '0.75rem', color: 'var(--admin-text-faint)' }}>
+                            {CODIGO_VARIOS} agrupa los productos que no pertenecen a ningún lote: los que creas fuera de los lotes
+                            y los que quedan cuando se elimina un lote. Este lote no se puede eliminar ni renombrar.
+                        </p>
+                    )}
+                    {loteGroup && !loteGroup.sistema && loteGroup.items.length === 0 && (
+                        <p role="status" style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--admin-text-faint)' }}>
+                            Este lote está vacío. Crea un producto nuevo o agrega uno sin lote con la cantidad que llegó.
+                        </p>
+                    )}
+
                     <div style={{ position: 'relative', maxWidth: '420px', marginBottom: '1rem' }}>
                         <span className="material-symbols-outlined" aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', color: 'var(--admin-text-faint)', pointerEvents: 'none' }}>search</span>
                         <input
@@ -455,7 +631,7 @@ export default function ProductsTable() {
                     <div className="admin-products-toolbar">
                         <div className="admin-products-chips" role="group" aria-label="Filtrar por categoría">
                             <button type="button" className="admin-products-chip" aria-pressed={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
-                                Todos<span>{products.length}</span>
+                                Todos<span>{baseProducts.length}</span>
                             </button>
                             {categoryChips.map(c => (
                                 <button key={c.key} type="button" className="admin-products-chip" aria-pressed={categoryFilter === c.key} onClick={() => setCategoryFilter(c.key)}>
@@ -472,7 +648,7 @@ export default function ProductsTable() {
                     {brandChips.length > 0 && (
                         <div className="admin-products-chips" role="group" aria-label="Filtrar por marca" style={{ margin: '-0.5rem 0 1.25rem' }}>
                             <button type="button" className="admin-products-chip" aria-pressed={activeBrandFilter === 'all'} onClick={() => setBrandFilter('all')}>
-                                Todas las marcas<span>{products.length}</span>
+                                Todas las marcas<span>{baseProducts.length}</span>
                             </button>
                             {brandChips.map(c => (
                                 <button key={c.key} type="button" className="admin-products-chip" aria-pressed={activeBrandFilter === c.key} onClick={() => setBrandFilter(c.key)}>
@@ -488,7 +664,7 @@ export default function ProductsTable() {
                         </p>
                     )}
 
-                    {filteredProducts.length === 0 && (
+                    {filteredProducts.length === 0 && baseProducts.length > 0 && (
                         <div role="status" style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center',
                             padding: '2.5rem 1rem', border: '1px solid rgba(234,179,8,0.35)', background: 'rgba(234,179,8,0.08)',
@@ -520,6 +696,7 @@ export default function ProductsTable() {
                                 key={product.id}
                                 product={product}
                                 brandName={brandNames.get(product.brand_id)}
+                                lote={loteByProduct.get(product.id)}
                                 onEdit={openEditModal}
                                 onDelete={handleDelete}
                                 onToggleVisibility={toggleVisibility}
@@ -527,7 +704,28 @@ export default function ProductsTable() {
                             />
                         ))}
                     </div>
+                    </>
+                    )}
                 </>
+            )}
+
+            {newLoteOpen && (
+                <NuevoLoteModal
+                    onClose={() => setNewLoteOpen(false)}
+                    onCreated={async codigo => {
+                        setNewLoteOpen(false)
+                        await loadLotes()
+                        setSelectedLote(codigo) // se abre vacío, listo para cargarle productos
+                    }}
+                />
+            )}
+            {addExistingOpen && loteGroup && (
+                <AgregarProductoModal
+                    codigo={loteGroup.codigo}
+                    products={productosSinLote}
+                    onClose={() => setAddExistingOpen(false)}
+                    onAdded={() => { setAddExistingOpen(false); load() }}
+                />
             )}
         </section>
     )

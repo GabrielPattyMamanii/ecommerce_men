@@ -32,6 +32,7 @@ const StockLayout     = lazy(() => import('./pages/admin/sections/Stock/StockLay
 const StockEntradas   = lazy(() => import('./pages/admin/sections/Stock/StockEntradas'))
 const StockSalidas    = lazy(() => import('./pages/admin/sections/Stock/StockSalidas'))
 const StockControl    = lazy(() => import('./pages/admin/sections/Stock/StockControl'))
+const StockLotes      = lazy(() => import('./pages/admin/sections/Stock/StockLotes'))
 const UsersTable      = lazy(() => import('./pages/admin/sections/Users/UsersTable'))
 const ConfiguracionContacto = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionContacto'))
 const ConfiguracionWhatsapp = lazy(() => import('./pages/admin/sections/Configuracion/ConfiguracionWhatsapp'))
@@ -114,6 +115,7 @@ export default function App() {
                   <Route index element={<Navigate to="control" replace />} />
                   <Route path="entradas" element={<Suspense fallback={null}><StockEntradas /></Suspense>} />
                   <Route path="salidas" element={<Suspense fallback={null}><StockSalidas /></Suspense>} />
+                  <Route path="lotes" element={<Suspense fallback={null}><StockLotes /></Suspense>} />
                   <Route path="control" element={<Suspense fallback={null}><StockControl /></Suspense>} />
                 </Route>
                 <Route path="categorias" element={<RequirePermission section="categorias"><Suspense fallback={null}><CategoriesTable /></Suspense></RequirePermission>} />

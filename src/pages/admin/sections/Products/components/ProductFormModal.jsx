@@ -71,7 +71,7 @@ function DimensionsGrid({ prefix, form, setForm }) {
  * el estado inicial de abajo se recalcula desde `initialProduct` sin
  * necesidad de sincronizarlo luego con un efecto.
  */
-export default function ProductFormModal({ isOpen, initialProduct = null, onClose, categories, brands = [], existingProducts = [], onSwitchToProduct, onSave, saving, error }) {
+export default function ProductFormModal({ isOpen, initialProduct = null, tandaCodigo = null, onClose, categories, brands = [], existingProducts = [], onSwitchToProduct, onSave, saving, error }) {
     const theme = useContext(AdminThemeContext)
     const pfVars = getPfVars(theme)
     const isEditMode = Boolean(initialProduct)
@@ -163,6 +163,10 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
 
         if (!form.price_on_request && !form.retail_price) {
             setValidationError('Precio minorista es obligatorio o activa "Precio a consultar"')
+            return
+        }
+        if (tandaCodigo && !(parseInt(form.stock, 10) > 0)) {
+            setValidationError(`Indica cuántas docenas de este producto entran al lote ${tandaCodigo}.`)
             return
         }
 
@@ -485,16 +489,18 @@ export default function ProductFormModal({ isOpen, initialProduct = null, onClos
                                     <h3 style={pfStyles.sidebarCardTitle}>Stock</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         <div>
-                                            <label style={pfStyles.label}>Stock (docenas)</label>
+                                            <label style={pfStyles.label}>{tandaCodigo ? `Docenas que entran al ${tandaCodigo}` : 'Stock (docenas)'}</label>
                                             <NumberInput
                                                 value={form.stock} decimals={0}
                                                 onChange={v => setForm(p => ({ ...p, stock: v }))}
                                                 placeholder="0" style={pfStyles.input}
                                             />
                                             <div style={{ fontSize: '0.7rem', color: PF.color.textMuted, marginTop: '0.4rem', lineHeight: 1.4 }}>
-                                                {form.unlimited_stock
-                                                    ? 'No se muestra al público mientras "Continuar vendiendo sin stock" esté activo.'
-                                                    : 'Opcional — si lo dejás vacío, el producto se crea sin stock (0).'}
+                                                {tandaCodigo
+                                                    ? `Obligatorio: estas docenas se cargan al lote ${tandaCodigo} y suman al stock del producto.`
+                                                    : form.unlimited_stock
+                                                        ? 'No se muestra al público mientras "Continuar vendiendo sin stock" esté activo.'
+                                                        : 'Opcional — si lo dejás vacío, el producto se crea sin stock (0).'}
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${PF.color.border}` }}>

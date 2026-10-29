@@ -4,6 +4,7 @@ const TABS = [
     { to: '/admin/stock/control', label: 'Control', icon: 'monitoring' },
     { to: '/admin/stock/entradas', label: 'Entradas', icon: 'move_to_inbox' },
     { to: '/admin/stock/salidas', label: 'Salidas', icon: 'outbox' },
+    { to: '/admin/stock/lotes', label: 'Lotes', icon: 'inventory_2' },
 ]
 
 export default function StockLayout() {

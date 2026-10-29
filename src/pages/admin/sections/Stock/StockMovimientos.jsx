@@ -6,9 +6,11 @@ import { PageHeader, cellStyle, headStyle } from './StockUi'
 import MovimientoModal from './MovimientoModal'
 
 const COPY = {
-    entrada: { title: 'Entradas', nuevo: 'Nueva entrada', vacio: 'Sin entradas todavía.', anular: 'Se anulará la entrada y se descontarán esas docenas del stock.' },
-    salida:  { title: 'Salidas',  nuevo: 'Nueva salida',  vacio: 'Sin salidas todavía.',  anular: 'Se anulará la salida y esas docenas vuelven al stock.' },
+    entrada: { title: 'Entradas', nuevo: 'Entrada (ajuste)', vacio: 'Sin entradas todavía.', anular: 'Se anulará la entrada y se descontarán esas docenas de su lote y del stock.' },
+    salida:  { title: 'Salidas',  nuevo: 'Nueva salida',  vacio: 'Sin salidas todavía.',  anular: 'Se anulará la salida y esas docenas vuelven a su lote y al stock.' },
 }
+
+const MOTIVO_LABEL = { ingreso: 'Ingreso', venta: 'Venta', ajuste: 'Ajuste', devolucion: 'Devolución' }
 
 /** Historial + alta de entradas o salidas. `tipo`: 'entrada' | 'salida'. */
 export default function StockMovimientos({ tipo }) {
@@ -50,9 +52,9 @@ export default function StockMovimientos({ tipo }) {
             {loading ? <p style={{ color: 'var(--admin-text-muted)' }}>Cargando…</p> : (
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead><tr>{['Fecha', 'Producto', 'Docenas', 'Saldo', 'Nota', ''].map(h => <th key={h} style={headStyle}>{h}</th>)}</tr></thead>
+                        <thead><tr>{['Fecha', 'Producto', 'Lote', 'Motivo', 'Docenas', 'Saldo', 'Nota', ''].map(h => <th key={h} style={headStyle}>{h}</th>)}</tr></thead>
                         <tbody>
-                            {rows.length === 0 && <tr><td colSpan={6} style={{ ...cellStyle, textAlign: 'center' }}>{c.vacio}</td></tr>}
+                            {rows.length === 0 && <tr><td colSpan={8} style={{ ...cellStyle, textAlign: 'center' }}>{c.vacio}</td></tr>}
                             {rows.map(r => {
                                 const anulado = !!r.anulado_at
                                 const st = anulado ? { opacity: 0.5, textDecoration: 'line-through' } : {}
@@ -60,6 +62,8 @@ export default function StockMovimientos({ tipo }) {
                                     <tr key={r.id}>
                                         <td style={{ ...cellStyle, ...st }}>{r.fecha}</td>
                                         <td style={{ ...cellStyle, ...st }}>{r.products?.name ?? '—'}</td>
+                                        <td style={{ ...cellStyle, ...st }}>{r.stock_lotes?.codigo ?? '—'}</td>
+                                        <td style={{ ...cellStyle, ...st }}>{MOTIVO_LABEL[r.motivo] ?? r.motivo ?? '—'}</td>
                                         <td style={{ ...cellStyle, ...st }}>{formatDocenas(r.cantidad)}</td>
                                         <td style={{ ...cellStyle, ...st }}>{r.saldo ?? '—'}</td>
                                         <td style={{ ...cellStyle, ...st }}>{r.nota || '—'}</td>
