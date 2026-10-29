@@ -477,6 +477,10 @@ export default function ProductsTable() {
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>refresh</span>
                         Actualizar
                     </button>
+                    <button onClick={() => setNewLoteOpen(true)} style={S.btnGhost} title="Crear un lote vacío para cargarle productos">
+                        <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>inventory_2</span>
+                        Nuevo lote
+                    </button>
                     <button onClick={openAddModal} style={S.btnPrimary}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
                         Nuevo producto
@@ -543,10 +547,6 @@ export default function ProductsTable() {
                     {showingLoteGrid ? (
                         <>
                             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                                <button type="button" onClick={() => setNewLoteOpen(true)} style={S.btnPrimary}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
-                                    Nuevo lote
-                                </button>
                                 <button type="button" onClick={() => setSoloConStock(v => !v)}
                                     style={{ ...S.btnGhost, ...(soloConStock ? { background: 'var(--admin-primary)', color: 'white' } : {}) }}>
                                     Solo con stock
@@ -715,7 +715,13 @@ export default function ProductsTable() {
                     onCreated={async codigo => {
                         setNewLoteOpen(false)
                         await loadLotes()
-                        setSelectedLote(codigo) // se abre vacío, listo para cargarle productos
+                        // Se crea desde el encabezado (estés en la vista que estés): se pasa a "Por lotes" y se abre vacío,
+                        // listo para cargarle productos.
+                        setViewMode('lotes')
+                        setSearch('')
+                        setCategoryFilter('all')
+                        setBrandFilter('all')
+                        setSelectedLote(codigo)
                     }}
                 />
             )}

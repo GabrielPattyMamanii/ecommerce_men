@@ -91,8 +91,8 @@ Pruebas: `tests.sh` **174/174** y `backfill.sh` (incluye esta migración sobre d
 
 La migración crea un lote por cada nombre ya existente (LOTE-000, LOTE-001…) y agrega la clave foránea `stock_lotes.codigo → stock_tandas.codigo` (`ON UPDATE CASCADE`: renombrar un lote lo renombra en todos sus productos). El resto (movimientos, triggers, corrección) no cambia.
 
-Flujo en pantalla (Productos → botón **Por lotes**):
-1. **Nuevo lote** → nombre `LOTE-NNN` sugerido y editable + fecha + nota. Se crea **vacío** y se abre.
+Flujo en pantalla (Productos):
+1. **Nuevo lote** (botón del encabezado, al lado de *Nuevo producto*; se puede usar desde cualquier vista) → nombre `LOTE-NNN` sugerido y editable + fecha + nota. Se crea **vacío**; la pantalla pasa a *Por lotes* y lo abre, listo para cargarle productos.
 2. Dentro del lote: **Nuevo producto** (formulario normal; el campo stock pasa a "Docenas que entran al LOTE-X" y es obligatorio) o **Agregar producto existente** (elige producto + docenas; **lista solo los productos que no están en ningún lote**, es decir los creados fuera de lotes).
 3. Un lote vacío se puede **eliminar**; con productos, no.
 - Un producto nuevo creado en un lote nace con stock 0 y entra por `stock_agregar_a_tanda` (queda el movimiento `ingreso` en el Kardex). Si el alta del producto sale bien pero falla la carga al lote, se avisa para reintentar con "Agregar producto existente".
