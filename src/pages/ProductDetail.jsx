@@ -34,6 +34,7 @@ export default function ProductDetail() {
     const [error, setError] = useState(null)
 
     const [activeImage, setActiveImage] = useState(0)
+    const [imageHovered, setImageHovered] = useState(false)
     const [activeColor, setActiveColor] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeSize, setActiveSize] = useState(null) // null = sin elección manual todavía; se resuelve en el render
     const [activeTab, setActiveTab] = useState('specs')
@@ -65,6 +66,16 @@ export default function ProductDetail() {
         }
         if (id) fetchProduct()
     }, [id])
+
+    // Carrusel automático cada 4s; se pausa mientras el cursor está sobre la imagen
+    const imageCount = product?.images?.length ?? 0
+    useEffect(() => {
+        if (imageCount < 2 || imageHovered) return
+        const timer = setInterval(() => {
+            setActiveImage(prev => (prev + 1) % imageCount)
+        }, 4000)
+        return () => clearInterval(timer)
+    }, [imageCount, imageHovered, activeImage])
 
     const sizeGuide = product?.size_guide
     const hasSizeGuide = sizeGuide?.columns?.length > 0 && sizeGuide?.rows?.length > 0
@@ -212,6 +223,8 @@ export default function ProductDetail() {
                         {/* Imagen principal */}
                         <div
                             className="aspect-[4/5] w-full bg-surface overflow-hidden relative group rounded-2xl transition-shadow duration-300 hover:shadow-[0_24px_48px_-24px_rgba(59,91,253,0.3)]"
+                            onMouseEnter={() => setImageHovered(true)}
+                            onMouseLeave={() => setImageHovered(false)}
                         >
                             {/* Stock bajo badge — oculto si el producto está marcado como disponible sin control de stock */}
                             {!product.unlimited_stock && product.stock !== null && product.stock <= 5 && (
@@ -238,6 +251,41 @@ export default function ProductDetail() {
                                 <div className="w-full h-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-outline text-8xl">image_not_supported</span>
                                 </div>
+                            )}
+
+                            {/* Flechas de navegación */}
+                            {images.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveImage(prev => (prev - 1 + images.length) % images.length)}
+                                        aria-label="Imagen anterior"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md flex items-center justify-center text-primary hover:bg-white hover:scale-105 transition-all"
+                                    >
+                                        <span className="material-symbols-outlined">chevron_left</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveImage(prev => (prev + 1) % images.length)}
+                                        aria-label="Imagen siguiente"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md flex items-center justify-center text-primary hover:bg-white hover:scale-105 transition-all"
+                                    >
+                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    </button>
+
+                                    {/* Indicadores (puntos) */}
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                        {images.map((_, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => setActiveImage(idx)}
+                                                aria-label={`Ir a imagen ${idx + 1}`}
+                                                className={`h-2 rounded-full transition-all ${activeImage === idx ? 'w-6 bg-primary' : 'w-2 bg-primary/30 hover:bg-primary/60'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
                             )}
 
                         </div>
