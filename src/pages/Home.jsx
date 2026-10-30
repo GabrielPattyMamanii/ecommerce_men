@@ -4,6 +4,7 @@ import { supabase } from '../services/supabaseClient'
 import { useHomeBannerSettings } from '../hooks/useHomeBannerSettings'
 import ProductCard from '../components/ProductCard'
 import PriceTag from '../components/PriceTag'
+import { productPath } from '../lib/productSlug'
 
 export default function Home() {
     const [products, setProducts] = useState([])
@@ -42,13 +43,13 @@ export default function Home() {
             const [mainRes, novRes] = await Promise.all([
                 supabase
                     .from('products')
-                    .select('id, name, description, retail_price, wholesale_price, price_on_request, stock, unlimited_stock, images')
+                    .select('id, slug, name, description, retail_price, wholesale_price, price_on_request, stock, unlimited_stock, images')
                     .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(8),
                 supabase
                     .from('products')
-                    .select('id, name, retail_price, wholesale_price, price_on_request, images')
+                    .select('id, slug, name, retail_price, wholesale_price, price_on_request, images')
                     .eq('visible', true)
                     .order('created_at', { ascending: false })
                     .limit(12),
@@ -169,7 +170,7 @@ export default function Home() {
                                 return (
                                     <Link
                                         key={product.id}
-                                        to={`/producto/${product.id}`}
+                                        to={productPath(product)}
                                         className="group flex-shrink-0 w-40 sm:w-44 snap-start flex flex-col bg-surface rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.3)] relative"
                                     >
                                         {/* Imagen */}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { productPath, parseProductParam } from '../lib/productSlug'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../services/supabaseClient'
 import { formatPrice, isPurchasable, hasWholesale, formatWholesalePrice, isWholesalePurchasable, hasDozenDimensions, formatDozenDimensions, getDozenDimensionEntries, isAvailable, formatCurrency } from '../lib/productPricing'
@@ -29,6 +30,7 @@ function Stars({ rating, size = 'text-[16px]' }) {
    ════════════════════════════════════════ */
 export default function ProductDetail() {
     const { id } = useParams()
+    const navigate = useNavigate()
     const [product, setProduct] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -54,18 +56,30 @@ export default function ProductDetail() {
         async function fetchProduct() {
             setLoading(true)
             setError(null)
-            const { data, error: err } = await supabase
+            const parsed = parseProductParam(id)
+            if (!parsed) {
+                setError('Producto no encontrado')
+                setLoading(false)
+                return
+            }
+            let query = supabase
                 .from('products')
-                .select('id, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide')
-                .eq('id', id)
+                .select('id, slug, name, description, retail_price, wholesale_price, dozen_height, dozen_width, dozen_length, dozen_weight, price_on_request, stock, unlimited_stock, images, sizes, colors, size_guide')
                 .eq('visible', true)
-                .single()
-            if (err) setError(err.message)
-            else setProduct(data)
+            query = parsed.fullId ? query.eq('id', parsed.fullId) : query.eq('slug', parsed.slug)
+            const { data, error: err } = await query.limit(1).single()
+            if (err) {
+                setError(err.code === 'PGRST116' ? 'Producto no encontrado' : err.message)
+            } else {
+                setProduct(data)
+                // Normaliza la URL (links viejos con UUID o nombre desactualizado)
+                const canonical = productPath(data)
+                if (window.location.pathname !== canonical) navigate(canonical, { replace: true })
+            }
             setLoading(false)
         }
         if (id) fetchProduct()
-    }, [id])
+    }, [id, navigate])
 
     // Carrusel automático cada 4s; se pausa mientras el cursor está sobre la imagen
     const imageCount = product?.images?.length ?? 0

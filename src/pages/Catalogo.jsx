@@ -21,7 +21,7 @@ export default function Catalogo() {
             setLoading(true)
             const { data, error: err } = await supabase
                 .from('products')
-                .select('id, name, description, retail_price, wholesale_price, price_on_request, stock, unlimited_stock, images, category_id, categories(name, slug)')
+                .select('id, slug, name, description, retail_price, wholesale_price, price_on_request, stock, unlimited_stock, images, category_id, categories(name, slug)')
                 .eq('visible', true)
                 .order('created_at', { ascending: false })
             if (err) setError(err.message)

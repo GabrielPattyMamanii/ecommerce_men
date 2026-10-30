@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import PriceTag from './PriceTag'
+import { productPath } from '../lib/productSlug'
 
 export default function ProductCard({ product }) {
     const imgUrl = product.images?.[0] || null
 
     return (
         <Link
-            to={`/producto/${product.id}`}
+            to={productPath(product)}
             className="group bg-surface flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-16px_rgba(59,91,253,0.25)]"
         >
             <div className="relative aspect-[3/4] overflow-hidden bg-surface-container rounded-2xl">
